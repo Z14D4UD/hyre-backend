@@ -1,11 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { postChatMessage, getChatMessages } = require('../controllers/chatController');
+const chatController = require('../controllers/chatController');
+const auth = require('../middleware/auth');
 
-// POST endpoint to create a new chat message
-router.post('/', postChatMessage);
+// Retrieve chat messages for a specific room
+router.get('/:room', auth, chatController.getChatMessages);
 
-// GET endpoint to retrieve messages for a specific room
-router.get('/:room', getChatMessages);
+// Send a chat message
+router.post('/send', auth, chatController.sendChatMessage);
 
 module.exports = router;

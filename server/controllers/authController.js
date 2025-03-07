@@ -1,4 +1,5 @@
 const Business = require('../models/Business');
+const Customer = require('../models/Customer');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
@@ -7,24 +8,40 @@ const sendEmail = require('../utils/sendEmail');
 const generateToken = () => crypto.randomBytes(20).toString('hex');
 
 exports.signup = async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, accountType } = req.body;
   try {
-    let business = await Business.findOne({ email });
-    if (business) return res.status(400).json({ msg: 'Business already exists' });
-
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-    const emailConfirmationToken = generateToken();
-
-    business = new Business({ name, email, password: hashedPassword, emailConfirmationToken });
-    await business.save();
-
-    const confirmUrl = `${process.env.FRONTEND_URL}/confirm/${emailConfirmationToken}`;
-    const message = `Please confirm your email by clicking this link: ${confirmUrl}`;
-    await sendEmail({ email: business.email, subject: 'Hyre Account Confirmation', message });
-
-    const token = jwt.sign({ id: business._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    res.json({ token, business, msg: 'Signup successful. Please check your email to confirm your account.' });
+    if (accountType === 'business') {
+      let business = await Business.findOne({ email });
+      if (business) return res.status(400).json({ msg: 'Business already exists' });
+  
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
+      const emailConfirmationToken = generateToken();
+  
+      business = new Business({ name, email, password: hashedPassword, emailConfirmationToken });
+      await business.save();
+  
+      const confirmUrl = `${process.env.FRONTEND_URL}/confirm/${emailConfirmationToken}`;
+      const message = `Please confirm your email by clicking this link: ${confirmUrl}`;
+      await sendEmail({ email: business.email, subject: 'Hyre Account Confirmation', message });
+  
+      const token = jwt.sign({ id: business._id, accountType: 'business' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+      res.json({ token, business, msg: 'Signup successful. Please check your email to confirm your account.' });
+    } else if (accountType === 'customer') {
+      let customer = await Customer.findOne({ email });
+      if (customer) return res.status(400).json({ msg: 'Customer already exists' });
+  
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
+  
+      customer = new Customer({ name, email, password: hashedPassword });
+      await customer.save();
+  
+      const token = jwt.sign({ id: customer._id, accountType: 'customer' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+      res.json({ token, customer, msg: 'Customer signup successful.' });
+    } else {
+      res.status(400).json({ msg: 'Invalid account type' });
+    }
   } catch (error) {
     console.error(error);
     res.status(500).send('Server error');
@@ -32,14 +49,25 @@ exports.signup = async (req, res) => {
 };
 
 exports.login = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, accountType } = req.body;
   try {
-    const business = await Business.findOne({ email });
-    if (!business) return res.status(400).json({ msg: 'Invalid credentials' });
-    const isMatch = await bcrypt.compare(password, business.password);
-    if (!isMatch) return res.status(400).json({ msg: 'Invalid credentials' });
-    const token = jwt.sign({ id: business._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    res.json({ token, business });
+    if (accountType === 'business') {
+      const business = await Business.findOne({ email });
+      if (!business) return res.status(400).json({ msg: 'Invalid credentials' });
+      const isMatch = await bcrypt.compare(password, business.password);
+      if (!isMatch) return res.status(400).json({ msg: 'Invalid credentials' });
+      const token = jwt.sign({ id: business._id, accountType: 'business' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+      res.json({ token, business });
+    } else if (accountType === 'customer') {
+      const customer = await Customer.findOne({ email });
+      if (!customer) return res.status(400).json({ msg: 'Invalid credentials' });
+      const isMatch = await bcrypt.compare(password, customer.password);
+      if (!isMatch) return res.status(400).json({ msg: 'Invalid credentials' });
+      const token = jwt.sign({ id: customer._id, accountType: 'customer' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+      res.json({ token, customer });
+    } else {
+      res.status(400).json({ msg: 'Invalid account type' });
+    }
   } catch (error) {
     console.error(error);
     res.status(500).send('Server error');
@@ -68,7 +96,7 @@ exports.forgotPassword = async (req, res) => {
     if (!business) return res.status(404).json({ msg: 'No account with that email found' });
     const resetToken = generateToken();
     business.resetPasswordToken = resetToken;
-    business.resetPasswordExpire = Date.now() + 3600000;
+    business.resetPasswordExpire = Date.now() + 3600000; // 1 hour from now
     await business.save();
 
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
@@ -103,6 +131,6 @@ exports.resetPassword = async (req, res) => {
 };
 
 exports.googleCallback = (req, res) => {
-  const token = jwt.sign({ id: req.user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+  const token = jwt.sign({ id: req.user._id, accountType: 'business' }, process.env.JWT_SECRET, { expiresIn: '1h' });
   res.redirect(`${process.env.FRONTEND_URL}/dashboard?token=${token}`);
 };

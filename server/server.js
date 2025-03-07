@@ -8,19 +8,20 @@ const http = require('http');
 const socketIo = require('socket.io');
 
 const authRoutes = require('./routes/authRoutes');
+const bookingRoutes = require('./routes/bookingRoutes');
+const invoiceRoutes = require('./routes/invoiceRoutes'); // if using separate invoice routes
+const chatRoutes = require('./routes/chatRoutes');
+const customerRoutes = require('./routes/customerRoutes');
 const carRoutes = require('./routes/carRoutes');
 const businessRoutes = require('./routes/businessRoutes');
-const bookingRoutes = require('./routes/bookingRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
-const chatRoutes = require('./routes/chatRoutes');
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
-  cors: { origin: '*' }  // Adjust as needed for security
+  cors: { origin: '*' } // Adjust as needed
 });
 
-// Connect to MongoDB
 connectDB();
 
 app.use(express.json());
@@ -37,30 +38,25 @@ app.use(passport.initialize());
 app.use(passport.session());
 require('./config/passport')(passport);
 
-// API Routes
+// Mount routes
 app.use('/api/auth', authRoutes);
+app.use('/api/bookings', bookingRoutes);
+app.use('/api/invoices', invoiceRoutes); // if using separate invoice routes
+app.use('/api/chat', chatRoutes);
+app.use('/api/customer', customerRoutes);
 app.use('/api/cars', carRoutes);
 app.use('/api/business', businessRoutes);
-app.use('/api/bookings', bookingRoutes);
 app.use('/api/payments', paymentRoutes);
-app.use('/api/chat', chatRoutes);
 
-// Setup Socket.io for real-time chat
 io.on('connection', (socket) => {
   console.log('New client connected:', socket.id);
-
-  // When a client joins a specific chat room (e.g., booking id or business id)
   socket.on('joinRoom', (room) => {
     socket.join(room);
     console.log(`Socket ${socket.id} joined room ${room}`);
   });
-
-  // When a message is sent, broadcast it to the room
   socket.on('sendMessage', (data) => {
-    // Data should include { room, message, sender }
     io.to(data.room).emit('receiveMessage', data);
   });
-
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
   });

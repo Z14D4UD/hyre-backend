@@ -13,10 +13,15 @@ exports.createBooking = async (req, res) => {
     const serviceFee = basePrice * 0.05;
     const totalAmount = basePrice + bookingFee;
     const payout = basePrice - serviceFee;
+    
+    // Determine if booking is from a customer (req.customer should be set if so)
+    const customerId = req.customer ? req.customer.id : undefined;
+
     const booking = new Booking({
       car: carId,
       business: businessId,
       customerName,
+      customer: customerId,
       startDate,
       endDate,
       basePrice,
@@ -27,7 +32,10 @@ exports.createBooking = async (req, res) => {
       currency: currency || 'usd'
     });
     await booking.save();
-    await Business.findByIdAndUpdate(businessId, { $inc: { balance: payout } });
+    // If the booking was made by a business, update the business balance
+    if (businessId && !customerId) {
+      await Business.findByIdAndUpdate(businessId, { $inc: { balance: payout } });
+    }
     res.json({ booking });
   } catch (error) {
     console.error(error);
@@ -62,9 +70,23 @@ exports.getBookings = async (req, res) => {
   }
 };
 
+// For businesses
 exports.getMyBookings = async (req, res) => {
   try {
     const bookings = await Booking.find({ business: req.business.id })
+      .populate('car', 'make model')
+      .populate('business', 'name email');
+    res.json(bookings);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server error');
+  }
+};
+
+// For customers
+exports.getCustomerBookings = async (req, res) => {
+  try {
+    const bookings = await Booking.find({ customer: req.customer.id })
       .populate('car', 'make model')
       .populate('business', 'name email');
     res.json(bookings);

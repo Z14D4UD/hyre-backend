@@ -1,12 +1,22 @@
 const express = require('express');
 const router = express.Router();
-const { createBooking, requestPayout, getBookings, getMyBookings, generateInvoice } = require('../controllers/bookingController');
-const authMiddleware = require('../middlewares/authMiddleware');
+const bookingController = require('../controllers/bookingController');
+const auth = require('../middleware/auth');
 
-router.post('/', createBooking);
-router.get('/', getBookings);
-router.get('/my', authMiddleware, getMyBookings);
-router.post('/payout', authMiddleware, requestPayout);
-router.get('/invoice/:id', generateInvoice);
+// For creating a booking (accessible by both account types)
+router.post('/', auth, bookingController.createBooking);
+
+// Business-specific endpoints
+router.get('/my', auth, bookingController.getMyBookings);
+router.post('/payout', auth, bookingController.requestPayout);
+
+// Customer-specific endpoint
+router.get('/customer', auth, bookingController.getCustomerBookings);
+
+// General endpoint to get all bookings (if needed)
+router.get('/', auth, bookingController.getBookings);
+
+// Invoice generation endpoint (accessible by both)
+router.get('/:id/invoice', auth, bookingController.generateInvoice);
 
 module.exports = router;
