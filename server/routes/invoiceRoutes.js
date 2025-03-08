@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const invoiceController = require('../controllers/invoiceController');
-const auth = require('../middlewares/authMiddlewares');
+const auth = require('../middlewares/authMiddleware');
 
 // Customer invoices endpoints
 router.get('/customer', auth, invoiceController.getCustomerInvoices);

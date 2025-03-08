@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const chatController = require('../controllers/chatController');
-const auth = require('../middlewares/authMiddlewares');
+const auth = require('../middlewares/authMiddleware');
 
 // Retrieve chat messages for a specific room
 router.get('/:room', auth, chatController.getChatMessages);

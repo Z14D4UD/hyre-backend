@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const bookingController = require('../controllers/bookingController');
-const auth = require('../middleware/authMiddlewares');
+const auth = require('../middlewares/authMiddleware');
 
 // For creating a booking (accessible by both account types)
 router.post('/', auth, bookingController.createBooking);
