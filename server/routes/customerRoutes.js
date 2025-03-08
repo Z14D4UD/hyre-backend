@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const customerController = require('../controllers/customerController');
-const auth = require('../middleware/auth');
+const auth = require('../middlewares/authMiddlewares');
 const multer = require('multer');
 
 // Configure multer for file uploads (ID documents)

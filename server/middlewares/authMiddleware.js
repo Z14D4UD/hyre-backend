@@ -1,3 +1,5 @@
+// File: server/middleware/auth.js
+
 const jwt = require('jsonwebtoken');
 
 module.exports = function (req, res, next) {
@@ -6,6 +8,7 @@ module.exports = function (req, res, next) {
   
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // Attach user info based on account type:
     if (decoded.accountType === 'customer') {
       req.customer = decoded;
     } else {
