@@ -1,18 +1,25 @@
-const jwt = require('jsonwebtoken');
+// File: server/controllers/customerController.js
 
-module.exports = function (req, res, next) {
-  const token = req.header('x-auth-token');
-  if (!token) return res.status(401).json({ msg: 'No token, authorization denied' });
-  
+const Customer = require('../models/Customer');
+
+exports.verifyId = async (req, res) => {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    if (decoded.accountType === 'customer') {
-      req.customer = decoded;
-    } else {
-      req.business = decoded;
+    // Assuming your auth middleware sets req.customer for a logged in customer
+    const customerId = req.customer.id; 
+    // Assuming you use multer to handle file uploads and the file is available as req.file
+    if (!req.file) {
+      return res.status(400).json({ msg: 'No file uploaded' });
     }
-    next();
-  } catch (err) {
-    res.status(401).json({ msg: 'Token is not valid' });
+    
+    // Update the customer's record with the path to the uploaded ID document
+    const updatedCustomer = await Customer.findByIdAndUpdate(
+      customerId,
+      { idDocument: req.file.path },
+      { new: true }
+    );
+    res.json({ msg: 'ID document uploaded successfully', customer: updatedCustomer });
+  } catch (error) {
+    console.error('Error during ID verification:', error);
+    res.status(500).json({ msg: 'Server error during ID verification' });
   }
 };
