@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@react-google-maps/api": "^2.20.6",
     "@stripe/react-stripe-js": "^3.1.1",
     "@stripe/stripe-js": "^5.7.0",
     "@testing-library/dom": "^10.4.0",
@@ -12,11 +13,12 @@
     "axios": "^1.8.1",
     "date-fns": "^4.1.0",
     "google-map-react": "^2.2.1",
-    "i18next": "^24.2.2",
-    "react": "^19.0.0",
+    "i18next": "^23.2.4",
+    "react": "^18.3.1",
     "react-datepicker": "^8.1.0",
-    "react-dom": "^19.0.0",
-    "react-i18next": "^15.4.1",
+    "react-dom": "^18.3.1",
+    "react-i18next": "^15.3.0",
+    "react-icons": "^5.5.0",
     "react-router-dom": "^7.2.0",
     "react-scripts": "5.0.1",
     "socket.io-client": "^4.8.1",
@@ -45,5 +47,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "typescript": "^4.9.5"
   }
 }
