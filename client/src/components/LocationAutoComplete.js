@@ -1,10 +1,13 @@
+// client/src/components/LocationAutocomplete.js
 import React, { useState, useEffect, useRef } from 'react';
 import { useJsApiLoader } from '@react-google-maps/api';
+import { useTranslation } from 'react-i18next';
 import styles from '../styles/Home.module.css';
 
 const libraries = ['places'];
 
 export default function LocationAutocomplete({ location, setLocation }) {
+  const { t } = useTranslation();
   const [autocomplete, setAutocomplete] = useState(null);
   const inputRef = useRef(null);
 
@@ -17,7 +20,7 @@ export default function LocationAutocomplete({ location, setLocation }) {
     if (isLoaded && !autocomplete && inputRef.current) {
       const auto = new window.google.maps.places.Autocomplete(inputRef.current, {
         types: ['(cities)'],
-        componentRestrictions: { country: 'uk' },
+        componentRestrictions: { country: 'ae' }, // For UAE (or adjust as needed)
       });
       auto.addListener('place_changed', () => {
         const place = auto.getPlace();
@@ -40,7 +43,7 @@ export default function LocationAutocomplete({ location, setLocation }) {
       ref={inputRef}
       type="text"
       className={styles.searchInput}
-      placeholder="City, airport, address or hotel"
+      placeholder={t('home.hero.searchPlaceholder')}
       value={location}
       onChange={handleChange}
     />

@@ -1,38 +1,31 @@
 // client/src/components/SideMenu.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import styles from '../styles/Home.module.css';
-import { 
-  FaTimes, 
-  FaSignInAlt, 
-  FaUser, 
-  FaShieldAlt
-} from 'react-icons/fa';
-import i18n from '../i18n';
+import { FaTimes, FaSignInAlt, FaUser, FaShieldAlt } from 'react-icons/fa';
 
 export default function SideMenu({ isOpen, toggleMenu }) {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const [currency, setCurrency] = useState('USD');
   const [language, setLanguage] = useState('en');
 
-  // Navigate and close menu
   const handleNavigation = (path) => {
     toggleMenu();
     navigate(path);
   };
 
-  // Language change
   const handleLanguageChange = (e) => {
     const lang = e.target.value;
     setLanguage(lang);
     i18n.changeLanguage(lang);
   };
 
-  // Currency change
   const handleCurrencyChange = (e) => {
     const cur = e.target.value;
     setCurrency(cur);
-    // Could store in localStorage or global context
+    // Optionally persist currency in localStorage or context.
   };
 
   return (
@@ -43,26 +36,17 @@ export default function SideMenu({ isOpen, toggleMenu }) {
         </button>
       </div>
       <ul className={styles.sideMenuList}>
-        <li 
-          className={styles.sideMenuItem} 
-          onClick={() => handleNavigation('/login')}
-        >
+        <li className={styles.sideMenuItem} onClick={() => handleNavigation('/login')}>
           <FaSignInAlt />
-          Log in
+          {t('header.menu.login')}
         </li>
-        <li 
-          className={styles.sideMenuItem} 
-          onClick={() => handleNavigation('/signup')}
-        >
+        <li className={styles.sideMenuItem} onClick={() => handleNavigation('/signup')}>
           <FaUser />
-          Sign up
+          {t('header.menu.signup')}
         </li>
-        <li 
-          className={styles.sideMenuItem} 
-          onClick={() => handleNavigation('/insurance-legal')}
-        >
+        <li className={styles.sideMenuItem} onClick={() => handleNavigation('/insurance-legal')}>
           <FaShieldAlt />
-          Insurance & Legal
+          {t('header.menu.insuranceLegal')}
         </li>
       </ul>
       <div className={styles.languageCurrencyToggle}>

@@ -2,9 +2,10 @@
 import React, { useState } from 'react';
 import { FaSearch } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import SideMenu from '../components/SideMenu';
 import FeaturedBusinesses from '../components/FeaturedBusinesses';
-import LocationAutocomplete from '../components/LocationAutoComplete';
+import LocationAutocomplete from '../components/LocationAutocomplete';
 import Footer from '../components/Footer';
 import styles from '../styles/Home.module.css';
 
@@ -13,8 +14,8 @@ export default function Home() {
   const [location, setLocation] = useState('');
   const [fromDateTime, setFromDateTime] = useState('');
   const [toDateTime, setToDateTime] = useState('');
-
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const toggleMenu = () => setMenuOpen(!menuOpen);
 
@@ -36,7 +37,7 @@ export default function Home() {
     <div className={styles.container}>
       {/* Header */}
       <header className={styles.header}>
-        <div className={styles.logo}>Hyre</div>
+        <div className={styles.logo}>{t('header.logo')}</div>
         <button className={styles.menuIcon} onClick={toggleMenu}>
           ☰
         </button>
@@ -50,48 +51,43 @@ export default function Home() {
         <div className={styles.heroOverlay}></div>
         <div className={styles.searchContainer}>
           <LocationAutocomplete location={location} setLocation={setLocation} />
-
           <input
             type="datetime-local"
             className={styles.searchInput}
             value={fromDateTime}
             onChange={(e) => setFromDateTime(e.target.value)}
           />
-
           <input
             type="datetime-local"
             className={styles.searchInput}
             value={toDateTime}
             onChange={(e) => setToDateTime(e.target.value)}
           />
-
           <button className={styles.searchIconButton} onClick={handleSearch}>
-            <FaSearch />
+            <FaSearch /> {t('home.hero.searchButton')}
           </button>
         </div>
       </section>
 
       {/* Featured Businesses */}
       <section className={styles.featuredSection}>
-        <h2 className={styles.featuredTitle}>Featured Businesses</h2>
+        <h2 className={styles.featuredTitle}>{t('home.featured.title')}</h2>
         <FeaturedBusinesses />
       </section>
 
       {/* List Your Car Section */}
       <section className={styles.listYourCarSection}>
-        <h2>List Your Car</h2>
+        <h2>{t('home.listYourCar.title')}</h2>
         <img
           src="/images/my-car.jpg"
-          alt="List your car"
+          alt={t('home.listYourCar.title')}
           className={styles.listYourCarImage}
         />
         <p className={styles.listYourCarContent}>
-          Earn extra income by listing your car on Hyre. Set your own rates and
-          availability, and we'll connect you with local customers looking for
-          the perfect ride.
+          {t('home.listYourCar.description')}
         </p>
         <button className={styles.listYourCarButton} onClick={handleListYourCar}>
-          List Your Car
+          {t('home.listYourCar.button')}
         </button>
       </section>
 
