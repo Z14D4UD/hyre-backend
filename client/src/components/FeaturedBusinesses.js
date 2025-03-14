@@ -11,7 +11,7 @@ export default function FeaturedBusinesses() {
   useEffect(() => {
     const fetchFeatured = async () => {
       try {
-        const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/business/featured`);
+        const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/business/featured`);
         setBusinesses(res.data);
       } catch (err) {
         setError(err.response?.data?.message || err.message);

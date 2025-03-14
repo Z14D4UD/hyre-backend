@@ -1,4 +1,3 @@
-// server/models/Business.js
 const mongoose = require('mongoose');
 
 const BusinessSchema = new mongoose.Schema({
@@ -8,9 +7,9 @@ const BusinessSchema = new mongoose.Schema({
   emailConfirmationToken: { type: String },
   verified: { type: Boolean, default: false },
   balance: { type: Number, default: 0 },
-  isFeatured: { type: Boolean, default: false },  // For featured businesses
-  image: { type: String },                         // URL to an image
-  description: { type: String }                    // Short description
+  isFeatured: { type: Boolean, default: false },
+  image: { type: String },       // URL to a featured image
+  description: { type: String }  // Short description
 }, { timestamps: true });
 
 module.exports = mongoose.model('Business', BusinessSchema);

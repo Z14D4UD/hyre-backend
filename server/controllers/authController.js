@@ -1,5 +1,6 @@
 const Business = require('../models/Business');
 const Customer = require('../models/Customer');
+const Affiliate = require('../models/Affiliate');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
@@ -39,6 +40,19 @@ exports.signup = async (req, res) => {
   
       const token = jwt.sign({ id: customer._id, accountType: 'customer' }, process.env.JWT_SECRET, { expiresIn: '1h' });
       res.json({ token, customer, msg: 'Customer signup successful.' });
+    } else if (accountType === 'affiliate') {
+      let affiliate = await Affiliate.findOne({ email });
+      if (affiliate) return res.status(400).json({ msg: 'Affiliate already exists' });
+  
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
+      const affiliateCode = crypto.randomBytes(4).toString('hex').toUpperCase();
+  
+      affiliate = new Affiliate({ name, email, password: hashedPassword, affiliateCode });
+      await affiliate.save();
+  
+      const token = jwt.sign({ id: affiliate._id, accountType: 'affiliate' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+      res.json({ token, affiliate, msg: 'Affiliate signup successful.' });
     } else {
       res.status(400).json({ msg: 'Invalid account type' });
     }
@@ -65,6 +79,13 @@ exports.login = async (req, res) => {
       if (!isMatch) return res.status(400).json({ msg: 'Invalid credentials' });
       const token = jwt.sign({ id: customer._id, accountType: 'customer' }, process.env.JWT_SECRET, { expiresIn: '1h' });
       res.json({ token, customer });
+    } else if (accountType === 'affiliate') {
+      const affiliate = await Affiliate.findOne({ email });
+      if (!affiliate) return res.status(400).json({ msg: 'Invalid credentials' });
+      const isMatch = await bcrypt.compare(password, affiliate.password);
+      if (!isMatch) return res.status(400).json({ msg: 'Invalid credentials' });
+      const token = jwt.sign({ id: affiliate._id, accountType: 'affiliate' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+      res.json({ token, affiliate });
     } else {
       res.status(400).json({ msg: 'Invalid account type' });
     }
@@ -96,7 +117,7 @@ exports.forgotPassword = async (req, res) => {
     if (!business) return res.status(404).json({ msg: 'No account with that email found' });
     const resetToken = generateToken();
     business.resetPasswordToken = resetToken;
-    business.resetPasswordExpire = Date.now() + 3600000; // 1 hour from now
+    business.resetPasswordExpire = Date.now() + 3600000;
     await business.save();
 
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;

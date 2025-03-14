@@ -11,7 +11,9 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchMyBookings = async () => {
       try {
-        const res = await api.get('/bookings/my');
+        const res = await api.get('/bookings/my', {
+          headers: { 'x-auth-token': localStorage.getItem('token') },
+        });
         setBookings(res.data);
         const earnings = res.data.reduce((acc, booking) => acc + booking.payout, 0);
         setTotalEarnings(earnings);
@@ -37,14 +39,13 @@ export default function Dashboard() {
         <p>No bookings found.</p>
       ) : (
         <ul>
-          {bookings.map(booking => (
+          {bookings.map((booking) => (
             <li key={booking._id}>
               <p>
-              href={`${process.env.REACT_APP_BACKEND_URL}/bookings/invoice/${booking._id}`}
-              {new Date(booking.startDate).toLocaleDateString()} to {new Date(booking.endDate).toLocaleDateString()}
+                Booking ID: {booking._id} | Dates: {new Date(booking.startDate).toLocaleDateString()} - {new Date(booking.endDate).toLocaleDateString()}
               </p>
               <a
-                  href={`${process.env.REACT_APP_BACKEND_URL}/bookings/invoice/${booking._id}`}
+                href={`${process.env.REACT_APP_BACKEND_URL}/bookings/invoice/${booking._id}`}
                 target="_blank"
                 rel="noopener noreferrer"
               >

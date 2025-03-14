@@ -1,27 +1,25 @@
 const Booking = require('../models/Booking');
 const Car = require('../models/Car');
 const Business = require('../models/Business');
+const Affiliate = require('../models/Affiliate');
 const PDFDocument = require('pdfkit');
 
 exports.createBooking = async (req, res) => {
-  const { carId, customerName, startDate, endDate, basePrice, currency } = req.body;
+  const { carId, customerName, startDate, endDate, basePrice, currency, affiliateCode } = req.body;
   try {
     const car = await Car.findById(carId);
     if (!car) return res.status(404).json({ msg: 'Car not found' });
+    
     const businessId = car.business;
     const bookingFee = basePrice * 0.05;
     const serviceFee = basePrice * 0.05;
     const totalAmount = basePrice + bookingFee;
     const payout = basePrice - serviceFee;
     
-    // Determine if booking is from a customer (req.customer should be set if so)
-    const customerId = req.customer ? req.customer.id : undefined;
-
-    const booking = new Booking({
+    const bookingData = {
       car: carId,
       business: businessId,
       customerName,
-      customer: customerId,
       startDate,
       endDate,
       basePrice,
@@ -30,15 +28,31 @@ exports.createBooking = async (req, res) => {
       totalAmount,
       payout,
       currency: currency || 'usd'
-    });
+    };
+    
+    if (affiliateCode) {
+      const affiliate = await Affiliate.findOne({ affiliateCode: affiliateCode.toUpperCase() });
+      if (affiliate) {
+        bookingData.affiliate = affiliate._id;
+        const commission = basePrice * 0.10; // 10% commission
+        affiliate.earnings += commission;
+        await affiliate.save();
+      } else {
+        return res.status(400).json({ msg: 'Invalid affiliate code' });
+      }
+    }
+    
+    const booking = new Booking(bookingData);
     await booking.save();
-    // If the booking was made by a business, update the business balance
-    if (businessId && !customerId) {
+    
+    // Update business balance (if applicable)
+    if (businessId) {
       await Business.findByIdAndUpdate(businessId, { $inc: { balance: payout } });
     }
+    
     res.json({ booking });
   } catch (error) {
-    console.error(error);
+    console.error('Booking error:', error);
     res.status(500).send('Server error');
   }
 };
@@ -70,7 +84,6 @@ exports.getBookings = async (req, res) => {
   }
 };
 
-// For businesses
 exports.getMyBookings = async (req, res) => {
   try {
     const bookings = await Booking.find({ business: req.business.id })
@@ -83,7 +96,6 @@ exports.getMyBookings = async (req, res) => {
   }
 };
 
-// For customers
 exports.getCustomerBookings = async (req, res) => {
   try {
     const bookings = await Booking.find({ customer: req.customer.id })

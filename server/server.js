@@ -1,4 +1,3 @@
-// server.js
 const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
@@ -11,23 +10,22 @@ const socketIo = require('socket.io');
 // Import routes
 const authRoutes = require('./routes/authRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
-const invoiceRoutes = require('./routes/invoiceRoutes'); // if using separate invoice routes
+const invoiceRoutes = require('./routes/invoiceRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const customerRoutes = require('./routes/customerRoutes');
 const carRoutes = require('./routes/carRoutes');
-const businessRoutes = require('./routes/businessRoutes'); // Featured, verify-id, etc.
+const businessRoutes = require('./routes/businessRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
+const affiliateRoutes = require('./routes/affiliateRoutes');
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
-  cors: { origin: '*' } // Adjust as needed for security
+  cors: { origin: '*' }
 });
 
-// Connect to MongoDB
 connectDB();
 
-// Middleware
 app.use(express.json());
 app.use(cors());
 app.use('/uploads', express.static('uploads'));
@@ -42,17 +40,16 @@ app.use(passport.initialize());
 app.use(passport.session());
 require('./config/passport')(passport);
 
-// Mount routes (each route is mounted once)
 app.use('/api/auth', authRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/customer', customerRoutes);
 app.use('/api/cars', carRoutes);
-app.use('/api/business', businessRoutes); // business routes mounted once
+app.use('/api/business', businessRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/affiliates', affiliateRoutes);
 
-// Socket.io for real-time chat
 io.on('connection', (socket) => {
   console.log('New client connected:', socket.id);
   

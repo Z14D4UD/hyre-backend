@@ -26,7 +26,7 @@
 }
 .logo {
   font-weight: 700;
-  font-size: 1.4rem;
+  font-size: 2.4rem;
   letter-spacing: 0.5px;
   color: #38b6ff; /* Hyre color */
   cursor: pointer;
@@ -111,9 +111,6 @@
   position: relative;
   width: 100%;
   height: 60vh;
-  background-image: url('public/images/hero.jpg');
-  /* Replace with your own hero image, e.g.: 
-     background-image: url('/images/my-hero.jpg'); */
   background-size: cover;
   background-position: center;
   margin-top: 72px;
@@ -138,7 +135,7 @@
   padding: 0.8rem;
   border-radius: 20px;
   display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr auto; /* location, fromDateTime, toDateTime, search icon */
+  grid-template-columns: 1.5fr 1fr 1fr auto; /* location, fromDateTime, toDateTime, icon */
   gap: 0.3rem; /* small gap between inputs */
   align-items: center;
   box-shadow: 0 3px 8px rgba(0,0,0,0.15);
@@ -204,25 +201,86 @@
   font-size: 0.9rem;
 }
 
+/* Promo Section (two columns like Turo's "Book a car"/"Become a host") */
+.promoSection {
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 1rem;
+}
+.promoItem {
+  width: 250px;
+  text-align: center;
+  margin: 1rem;
+}
+.promoIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 70px;
+  height: 70px;
+  margin: 0 auto 1rem;
+  background-color: #f5f5f5;
+  border-radius: 50%;
+  font-size: 1.5rem;
+}
+.promoItem h3 {
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+.promoItem p {
+  font-size: 0.95rem;
+  color: #666;
+  margin-bottom: 0.5rem;
+}
+.promoLink {
+  color: #38b6ff;
+  text-decoration: none;
+  font-weight: 600;
+}
+
 /* List Your Car Section */
 .listYourCarSection {
+  position: relative; /* enable positioning for pseudo-element overlay */
   padding: 2rem 1rem;
   max-width: 1200px;
   margin: 0 auto;
   text-align: center;
-  background-image: url('https://via.placeholder.com/1600x900?text=List+Your+Car+Background');
-  /* Replace with your own background image, e.g.: 
-     background-image: url('/images/list-your-car-bg.jpg'); */
+  background-image: url('/src/assets/my-car.jpg');
+  /* Alternatively, if you store your image in public, you might use: url('/images/list-your-car-bg.jpg'); */
   background-size: cover;
   background-position: center;
   border-radius: 12px;
   color: #fff;
+  overflow: hidden; /* ensure overlay doesn't spill out */
 }
+
+/* Overlay to dim the background image */
+.listYourCarSection::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* Adjust opacity (0.5 means 50% opacity) */
+  z-index: 1;
+}
+
+/* Ensure content appears above the overlay */
+.listYourCarSection > * {
+  position: relative;
+  z-index: 2;
+}
+
 .listYourCarSection h2 {
   font-size: 1.4rem;
   font-weight: 700;
   margin-bottom: 1rem;
 }
+
 .listYourCarImage {
   width: 100%;
   max-width: 600px;
@@ -231,6 +289,7 @@
   object-fit: cover;
   display: block;
 }
+
 .listYourCarContent {
   margin: 0 auto;
   max-width: 600px;
@@ -239,6 +298,7 @@
   margin-bottom: 1.5rem;
   color: #fff;
 }
+
 .listYourCarButton {
   background-color: #000;
   color: #fff;
@@ -249,6 +309,7 @@
   font-size: 0.95rem;
   font-weight: 500;
 }
+
 
 /* Footer */
 .footer {
@@ -270,6 +331,14 @@
   .hero {
     height: 50vh;
   }
+  .promoSection {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .promoItem {
+    margin: 1rem auto;
+    width: 80%;
+  }
 }
 
 @media (max-width: 600px) {
@@ -278,7 +347,7 @@
     flex-direction: column;
     align-items: stretch;
     width: 80%;
-    margin: 0 auto; /* center horizontally */
+    margin: 0 auto;
   }
   .searchIconButton {
     width: 100%;

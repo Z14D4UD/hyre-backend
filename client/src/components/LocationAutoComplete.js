@@ -11,7 +11,7 @@ export default function LocationAutocomplete({ location, setLocation }) {
   const [autocomplete, setAutocomplete] = useState(null);
   const inputRef = useRef(null);
 
-  const { isLoaded } = useJsApiLoader({
+  const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
     libraries,
   });
@@ -20,7 +20,7 @@ export default function LocationAutocomplete({ location, setLocation }) {
     if (isLoaded && !autocomplete && inputRef.current) {
       const auto = new window.google.maps.places.Autocomplete(inputRef.current, {
         types: ['(cities)'],
-        componentRestrictions: { country: 'ae' }, // For UAE (or adjust as needed)
+        componentRestrictions: { country: 'ae' },
       });
       auto.addListener('place_changed', () => {
         const place = auto.getPlace();
@@ -34,6 +34,9 @@ export default function LocationAutocomplete({ location, setLocation }) {
     }
   }, [isLoaded, autocomplete, setLocation]);
 
+  if (loadError) return <p>Error loading Google Maps</p>;
+  if (!isLoaded) return <p>Loading Google Maps...</p>;
+
   const handleChange = (e) => {
     setLocation(e.target.value);
   };
@@ -46,6 +49,7 @@ export default function LocationAutocomplete({ location, setLocation }) {
       placeholder={t('home.hero.searchPlaceholder')}
       value={location}
       onChange={handleChange}
+      aria-label={t('home.hero.searchPlaceholder')}
     />
   );
 }

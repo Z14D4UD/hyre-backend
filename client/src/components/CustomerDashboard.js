@@ -8,49 +8,45 @@ export default function CustomerDashboard() {
   const [chatMessages, setChatMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
 
-  // Fetch bookings
-  const fetchBookings = async () => {
-    try {
-      const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/bookings/my`, {
-        headers: { 'x-auth-token': localStorage.getItem('token') },
-      });
-      setBookings(res.data);
-    } catch (error) {
-      console.error('Error fetching bookings:', error);
-    }
-  };
-
-  // Fetch invoices
-  const fetchInvoices = async () => {
-    try {
-      const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/invoices/my`, {
-        headers: { 'x-auth-token': localStorage.getItem('token') },
-      });
-      setInvoices(res.data);
-    } catch (error) {
-      console.error('Error fetching invoices:', error);
-    }
-  };
-
-  // Fetch chat messages
-  const fetchChatMessages = async () => {
-    try {
-      const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/chat/messages`, {
-        headers: { 'x-auth-token': localStorage.getItem('token') },
-      });
-      setChatMessages(res.data);
-    } catch (error) {
-      console.error('Error fetching chat messages:', error);
-    }
-  };
-
   useEffect(() => {
+    const fetchBookings = async () => {
+      try {
+        const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/bookings/customer`, {
+          headers: { 'x-auth-token': localStorage.getItem('token') },
+        });
+        setBookings(res.data);
+      } catch (error) {
+        console.error('Error fetching bookings:', error);
+      }
+    };
+
+    const fetchInvoices = async () => {
+      try {
+        const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/invoices/my`, {
+          headers: { 'x-auth-token': localStorage.getItem('token') },
+        });
+        setInvoices(res.data);
+      } catch (error) {
+        console.error('Error fetching invoices:', error);
+      }
+    };
+
+    const fetchChatMessages = async () => {
+      try {
+        const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/chat/messages`, {
+          headers: { 'x-auth-token': localStorage.getItem('token') },
+        });
+        setChatMessages(res.data);
+      } catch (error) {
+        console.error('Error fetching chat messages:', error);
+      }
+    };
+
     fetchBookings();
     fetchInvoices();
     fetchChatMessages();
   }, []);
 
-  // Handle ID upload
   const handleIdUpload = async (e) => {
     e.preventDefault();
     const formData = new FormData();
@@ -66,7 +62,6 @@ export default function CustomerDashboard() {
     }
   };
 
-  // Handle sending chat message
   const handleSendMessage = async (e) => {
     e.preventDefault();
     try {
@@ -119,7 +114,11 @@ export default function CustomerDashboard() {
           <ul>
             {invoices.map((invoice) => (
               <li key={invoice._id}>
-                <a href={`${process.env.REACT_APP_BACKEND_URL}/invoices/download/${invoice._id}`} target="_blank" rel="noopener noreferrer">
+                <a
+                  href={`${process.env.REACT_APP_BACKEND_URL}/invoices/download/${invoice._id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   Download Invoice for Booking {invoice.bookingId}
                 </a>
               </li>

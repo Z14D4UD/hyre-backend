@@ -1,5 +1,3 @@
-// server/routes/businessRoutes.js
-
 const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middlewares/authMiddleware');
@@ -7,10 +5,8 @@ const upload = require('../middlewares/uploadMiddleware');
 const { verifyID } = require('../controllers/businessController');
 const Business = require('../models/Business');
 
-// GET /api/business/featured – return featured businesses from DB
 router.get('/featured', async (req, res) => {
   try {
-    // Query the database for featured businesses
     const featured = await Business.find({ isFeatured: true });
     res.json(featured);
   } catch (err) {
@@ -19,7 +15,6 @@ router.get('/featured', async (req, res) => {
   }
 });
 
-// POST /api/business/verify-id – handle business ID verification
 router.post('/verify-id', authMiddleware, upload.single('idDocument'), verifyID);
 
 module.exports = router;
