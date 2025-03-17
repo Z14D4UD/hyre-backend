@@ -1,3 +1,5 @@
+// server/controllers/authController.js
+
 const Business = require('../models/Business');
 const Customer = require('../models/Customer');
 const Affiliate = require('../models/Affiliate');
@@ -27,7 +29,12 @@ exports.signup = async (req, res) => {
       await sendEmail({ email: business.email, subject: 'Hyre Account Confirmation', message });
   
       const token = jwt.sign({ id: business._id, accountType: 'business' }, process.env.JWT_SECRET, { expiresIn: '1h' });
-      res.json({ token, business, msg: 'Signup successful. Please check your email to confirm your account.' });
+      return res.json({
+        token,
+        business,
+        msg: 'Signup successful. Please check your email to confirm your account.',
+        redirectUrl: '/dashboard/business'
+      });
     } else if (accountType === 'customer') {
       let customer = await Customer.findOne({ email });
       if (customer) return res.status(400).json({ msg: 'Customer already exists' });
@@ -39,7 +46,12 @@ exports.signup = async (req, res) => {
       await customer.save();
   
       const token = jwt.sign({ id: customer._id, accountType: 'customer' }, process.env.JWT_SECRET, { expiresIn: '1h' });
-      res.json({ token, customer, msg: 'Customer signup successful.' });
+      return res.json({
+        token,
+        customer,
+        msg: 'Customer signup successful.',
+        redirectUrl: '/dashboard/customer'
+      });
     } else if (accountType === 'affiliate') {
       let affiliate = await Affiliate.findOne({ email });
       if (affiliate) return res.status(400).json({ msg: 'Affiliate already exists' });
@@ -52,9 +64,14 @@ exports.signup = async (req, res) => {
       await affiliate.save();
   
       const token = jwt.sign({ id: affiliate._id, accountType: 'affiliate' }, process.env.JWT_SECRET, { expiresIn: '1h' });
-      res.json({ token, affiliate, msg: 'Affiliate signup successful.' });
+      return res.json({
+        token,
+        affiliate,
+        msg: 'Affiliate signup successful.',
+        redirectUrl: '/dashboard/affiliate'
+      });
     } else {
-      res.status(400).json({ msg: 'Invalid account type' });
+      return res.status(400).json({ msg: 'Invalid account type' });
     }
   } catch (error) {
     console.error(error);
@@ -71,23 +88,35 @@ exports.login = async (req, res) => {
       const isMatch = await bcrypt.compare(password, business.password);
       if (!isMatch) return res.status(400).json({ msg: 'Invalid credentials' });
       const token = jwt.sign({ id: business._id, accountType: 'business' }, process.env.JWT_SECRET, { expiresIn: '1h' });
-      res.json({ token, business });
+      return res.json({
+        token,
+        business,
+        redirectUrl: '/dashboard/business'
+      });
     } else if (accountType === 'customer') {
       const customer = await Customer.findOne({ email });
       if (!customer) return res.status(400).json({ msg: 'Invalid credentials' });
       const isMatch = await bcrypt.compare(password, customer.password);
       if (!isMatch) return res.status(400).json({ msg: 'Invalid credentials' });
       const token = jwt.sign({ id: customer._id, accountType: 'customer' }, process.env.JWT_SECRET, { expiresIn: '1h' });
-      res.json({ token, customer });
+      return res.json({
+        token,
+        customer,
+        redirectUrl: '/dashboard/customer'
+      });
     } else if (accountType === 'affiliate') {
       const affiliate = await Affiliate.findOne({ email });
       if (!affiliate) return res.status(400).json({ msg: 'Invalid credentials' });
       const isMatch = await bcrypt.compare(password, affiliate.password);
       if (!isMatch) return res.status(400).json({ msg: 'Invalid credentials' });
       const token = jwt.sign({ id: affiliate._id, accountType: 'affiliate' }, process.env.JWT_SECRET, { expiresIn: '1h' });
-      res.json({ token, affiliate });
+      return res.json({
+        token,
+        affiliate,
+        redirectUrl: '/dashboard/affiliate'
+      });
     } else {
-      res.status(400).json({ msg: 'Invalid account type' });
+      return res.status(400).json({ msg: 'Invalid account type' });
     }
   } catch (error) {
     console.error(error);
