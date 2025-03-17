@@ -1,3 +1,4 @@
+// server/controllers/bookingController.js
 const Booking = require('../models/Booking');
 const Car = require('../models/Car');
 const Business = require('../models/Business');
@@ -32,14 +33,13 @@ exports.createBooking = async (req, res) => {
     
     if (affiliateCode) {
       const affiliate = await Affiliate.findOne({ affiliateCode: affiliateCode.toUpperCase() });
-      if (affiliate) {
-        bookingData.affiliate = affiliate._id;
-        const commission = basePrice * 0.10; // 10% commission
-        affiliate.earnings += commission;
-        await affiliate.save();
-      } else {
+      if (!affiliate) {
         return res.status(400).json({ msg: 'Invalid affiliate code' });
       }
+      bookingData.affiliate = affiliate._id;
+      const commission = basePrice * 0.10; // 10% commission
+      affiliate.earnings += commission;
+      await affiliate.save();
     }
     
     const booking = new Booking(bookingData);
@@ -58,6 +58,7 @@ exports.createBooking = async (req, res) => {
 };
 
 exports.requestPayout = async (req, res) => {
+  if (!req.business) return res.status(401).json({ msg: 'Unauthorized' });
   const businessId = req.business.id;
   try {
     const business = await Business.findById(businessId);
@@ -86,7 +87,17 @@ exports.getBookings = async (req, res) => {
 
 exports.getMyBookings = async (req, res) => {
   try {
-    const bookings = await Booking.find({ business: req.business.id })
+    let query = {};
+    if (req.accountType === 'business' && req.business) {
+      query.business = req.business.id;
+    } else if (req.accountType === 'customer' && req.customer) {
+      query.customer = req.customer.id;
+    } else if (req.accountType === 'affiliate' && req.affiliate) {
+      query.affiliate = req.affiliate.id;
+    } else {
+      return res.status(400).json({ msg: 'Invalid account type for booking retrieval' });
+    }
+    const bookings = await Booking.find(query)
       .populate('car', 'make model')
       .populate('business', 'name email');
     res.json(bookings);
@@ -98,6 +109,7 @@ exports.getMyBookings = async (req, res) => {
 
 exports.getCustomerBookings = async (req, res) => {
   try {
+    if (!req.customer) return res.status(401).json({ msg: 'Unauthorized' });
     const bookings = await Booking.find({ customer: req.customer.id })
       .populate('car', 'make model')
       .populate('business', 'name email');

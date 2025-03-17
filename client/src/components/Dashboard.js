@@ -1,6 +1,7 @@
+// client/src/pages/Dashboard.js
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../api';
+import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 
 export default function Dashboard() {
@@ -11,7 +12,7 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchMyBookings = async () => {
       try {
-        const res = await api.get('/bookings/my', {
+        const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/bookings/my`, {
           headers: { 'x-auth-token': localStorage.getItem('token') },
         });
         setBookings(res.data);

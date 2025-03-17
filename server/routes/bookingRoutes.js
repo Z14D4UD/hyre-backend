@@ -1,12 +1,21 @@
+// server/routes/bookingRoutes.js
 const express = require('express');
 const router = express.Router();
-const { createBooking, requestPayout, getBookings, getMyBookings, getCustomerBookings, generateInvoice } = require('../controllers/bookingController');
+const authMiddleware = require('../middlewares/authMiddleware');
+const {
+  createBooking,
+  requestPayout,
+  getBookings,
+  getMyBookings,
+  getCustomerBookings,
+  generateInvoice
+} = require('../controllers/bookingController');
 
 router.post('/', createBooking);
 router.get('/', getBookings);
-router.get('/my', getMyBookings); // for businesses
-router.get('/customer', getCustomerBookings); // for customers
+router.get('/my', authMiddleware, getMyBookings); // Handles bookings for all account types
+router.get('/customer', authMiddleware, getCustomerBookings); // For customer-specific bookings (if needed)
 router.get('/invoice/:id', generateInvoice);
-router.post('/payout', requestPayout);
+router.post('/payout', authMiddleware, requestPayout);
 
 module.exports = router;
