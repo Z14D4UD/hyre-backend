@@ -10,24 +10,25 @@ const sendEmail = require('../utils/sendEmail');
 
 const generateToken = () => crypto.randomBytes(20).toString('hex');
 
-exports.signup = async (req, res) => {
+// Define signup as a constant function
+const signup = async (req, res) => {
   const { name, email, password, accountType } = req.body;
   try {
     if (accountType === 'business') {
       let business = await Business.findOne({ email });
       if (business) return res.status(400).json({ msg: 'Business already exists' });
-  
+
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
       const emailConfirmationToken = generateToken();
-  
+
       business = new Business({ name, email, password: hashedPassword, emailConfirmationToken });
       await business.save();
-  
+
       const confirmUrl = `${process.env.FRONTEND_URL}/confirm/${emailConfirmationToken}`;
       const message = `Please confirm your email by clicking this link: ${confirmUrl}`;
       await sendEmail({ email: business.email, subject: 'Hyre Account Confirmation', message });
-  
+
       const token = jwt.sign({ id: business._id, accountType: 'business' }, process.env.JWT_SECRET, { expiresIn: '1h' });
       return res.json({
         token,
@@ -38,13 +39,13 @@ exports.signup = async (req, res) => {
     } else if (accountType === 'customer') {
       let customer = await Customer.findOne({ email });
       if (customer) return res.status(400).json({ msg: 'Customer already exists' });
-  
+
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
-  
+
       customer = new Customer({ name, email, password: hashedPassword });
       await customer.save();
-  
+
       const token = jwt.sign({ id: customer._id, accountType: 'customer' }, process.env.JWT_SECRET, { expiresIn: '1h' });
       return res.json({
         token,
@@ -55,14 +56,14 @@ exports.signup = async (req, res) => {
     } else if (accountType === 'affiliate') {
       let affiliate = await Affiliate.findOne({ email });
       if (affiliate) return res.status(400).json({ msg: 'Affiliate already exists' });
-  
+
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
       const affiliateCode = crypto.randomBytes(4).toString('hex').toUpperCase();
-  
+
       affiliate = new Affiliate({ name, email, password: hashedPassword, affiliateCode });
       await affiliate.save();
-  
+
       const token = jwt.sign({ id: affiliate._id, accountType: 'affiliate' }, process.env.JWT_SECRET, { expiresIn: '1h' });
       return res.json({
         token,
@@ -79,7 +80,8 @@ exports.signup = async (req, res) => {
   }
 };
 
-exports.login = async (req, res) => {
+// Define login as a constant function
+const login = async (req, res) => {
   const { email, password } = req.body;
   try {
     let user = await Business.findOne({ email });
@@ -95,29 +97,43 @@ exports.login = async (req, res) => {
     if (!user) {
       return res.status(400).json({ msg: 'Invalid credentials' });
     }
-    
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ msg: 'Invalid credentials' });
     }
-    
+
     const token = jwt.sign({ id: user._id, accountType }, process.env.JWT_SECRET, { expiresIn: '1h' });
     let redirectUrl = '/dashboard';
     if (accountType === 'business') redirectUrl = '/dashboard/business';
     else if (accountType === 'customer') redirectUrl = '/dashboard/customer';
     else if (accountType === 'affiliate') redirectUrl = '/dashboard/affiliate';
-    
+
     return res.json({ token, user, accountType, redirectUrl });
-    
   } catch (error) {
     console.error(error);
     res.status(500).send('Server error');
   }
 };
 
-// ... (other functions: confirmEmail, forgotPassword, resetPassword, googleCallback) ...
+// For now, if you haven't implemented these functions, you can define them as stubs:
+const confirmEmail = async (req, res) => {
+  res.json({ msg: 'confirmEmail not implemented yet.' });
+};
 
-// IMPORTANT: Ensure all functions are exported:
+const forgotPassword = async (req, res) => {
+  res.json({ msg: 'forgotPassword not implemented yet.' });
+};
+
+const resetPassword = async (req, res) => {
+  res.json({ msg: 'resetPassword not implemented yet.' });
+};
+
+const googleCallback = (req, res) => {
+  res.json({ msg: 'googleCallback not implemented yet.' });
+};
+
+// Export all functions using the same variable names
 module.exports = {
   signup,
   login,
