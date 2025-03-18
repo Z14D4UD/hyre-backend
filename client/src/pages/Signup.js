@@ -21,18 +21,24 @@ export default function Signup() {
         password,
         accountType: role
       });
-      localStorage.setItem('token', res.data.token);
-      // Redirect based on role – adjust routes as needed
-      if (role === 'business') {
-        navigate('/dashboard');
-      } else if (role === 'customer') {
-        navigate('/dashboard');
-      } else if (role === 'affiliate') {
+
+      // The server response should include { token, msg, redirectUrl, ... } 
+      // Store the token if present
+      if (res.data.token) {
+        localStorage.setItem('token', res.data.token);
+      }
+
+      // If the server returns a redirectUrl, navigate there
+      if (res.data.redirectUrl) {
+        navigate(res.data.redirectUrl);
+      } else {
+        // Fallback if no redirectUrl
         navigate('/dashboard');
       }
+
     } catch (error) {
-      console.error(error.response.data);
-      alert(error.response.data.msg || 'Signup failed');
+      console.error(error.response?.data || error);
+      alert(error.response?.data?.msg || 'Signup failed');
     }
   };
 
@@ -42,19 +48,38 @@ export default function Signup() {
       <form onSubmit={handleSignup}>
         <div>
           <label>{t('name')}</label>
-          <input type="text" value={name} onChange={(e) => setName(e.target.value)} required />
+          <input 
+            type="text" 
+            value={name} 
+            onChange={(e) => setName(e.target.value)} 
+            required 
+          />
         </div>
         <div>
           <label>{t('email')}</label>
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <input 
+            type="email" 
+            value={email} 
+            onChange={(e) => setEmail(e.target.value)} 
+            required 
+          />
         </div>
         <div>
           <label>{t('password')}</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <input 
+            type="password" 
+            value={password} 
+            onChange={(e) => setPassword(e.target.value)} 
+            required 
+          />
         </div>
         <div>
           <label>{t('signupAs')}</label>
-          <select value={role} onChange={(e) => setRole(e.target.value)} required>
+          <select 
+            value={role} 
+            onChange={(e) => setRole(e.target.value)} 
+            required
+          >
             <option value="business">{t('signupAsBusiness')}</option>
             <option value="customer">{t('signupAsCustomer')}</option>
             <option value="affiliate">{t('signupAsAffiliate')}</option>

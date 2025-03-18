@@ -116,9 +116,37 @@ const login = async (req, res) => {
   }
 };
 
-// For now, if you haven't implemented these functions, you can define them as stubs:
+// Updated confirmEmail: confirms the user's email and sends back an HTML confirmation message
 const confirmEmail = async (req, res) => {
-  res.json({ msg: 'confirmEmail not implemented yet.' });
+  const token = req.params.token;
+  try {
+    const business = await Business.findOne({ emailConfirmationToken: token });
+    if (!business) return res.status(400).send('Invalid or expired token.');
+    business.verified = true;
+    business.emailConfirmationToken = undefined;
+    await business.save();
+    return res.send(`
+      <html>
+        <head>
+          <title>Hyre - Email Confirmed</title>
+          <style>
+            body { font-family: Arial, sans-serif; background: #f5f5f5; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+            .container { background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); text-align: center; }
+            h1 { color: #38b6ff; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>Thank you for signing up to Hyre!</h1>
+            <p>Your email has been successfully confirmed.</p>
+          </div>
+        </body>
+      </html>
+    `);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server error');
+  }
 };
 
 const forgotPassword = async (req, res) => {
