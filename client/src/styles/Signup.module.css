@@ -1,0 +1,233 @@
+/* client/src/pages/Signup.module.css */
+
+/* 
+  Overall container:
+  Desktop: 2 columns (left wave 50%, right form 50%).
+  Mobile: wave top, form bottom as an overlapping card.
+*/
+.container {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  height: 100vh;
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Left wave panel (desktop) */
+.leftPanel {
+  position: relative;
+  width: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #38b6ff; /* fallback color behind wave shapes */
+}
+
+/* Wave shape for desktop. 
+   Approximates the big wave from your references. */
+.desktopWave {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #56ccf2 0%, #2f80ed 100%);
+  clip-path: ellipse(75% 100% at 50% 0%);
+  z-index: 1;
+}
+
+/* Brand container in center of wave */
+.brandContainer {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  color: #fff;
+  cursor: pointer; /* clickable -> home */
+  max-width: 70%;
+}
+
+/* "Hyre" brand text */
+.brandTitle {
+  font-size: 5rem; /* large on desktop */
+  font-weight: 700;
+  margin-bottom: 3.4rem;
+}
+
+/* Subtext, if you want any under brand (optional). 
+   You can remove or adapt if not needed. */
+.brandSubtext {
+  font-size: 1rem;
+  line-height: 1.4;
+  max-width: 220px;
+  margin: 100px;
+}
+
+/* Right panel: White background for the form (desktop) */
+.rightPanel {
+  width: 50%;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Form container (desktop) */
+.formContainer {
+  width: 80%;
+  max-width: 380px;
+  text-align: center;
+}
+
+/* Title: e.g., "Sign Up" */
+.formTitle {
+  font-size: 1.8rem;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+/* Subtitle, e.g. "Create your account to continue" */
+.formSubtitle {
+  font-size: 0.95rem;
+  color: #666;
+  margin-bottom: 1.5rem;
+}
+
+/* The form itself */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Pastel-green input fields (same as your login page) */
+.inputField {
+  padding: 0.75rem;
+  border-radius: 20px;
+  border: none;
+  background-color: #c2e5df; /* pastel greenish */
+  font-size: 0.95rem;
+  outline: none;
+}
+
+/* A typical "Sign Up" button in pastel green */
+.signupButton {
+  background-color: #8bd5ca;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 0.75rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.signupButton:hover {
+  background-color: #78c1b6;
+}
+
+/* 
+  For any extra links or text, e.g. 
+  "Already have an account? Login"
+*/
+.extraRow {
+  font-size: 0.85rem;
+  color: #666;
+  margin-top: 0.5rem;
+}
+
+.extraLink {
+  color: #8bd5ca;
+  text-decoration: none;
+  margin-left: 0.3rem;
+}
+
+/* MOBILE LAYOUT (max-width: 768px) 
+   Wave on top, overlapping card for the form. */
+@media (max-width: 768px) {
+  .container {
+    flex-direction: column;
+    height: auto;
+  }
+
+  /* Hide the desktop wave shape on mobile */
+  .desktopWave {
+    display: none;
+  }
+
+  /* LeftPanel becomes a gradient background, 
+     occupying top 40vh. */
+  .leftPanel {
+    width: 100%;
+    height: 40vh;
+    background: linear-gradient(135deg, #56ccf2 0%, #2f80ed 100%);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+
+  /* Brand text near bottom of wave */
+  .brandContainer {
+    margin-bottom: 1rem;
+  }
+
+  .brandTitle {
+    font-size: 3rem;
+    margin-bottom: 7rem;
+  }
+
+  .brandSubtext {
+    font-size: 1.1rem;
+    margin: 0 1rem 2rem;
+  }
+
+  .rightPanel {
+    width: 100%;
+    background: transparent;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    height: calc(100vh - 40vh);
+    position: relative;
+    padding-top: 0;
+  }
+  .checkboxContainer {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem; /* space between checkbox and label */
+    margin-top: 1rem; /* adjust spacing as desired */
+  }
+  
+  .checkbox {
+    /* Modern browsers support accent-color for checkboxes */
+    accent-color: #8bd5ca; /* or any color to match your pastel green theme */
+    width: 1.2rem;
+    height: 1.2rem;
+    cursor: pointer;
+    /* Remove default outline in some browsers */
+    outline: none;
+  }
+  
+  .checkboxLabel {
+    font-size: 0.85rem;
+    color: #666;
+    cursor: pointer;
+  }
+  
+  /* Overlapping white card for the form */
+  .formContainer {
+    background: #fff;
+    width: 90%;
+    max-width: 400px;
+    margin-top: -2rem; /* overlap wave */
+    border-top-left-radius: 2rem;
+    border-top-right-radius: 2rem;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    padding: 2rem 1.5rem 1.5rem;
+  }
+
+  .formTitle {
+    font-size: 1.6rem;
+  }
+}

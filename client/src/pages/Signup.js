@@ -1,3 +1,4 @@
+// client/src/pages/Signup.js
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -6,12 +7,20 @@ import styles from '../styles/Signup.module.css';
 
 export default function Signup() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  // Form fields
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('customer'); // default role
-  const navigate = useNavigate();
 
+  // Click brand to go home
+  const goHome = () => {
+    navigate('/');
+  };
+
+  // Handle signup form
   const handleSignup = async (e) => {
     e.preventDefault();
     try {
@@ -22,20 +31,14 @@ export default function Signup() {
         accountType: role
       });
 
-      // The server response should include { token, msg, redirectUrl, ... } 
-      // Store the token if present
       if (res.data.token) {
         localStorage.setItem('token', res.data.token);
       }
-
-      // If the server returns a redirectUrl, navigate there
       if (res.data.redirectUrl) {
         navigate(res.data.redirectUrl);
       } else {
-        // Fallback if no redirectUrl
         navigate('/dashboard');
       }
-
     } catch (error) {
       console.error(error.response?.data || error);
       alert(error.response?.data?.msg || 'Signup failed');
@@ -43,50 +46,99 @@ export default function Signup() {
   };
 
   return (
-    <div className={styles.signupContainer}>
-      <h2>{t('signup')}</h2>
-      <form onSubmit={handleSignup}>
-        <div>
-          <label>{t('name')}</label>
-          <input 
-            type="text" 
-            value={name} 
-            onChange={(e) => setName(e.target.value)} 
-            required 
-          />
+    <div className={styles.container}>
+      {/* Left wave panel */}
+      <div className={styles.leftPanel}>
+        <div className={styles.desktopWave}></div>
+
+        {/* Brand container in center of wave */}
+        <div className={styles.brandContainer} onClick={goHome}>
+          <div className={styles.brandTitle}>Hyre</div>
+          {/* Optional subtext if you want the same style as login */}
+          <div className={styles.brandSubtext}>
+            {/* e.g. "Create Your Account" or any tagline */}
+            Let the Journey 
+          </div>
         </div>
-        <div>
-          <label>{t('email')}</label>
-          <input 
-            type="email" 
-            value={email} 
-            onChange={(e) => setEmail(e.target.value)} 
-            required 
-          />
+      </div>
+
+      
+
+      {/* Right panel: white background with signup form */}
+      <div className={styles.rightPanel}>
+        <div className={styles.formContainer}>
+          <h2 className={styles.formTitle}>Sign Up</h2>
+          <p className={styles.formSubtitle}>Create your account to continue</p>
+
+          <form className={styles.form} onSubmit={handleSignup}>
+            {/* Name field */}
+            <input
+              className={styles.inputField}
+              type="text"
+              placeholder="Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+
+            {/* Email field */}
+            <input
+              className={styles.inputField}
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+
+            {/* Password field */}
+            <input
+              className={styles.inputField}
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+
+            {/* Role dropdown */}
+            <select
+              className={styles.inputField}
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              required
+            >
+              <option value="business">{t('Signup as a Business')}</option>
+              <option value="customer">{t('Signup as a Customer')}</option>
+              <option value="affiliate">{t('Signup as an Affiliate')}</option>
+            </select>
+
+            <button className={styles.signupButton} type="submit">
+              Sign Up
+            </button>
+          </form>
+
+          <div className={styles.checkboxContainer}>
+  <input
+    type="checkbox"
+    id="acceptTerms"
+    className={styles.checkbox}
+    required
+  />
+  <label htmlFor="acceptTerms" className={styles.checkboxLabel}>
+    I accept the terms and policy
+  </label>
+</div>
+
+
+          <div className={styles.extraRow}>
+            Already have an account?
+            <a className={styles.extraLink} href="/login">
+              Log In
+            </a>
+          </div>
         </div>
-        <div>
-          <label>{t('password')}</label>
-          <input 
-            type="password" 
-            value={password} 
-            onChange={(e) => setPassword(e.target.value)} 
-            required 
-          />
-        </div>
-        <div>
-          <label>{t('signupAs')}</label>
-          <select 
-            value={role} 
-            onChange={(e) => setRole(e.target.value)} 
-            required
-          >
-            <option value="business">{t('signupAsBusiness')}</option>
-            <option value="customer">{t('signupAsCustomer')}</option>
-            <option value="affiliate">{t('signupAsAffiliate')}</option>
-          </select>
-        </div>
-        <button type="submit">{t('signup')}</button>
-      </form>
+      </div>
     </div>
   );
 }
