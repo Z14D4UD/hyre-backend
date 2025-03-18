@@ -43,7 +43,7 @@ export default function Login() {
         {/* Brand container in center (desktop), near bottom (mobile) */}
         <div className={styles.brandContainer} onClick={goHome}>
           <div className={styles.brandTitle}>Hyre</div>
-          <div className={styles.brandSubtext}>We make it for you</div>
+        
         </div>
       </div>
 

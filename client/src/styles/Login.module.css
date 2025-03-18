@@ -7,214 +7,222 @@
     - Right white form (50%)
 */
 .container {
-    display: flex;
-    flex-direction: row;
-    width: 100%;
-    height: 100vh;
-    margin: 0;
-    font-family: 'Poppins', sans-serif; /* A modern font */
-  }
-  
-  /* Left wave panel (desktop) */
-  .leftPanel {
-    position: relative;
-    width: 50%;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #38b6ff; /* fallback color behind wave shapes */
-  }
-  
-  /* We'll use one wave shape for the desktop,
-     approximating the big wave from the reference. */
-  .desktopWave {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, #56ccf2 0%, #2f80ed 100%);
-    /* Gentle wave shape */
-    clip-path: ellipse(75% 100% at 50% 0%);
-    z-index: 1;
-  }
-  
-  /* Brand container (desktop) */
-  .brandContainer {
-    position: relative;
-    z-index: 2;
-    text-align: center;
-    color: #fff;
-    cursor: pointer; /* clickable -> home */
-    max-width: 70%;
-  }
-  
-  /* "Hyre" brand text */
-  .brandTitle {
-    font-size: 5rem;
-    font-weight: 700;
-    margin-bottom: 3.4rem;
-  }
-  
-  /* Subtext below brand */
-  .brandSubtext {
-    font-size: 1rem;
-    line-height: 1.4;
-    max-width: 220px;
-    margin: 100px;
-  }
-  
-  /* Right panel: White background with login form (desktop) */
-  .rightPanel {
-    width: 50%;
-    background: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  /* The form container (desktop) */
-  .formContainer {
-    width: 80%;
-    max-width: 380px;
-    text-align: center;
-  }
-  
-  /* "Welcome" heading */
-  .formTitle {
-    font-size: 1.8rem;
-    color: #333;
-    margin-bottom: 0.5rem;
-  }
-  
-  /* "Login in your account to continue" text */
-  .formSubtitle {
-    font-size: 0.95rem;
-    color: #666;
-    margin-bottom: 1.5rem;
-  }
-  
-  /* The form itself */
-  .form {
-    display: flex;
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  height: 100vh;
+  margin: 0;
+  font-family: 'Poppins', sans-serif; /* A modern font */
+}
+
+/* Left wave panel (desktop) */
+.leftPanel {
+  position: relative;
+  width: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #38b6ff; /* fallback color behind wave shapes */
+}
+
+/* We'll use one wave shape for the desktop,
+   approximating the big wave from the reference. */
+.desktopWave {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #56ccf2 0%, #2f80ed 100%);
+  /* Gentle wave shape */
+  clip-path: ellipse(75% 100% at 50% 0%);
+  z-index: 1;
+}
+
+/* Brand container (desktop) */
+.brandContainer {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  color: #fff;
+  cursor: pointer; /* clickable -> home */
+  max-width: 70%;
+}
+
+/* "Hyre" brand text */
+.brandTitle {
+  font-size: 5rem;  /* large on desktop */
+  font-weight: 700;
+  margin-bottom: 3.4rem;
+}
+
+/* Subtext below brand */
+.brandSubtext {
+  font-size: 1rem;
+  line-height: 1.4;
+  max-width: 220px;
+  margin: 100px;
+}
+
+/* Right panel: White background with login form (desktop) */
+.rightPanel {
+  width: 50%;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The form container (desktop) */
+.formContainer {
+  width: 80%;
+  max-width: 380px;
+  text-align: center;
+}
+
+/* "Welcome" heading */
+.formTitle {
+  font-size: 1.8rem;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+/* "Login in your account to continue" text */
+.formSubtitle {
+  font-size: 0.95rem;
+  color: #666;
+  margin-bottom: 1.5rem;
+}
+
+/* The form itself */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Pastel-green input fields, as in the reference images */
+.inputField {
+  padding: 0.75rem;
+  border-radius: 20px;
+  border: none;
+  background-color: #c2e5df; /* pastel greenish */
+  font-size: 0.95rem;
+  outline: none;
+}
+
+/* Forgot password link */
+.forgotPassword {
+  font-size: 0.85rem;
+  color: #666;
+  text-decoration: none;
+  margin-top: -0.5rem;
+  display: inline-block;
+}
+
+/* "Login" button in a slightly darker pastel green */
+.loginButton {
+  background-color: #8bd5ca;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 0.75rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.loginButton:hover {
+  background-color: #78c1b6;
+}
+
+/* "Don't have an account? Sign Up" row */
+.signupRow {
+  font-size: 0.85rem;
+  color: #666;
+  margin-top: 0.5rem;
+}
+
+.signupLink {
+  color: #8bd5ca;
+  text-decoration: none;
+  margin-left: 0.3rem;
+}
+
+/* 
+  ========== MOBILE LAYOUT (max-width: 768px) ==========
+  The wave on top, 
+  a white overlapping card for the form.
+*/
+@media (max-width: 768px) {
+  .container {
     flex-direction: column;
-    gap: 1rem;
+    height: auto;
   }
-  
-  /* Pastel-green input fields, as in the reference images */
-  .inputField {
-    padding: 0.75rem;
-    border-radius: 20px;
-    border: none;
-    background-color: #c2e5df; /* pastel greenish */
-    font-size: 0.95rem;
-    outline: none;
+
+  /* Hide the desktop wave shape */
+  .desktopWave {
+    display: none;
   }
-  
-  /* Forgot password link */
-  .forgotPassword {
-    font-size: 0.85rem;
-    color: #666;
-    text-decoration: none;
-    margin-top: -0.5rem;
-    display: inline-block;
+
+  /* The entire leftPanel becomes a wave background at the top */
+  .leftPanel {
+    width: 100%;
+    height: 40vh; /* top wave area */
+    background: linear-gradient(135deg, #56ccf2 0%, #2f80ed 100%);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
   }
-  
-  /* "Login" button in a slightly darker pastel green */
-  .loginButton {
-    background-color: #8bd5ca;
-    color: #fff;
-    border: none;
-    border-radius: 20px;
-    padding: 0.75rem;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
+
+  /* The brand text near the bottom of the wave */
+  .brandContainer {
+    margin-bottom: 1rem;
   }
-  
-  .loginButton:hover {
-    background-color: #78c1b6;
-  }
-  
-  /* "Don't have an account? Sign Up" row */
-  .signupRow {
-    font-size: 0.85rem;
-    color: #666;
-    margin-top: 0.5rem;
-  }
-  
-  .signupLink {
-    color: #8bd5ca;
-    text-decoration: none;
-    margin-left: 0.3rem;
-  }
-  
+
   /* 
-    ========== MOBILE LAYOUT (max-width: 768px) ==========
-    The wave on top, 
-    a white overlapping card for the form.
+    Make "Hyre" bigger on mobile 
+    so it's more prominent
   */
-  @media (max-width: 768px) {
-    .container {
-      flex-direction: column;
-      height: auto;
-    }
-  
-    /* Hide the desktop wave shape */
-    .desktopWave {
-      display: none;
-    }
-  
-    /* The entire leftPanel becomes a wave background at the top */
-    .leftPanel {
-      width: 100%;
-      height: 40vh; /* top wave area */
-      background: linear-gradient(135deg, #56ccf2 0%, #2f80ed 100%);
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
-    }
-  
-    /* The brand text near the bottom of the wave */
-    .brandContainer {
-      margin-bottom: 1rem;
-    }
-  
-    /* The rightPanel is now 100% wide, 
-       but we won't show it as a panel. 
-       We'll place a white overlapping card. */
-    .rightPanel {
-      width: 100%;
-      background: transparent; /* no background here, wave behind it */
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-      height: calc(100vh - 40vh);
-      position: relative;
-      padding-top: 0;
-    }
-  
-    /* The formContainer becomes a "card" that overlaps the wave, 
-       with a top border radius. We'll shift it up with negative margin. */
-    .formContainer {
-      background: #fff;
-      width: 90%;
-      max-width: 400px;
-      margin-top: -2rem; /* overlap the wave */
-      border-top-left-radius: 2rem;
-      border-top-right-radius: 2rem;
-      box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-      padding: 2rem 1.5rem 1.5rem;
-    }
-  
-    /* Adjust the heading sizes for mobile */
-    .formTitle {
-      font-size: 1.6rem;
-    }
-  
-    .brandTitle {
-      font-size: 1.4rem;
-    }
+  .brandTitle {
+    font-size: 3rem;  /* Increase from 1.4rem to 3rem on mobile */
+    margin-bottom: 7rem;
   }
-  
+
+  .brandSubtext {
+    font-size: 1.1rem;
+    margin: 0 1rem 2rem;
+  }
+
+  /* The rightPanel is now 100% wide,
+     with a white overlapping card for the form. */
+  .rightPanel {
+    width: 100%;
+    background: transparent; /* no background here, wave behind it */
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    height: calc(100vh - 40vh);
+    position: relative;
+    padding-top: 0;
+  }
+
+  /* The formContainer becomes a "card" that overlaps the wave,
+     with a top border radius. We'll shift it up with negative margin. */
+  .formContainer {
+    background: #fff;
+    width: 90%;
+    max-width: 400px;
+    margin-top: -2rem; /* overlap the wave */
+    border-top-left-radius: 2rem;
+    border-top-right-radius: 2rem;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    padding: 2rem 1.5rem 1.5rem;
+  }
+
+  /* Adjust the heading sizes for mobile */
+  .formTitle {
+    font-size: 1.6rem;
+  }
+}
