@@ -1,3 +1,4 @@
+// client/src/pages/Home.js
 import React, { useState } from 'react';
 import { FaSearch } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
@@ -11,9 +12,12 @@ import heroImage from '../assets/hero.jpg'; // Ensure this file exists in client
 
 export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // Default date/time for "From" and "Until"
   const [location, setLocation] = useState('');
-  const [fromDateTime, setFromDateTime] = useState('');
-  const [toDateTime, setToDateTime] = useState('');
+  const [fromDateTime, setFromDateTime] = useState('2025-03-25T10:00');
+  const [toDateTime, setToDateTime] = useState('2025-03-27T10:00');
+
   const navigate = useNavigate();
   const { t } = useTranslation();
 
@@ -52,23 +56,41 @@ export default function Home() {
         style={{ backgroundImage: `url(${heroImage})` }}
       >
         <div className={styles.heroOverlay}></div>
+
+        {/* Search Container: Turo-style row with 3 labeled fields + icon */}
         <div className={styles.searchContainer}>
-          <LocationAutocomplete location={location} setLocation={setLocation} />
-          <input
-            type="datetime-local"
-            className={styles.searchInput}
-            value={fromDateTime}
-            onChange={(e) => setFromDateTime(e.target.value)}
-          />
-          <input
-            type="datetime-local"
-            className={styles.searchInput}
-            value={toDateTime}
-            onChange={(e) => setToDateTime(e.target.value)}
-          />
-          <button 
-            className={styles.searchIconButton} 
-            onClick={handleSearch} 
+          {/* Location Field */}
+          <div className={styles.fieldGroup}>
+            <label className={styles.fieldLabel}>Where</label>
+            <LocationAutocomplete location={location} setLocation={setLocation} />
+          </div>
+
+          {/* From Date/Time */}
+          <div className={styles.fieldGroup}>
+            <label className={styles.fieldLabel}>From</label>
+            <input
+              type="datetime-local"
+              className={styles.searchInput}
+              value={fromDateTime}
+              onChange={(e) => setFromDateTime(e.target.value)}
+            />
+          </div>
+
+          {/* Until Date/Time */}
+          <div className={styles.fieldGroup}>
+            <label className={styles.fieldLabel}>Until</label>
+            <input
+              type="datetime-local"
+              className={styles.searchInput}
+              value={toDateTime}
+              onChange={(e) => setToDateTime(e.target.value)}
+            />
+          </div>
+
+          {/* Magnifying Glass Button */}
+          <button
+            className={styles.searchIconButton}
+            onClick={handleSearch}
             aria-label="Search"
           >
             <FaSearch />
