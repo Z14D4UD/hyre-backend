@@ -1,8 +1,8 @@
-// client/src/components/SideMenu.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import styles from '../styles/Home.module.css';
+// 1) Import the side menu CSS module from src/styles
+import styles from '../styles/SideMenu.module.css';
 import { FaTimes, FaSignInAlt, FaUser, FaShieldAlt } from 'react-icons/fa';
 
 export default function SideMenu({ isOpen, toggleMenu }) {
@@ -35,6 +35,7 @@ export default function SideMenu({ isOpen, toggleMenu }) {
           <FaTimes />
         </button>
       </div>
+
       <ul className={styles.sideMenuList}>
         <li className={styles.sideMenuItem} onClick={() => handleNavigation('/login')}>
           <FaSignInAlt />
@@ -49,6 +50,7 @@ export default function SideMenu({ isOpen, toggleMenu }) {
           {t('header.menu.insuranceLegal')}
         </li>
       </ul>
+
       <div className={styles.languageCurrencyToggle}>
         <select value={language} onChange={handleLanguageChange}>
           <option value="en">English</option>

@@ -1,13 +1,15 @@
+// server/routes/customerRoutes.js
 const express = require('express');
 const router = express.Router();
 const customerController = require('../controllers/customerController');
 const auth = require('../middlewares/authMiddleware');
 const multer = require('multer');
 
-// Configure multer for file uploads (ID documents)
+// Existing code for ID upload
 const upload = multer({ dest: 'uploads/id-documents/' });
-
-// Endpoint for ID upload (only for customers)
 router.post('/verify-id', auth, upload.single('idDocument'), customerController.verifyId);
+
+// NEW ROUTE: GET /api/customer/me
+router.get('/me', auth, customerController.getCustomerProfile);
 
 module.exports = router;

@@ -13,6 +13,7 @@ import Payment from './components/Payment';
 import Search from './components/Search';
 import CarDetails from './pages/CarDetails';
 import Chat from './components/Chat';
+import Profile from './pages/Profile';
 
 function App() {
   return (
@@ -36,6 +37,7 @@ function App() {
         <Route path="/car/:id" element={<CarDetails />} />
         <Route path="/chat" element={<Chat />} />
         <Route path="/insurance-legal" element={<div>Insurance & Legal Page</div>} />
+        <Route path="/profile" element={<Profile />} />
 
         {/* Catch-all 404 */}
         <Route path="*" element={<div>404 - Not Found</div>} />

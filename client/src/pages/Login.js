@@ -25,8 +25,32 @@ export default function Login() {
         email,
         password
       });
-      localStorage.setItem('token', res.data.token);
-      navigate(res.data.redirectUrl || '/dashboard');
+
+      // Destructure the fields from the server response
+      const { token, user, accountType, redirectUrl } = res.data;
+
+      // Save the token in localStorage
+      localStorage.setItem('token', token);
+
+      // Also store the accountType in localStorage
+      localStorage.setItem('accountType', accountType);
+
+      console.log('Server returned accountType:', accountType);
+      console.log('Server returned redirectUrl:', redirectUrl);
+
+      // If accountType is "customer", ALWAYS go to home page ("/")
+      if (accountType?.toLowerCase() === 'customer') {
+        navigate('/');
+        return;
+      }
+
+      // Otherwise, use the server's redirectUrl if present,
+      // or fallback to "/dashboard"
+      if (redirectUrl) {
+        navigate(redirectUrl);
+      } else {
+        navigate('/dashboard');
+      }
     } catch (error) {
       console.error(error.response?.data || error);
       alert(error.response?.data?.msg || 'Login failed');
@@ -43,12 +67,10 @@ export default function Login() {
         {/* Brand container in center (desktop), near bottom (mobile) */}
         <div className={styles.brandContainer} onClick={goHome}>
           <div className={styles.brandTitle}>Hyre</div>
-        
         </div>
       </div>
 
-      {/* Right Panel: white background on desktop,
-          no background on mobile (we overlap a white card) */}
+      {/* Right Panel */}
       <div className={styles.rightPanel}>
         <div className={styles.formContainer}>
           <h2 className={styles.formTitle}>Welcome</h2>

@@ -3,17 +3,20 @@ import React, { useState } from 'react';
 import { FaSearch } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+
+// Import both menus
 import SideMenu from '../components/SideMenu';
+import SideMenuCustomer from '../components/SideMenuCustomer';
+
 import FeaturedBusinesses from '../components/FeaturedBusinesses';
 import LocationAutocomplete from '../components/LocationAutoComplete';
 import Footer from '../components/Footer';
+
 import styles from '../styles/Home.module.css';
-import heroImage from '../assets/hero.jpg'; // Ensure this file exists in client/src/assets
+import heroImage from '../assets/hero.jpg';
 
 export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
-
-  // Default date/time for "From" and "Until"
   const [location, setLocation] = useState('');
   const [fromDateTime, setFromDateTime] = useState('2025-03-25T10:00');
   const [toDateTime, setToDateTime] = useState('2025-03-27T10:00');
@@ -21,14 +24,23 @@ export default function Home() {
   const navigate = useNavigate();
   const { t } = useTranslation();
 
+  // Retrieve token and accountType from localStorage
+  const token = (localStorage.getItem('token') || '').trim();
+  const accountType = (localStorage.getItem('accountType') || '').toLowerCase();
+
+  // Determine if a customer is logged in
+  const isCustomerLoggedIn = token !== '' && accountType === 'customer';
+
+  // Toggle menu open/closed
   const toggleMenu = () => setMenuOpen(!menuOpen);
+  // Callback to explicitly close the menu
+  const closeMenu = () => setMenuOpen(false);
 
   const handleSearch = () => {
     alert(`Searching: ${location}, from: ${fromDateTime}, to: ${toDateTime}`);
   };
 
   const handleListYourCar = () => {
-    const token = localStorage.getItem('token');
     if (token) {
       navigate('/upload-car');
     } else {
@@ -37,35 +49,41 @@ export default function Home() {
     }
   };
 
+  console.log('Home.js -> token:', token, 'accountType:', accountType, 'menuOpen:', menuOpen);
+
   return (
     <div className={styles.container}>
       {/* Header */}
       <header className={styles.header}>
         <div className={styles.logo}>Hyre</div>
+        {/* Always show the menu toggle button */}
         <button className={styles.menuIcon} onClick={toggleMenu}>
           ☰
         </button>
       </header>
 
-      {/* Side Menu */}
-      <SideMenu isOpen={menuOpen} toggleMenu={toggleMenu} />
+      {/* Render customer menu only if logged in as customer, else default menu */}
+      {isCustomerLoggedIn ? (
+        <SideMenuCustomer
+          isOpen={menuOpen}
+          toggleMenu={toggleMenu}
+          closeMenu={closeMenu}
+        />
+      ) : (
+        <SideMenu isOpen={menuOpen} toggleMenu={toggleMenu} />
+      )}
 
-      {/* Hero Section with Inline Background Image */}
+      {/* Hero Section */}
       <section
         className={styles.hero}
         style={{ backgroundImage: `url(${heroImage})` }}
       >
         <div className={styles.heroOverlay}></div>
-
-        {/* Search Container: Turo-style row with 3 labeled fields + icon */}
         <div className={styles.searchContainer}>
-          {/* Location Field */}
           <div className={styles.fieldGroup}>
             <label className={styles.fieldLabel}>Where</label>
             <LocationAutocomplete location={location} setLocation={setLocation} />
           </div>
-
-          {/* From Date/Time */}
           <div className={styles.fieldGroup}>
             <label className={styles.fieldLabel}>From</label>
             <input
@@ -75,8 +93,6 @@ export default function Home() {
               onChange={(e) => setFromDateTime(e.target.value)}
             />
           </div>
-
-          {/* Until Date/Time */}
           <div className={styles.fieldGroup}>
             <label className={styles.fieldLabel}>Until</label>
             <input
@@ -86,8 +102,6 @@ export default function Home() {
               onChange={(e) => setToDateTime(e.target.value)}
             />
           </div>
-
-          {/* Magnifying Glass Button */}
           <button
             className={styles.searchIconButton}
             onClick={handleSearch}
