@@ -1,53 +1,40 @@
 // server/controllers/customerController.js
-
 const Customer = require('../models/Customer');
 
-// Existing verifyId function
-exports.verifyId = async (req, res) => {
+// Existing verifyId function ...
+
+exports.updateCustomerProfile = async (req, res) => {
   try {
+    // auth middleware sets req.customer = { id: decoded.id }
     const customerId = req.customer.id;
-    if (!req.file) {
-      return res.status(400).json({ msg: 'No file uploaded' });
+
+    // Collect fields from req.body
+    const updateData = {
+      name: req.body.name,
+      location: req.body.location,
+      aboutMe: req.body.aboutMe,
+      phoneNumber: req.body.phoneNumber
+    };
+
+    // If a new avatar is uploaded, update avatarUrl
+    if (req.file) {
+      updateData.avatarUrl = req.file.path; // e.g., "uploads/avatars/xyz.jpg"
     }
 
+    // Update customer in DB
     const updatedCustomer = await Customer.findByIdAndUpdate(
       customerId,
-      { idDocument: req.file.path },
+      updateData,
       { new: true }
-    );
-    res.json({ msg: 'ID document uploaded successfully', customer: updatedCustomer });
-  } catch (error) {
-    console.error('Error during ID verification:', error);
-    res.status(500).json({ msg: 'Server error during ID verification' });
-  }
-};
+    ).select('-password');
 
-// NEW FUNCTION: Get the current customer's profile
-exports.getCustomerProfile = async (req, res) => {
-  try {
-    // If your auth middleware sets req.customer, we can use req.customer.id
-    // If it sets req.user, then use req.user.id instead.
-    const customerId = req.customer.id; // or req.user.id
-
-    const customer = await Customer.findById(customerId).select('-password');
-    if (!customer) {
+    if (!updatedCustomer) {
       return res.status(404).json({ msg: 'Customer not found' });
     }
 
-    // Return the fields your frontend needs
-    res.json({
-      name: customer.name,
-      location: customer.location || '',
-      // If you store creation date, you could format a "joinedDate"
-      joinedDate: 'March 2025', // or derive from customer.createdAt
-      aboutMe: customer.aboutMe || '',
-      phoneNumber: customer.phoneNumber || '',
-      email: customer.email,
-      approvedToDrive: !!customer.approvedToDrive,
-      avatarUrl: customer.avatarUrl || ''
-    });
+    res.json(updatedCustomer);
   } catch (error) {
-    console.error('Error fetching customer profile:', error);
-    res.status(500).json({ msg: 'Server error fetching customer profile' });
+    console.error('Error updating profile:', error);
+    res.status(500).json({ msg: 'Server error updating profile' });
   }
 };

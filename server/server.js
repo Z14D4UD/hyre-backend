@@ -6,7 +6,8 @@ const passport = require('passport');
 require('dotenv').config();
 const connectDB = require('./config/db');
 const http = require('http');
-const { Server } = require('socket.io'); // Import named 'Server' from socket.io
+const { Server } = require('socket.io');
+
 
 // Import routes
 const authRoutes = require('./routes/authRoutes');
@@ -25,14 +26,14 @@ const server = http.createServer(app);
 // 1) Connect to DB
 connectDB();
 
-// 2) Allowed origins for CORS
+// 2) Define allowed origins for CORS
 const allowedOrigins = [
-  'http://localhost:3000',         // local dev
-  'https://hyreuk.com',            // example production domain
-  // add any other domains you want to allow
+  'http://localhost:3000', // local dev
+  'https://hyreuk.com',    // production domain (adjust if needed)
+  // add other allowed domains here
 ];
 
-// 3) Express CORS
+// 3) Configure Express CORS
 app.use(express.json());
 app.use(
   cors({
@@ -41,10 +42,10 @@ app.use(
   })
 );
 
-// 4) Serve uploads folder
+// 4) Serve static files from the uploads folder
 app.use('/uploads', express.static('uploads'));
 
-// 5) Session and Passport
+// 5) Setup session and Passport
 app.use(
   session({
     secret: process.env.SESSION_SECRET || 'secretKey',
@@ -67,7 +68,7 @@ app.use('/api/business', businessRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/affiliates', affiliateRoutes);
 
-// 7) Socket.io with matching CORS
+// 7) Setup Socket.io with matching CORS options
 const io = new Server(server, {
   cors: {
     origin: allowedOrigins,

@@ -1,3 +1,4 @@
+// client/src/pages/Profile.js
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -10,7 +11,7 @@ export default function Profile() {
   const accountType = localStorage.getItem('accountType');
   const isCustomer = token && accountType === 'customer';
 
-  // If not a logged-in customer, redirect to home
+  // Redirect if not a logged-in customer
   useEffect(() => {
     if (!isCustomer) {
       alert('Please log in as a customer to view your profile.');
@@ -24,16 +25,19 @@ export default function Profile() {
 
   const [user, setUser] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+
+  // Local edit fields
   const [editName, setEditName] = useState('');
   const [editLocation, setEditLocation] = useState('');
   const [editAboutMe, setEditAboutMe] = useState('');
   const [editPhone, setEditPhone] = useState('');
+  const [avatarFile, setAvatarFile] = useState(null);
 
-  // Use your environment variable
-  const backendUrl = process.env.REACT_APP_BACKEND_URL;
+  // Use backend URL from env (make sure client/.env has REACT_APP_BACKEND_URL)
+  const backendUrl = process.env.REACT_APP_BACKEND_URL; // e.g., https://hyre-backend.onrender.com/api
   console.log('Backend URL:', backendUrl);
 
-  // GET /api/customer/me
+  // Load profile data on mount
   useEffect(() => {
     axios
       .get(`${backendUrl}/customer/me`, {
@@ -53,24 +57,38 @@ export default function Profile() {
       });
   }, [backendUrl, token]);
 
-  // PUT /api/customer/me
+  // Handle avatar file selection
+  const handleAvatarChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setAvatarFile(e.target.files[0]);
+    }
+  };
+
+  // Handle saving profile updates (text fields + avatar)
   const handleSaveProfile = () => {
-    const updatedData = {
-      name: editName,
-      location: editLocation,
-      aboutMe: editAboutMe,
-      phoneNumber: editPhone
-    };
+    const formData = new FormData();
+    formData.append('name', editName);
+    formData.append('location', editLocation);
+    formData.append('aboutMe', editAboutMe);
+    formData.append('phoneNumber', editPhone);
+
+    if (avatarFile) {
+      formData.append('avatar', avatarFile);
+    }
 
     axios
-      .put(`${backendUrl}/customer/me`, updatedData, {
-        headers: { Authorization: `Bearer ${token}` }
+      .put(`${backendUrl}/customer/me`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
       })
       .then((res) => {
         console.log('Profile updated:', res.data);
         setUser(res.data);
         setIsEditing(false);
         alert('Profile updated successfully.');
+        setAvatarFile(null);
       })
       .catch((err) => {
         console.error('Error updating profile:', err);
@@ -84,6 +102,7 @@ export default function Profile() {
     setEditLocation(user.location || '');
     setEditAboutMe(user.aboutMe || '');
     setEditPhone(user.phoneNumber || '');
+    setAvatarFile(null);
   };
 
   if (!user) {
@@ -113,7 +132,11 @@ export default function Profile() {
         <div className={styles.leftColumn}>
           <div className={styles.avatarWrapper}>
             {user.avatarUrl ? (
-              <img src={user.avatarUrl} alt="User avatar" className={styles.avatar} />
+              <img
+                src={`https://hyre-backend.onrender.com/${user.avatarUrl}`}
+                alt="User avatar"
+                className={styles.avatar}
+              />
             ) : (
               <div className={styles.avatarPlaceholder}>
                 <span className={styles.avatarInitials}>
@@ -144,6 +167,14 @@ export default function Profile() {
                   className={styles.inputField}
                   value={editLocation}
                   onChange={(e) => setEditLocation(e.target.value)}
+                />
+
+                {/* New avatar file input */}
+                <label>Change Avatar</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarChange}
                 />
               </div>
             )}

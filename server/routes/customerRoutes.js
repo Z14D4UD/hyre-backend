@@ -5,11 +5,10 @@ const customerController = require('../controllers/customerController');
 const auth = require('../middlewares/authMiddleware');
 const multer = require('multer');
 
-// Existing code for ID upload
-const upload = multer({ dest: 'uploads/id-documents/' });
-router.post('/verify-id', auth, upload.single('idDocument'), customerController.verifyId);
+// For storing avatar images
+const upload = multer({ dest: 'uploads/avatars/' });
 
-// NEW ROUTE: GET /api/customer/me
-router.get('/me', auth, customerController.getCustomerProfile);
+// PUT route to update profile (text fields + avatar)
+router.put('/me', auth, upload.single('avatar'), customerController.updateCustomerProfile);
 
 module.exports = router;
