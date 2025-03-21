@@ -74,7 +74,7 @@ export default function Login() {
       <div className={styles.rightPanel}>
         <div className={styles.formContainer}>
           <h2 className={styles.formTitle}>Welcome</h2>
-          <p className={styles.formSubtitle}>Login in your account to continue</p>
+          <p className={styles.formSubtitle}>Login to your account to continue</p>
 
           <form className={styles.form} onSubmit={handleSubmit}>
             <input
@@ -99,7 +99,7 @@ export default function Login() {
             </a>
 
             <button className={styles.loginButton} type="submit">
-              {t('login')}
+              {t('Login')}
             </button>
           </form>
 

@@ -57,7 +57,7 @@ export default function Signup() {
           {/* Optional subtext if you want the same style as login */}
           <div className={styles.brandSubtext}>
             {/* e.g. "Create Your Account" or any tagline */}
-            Let the Journey 
+            Let your journey begin...
           </div>
         </div>
       </div>
@@ -108,9 +108,9 @@ export default function Signup() {
               onChange={(e) => setRole(e.target.value)}
               required
             >
-              <option value="business">{t('Signup as a Business')}</option>
-              <option value="customer">{t('Signup as a Customer')}</option>
-              <option value="affiliate">{t('Signup as an Affiliate')}</option>
+              <option value="business">{t('Sign up as a Business')}</option>
+              <option value="customer">{t('Sign up as a Customer')}</option>
+              <option value="affiliate">{t('Sign up as an Affiliate')}</option>
             </select>
 
             <button className={styles.signupButton} type="submit">

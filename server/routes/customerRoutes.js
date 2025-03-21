@@ -8,6 +8,9 @@ const multer = require('multer');
 // For storing avatar images
 const upload = multer({ dest: 'uploads/avatars/' });
 
+// NEW: GET route to fetch profile
+router.get('/me', auth, customerController.getCustomerProfile);
+
 // PUT route to update profile (text fields + avatar)
 router.put('/me', auth, upload.single('avatar'), customerController.updateCustomerProfile);
 

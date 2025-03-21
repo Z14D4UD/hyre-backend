@@ -107,7 +107,8 @@
   padding: 0.75rem;
   border-radius: 20px;
   border: none;
-  background-color: #c2e5df; /* pastel greenish */
+  background-color: #A7C7E7
+  ; /* pastel greenish */
   font-size: 0.95rem;
   outline: none;
 }
@@ -115,7 +116,7 @@
 /* Forgot password link */
 .forgotPassword {
   font-size: 0.85rem;
-  color: #666;
+  color: #8bd5ca;
   text-decoration: none;
   margin-top: -0.5rem;
   display: inline-block;
@@ -123,7 +124,7 @@
 
 /* "Login" button in a slightly darker pastel green */
 .loginButton {
-  background-color: #8bd5ca;
+  background-color: #A7C7E7 ;
   color: #fff;
   border: none;
   border-radius: 20px;
