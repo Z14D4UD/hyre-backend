@@ -5,10 +5,9 @@ const customerController = require('../controllers/customerController');
 const auth = require('../middlewares/authMiddleware');
 const multer = require('multer');
 
-// For storing avatar images
 const upload = multer({ dest: 'uploads/avatars/' });
 
-// NEW: GET route to fetch profile
+// GET route to fetch profile
 router.get('/me', auth, customerController.getCustomerProfile);
 
 // PUT route to update profile (text fields + avatar)

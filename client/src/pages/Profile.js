@@ -11,7 +11,7 @@ export default function Profile() {
   const accountType = localStorage.getItem('accountType');
   const isCustomer = token && accountType === 'customer';
 
-  // Redirect if not a logged-in customer
+  // Redirect if not logged in as customer
   useEffect(() => {
     if (!isCustomer) {
       alert('Please log in as a customer to view your profile.');
@@ -31,17 +31,17 @@ export default function Profile() {
   const [editLocation, setEditLocation] = useState('');
   const [editAboutMe, setEditAboutMe] = useState('');
   const [editPhone, setEditPhone] = useState('');
+  const [editEmail, setEditEmail] = useState(''); // new state for email
   const [avatarFile, setAvatarFile] = useState(null);
 
-  // Use backend URL from env (make sure client/.env has REACT_APP_BACKEND_URL)
-  const backendUrl = process.env.REACT_APP_BACKEND_URL; // e.g., https://hyre-backend.onrender.com/api
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
   console.log('Backend URL:', backendUrl);
 
   // Load profile data on mount
   useEffect(() => {
     axios
       .get(`${backendUrl}/customer/me`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
         console.log('Fetched profile:', res.data);
@@ -50,6 +50,7 @@ export default function Profile() {
         setEditLocation(res.data.location || '');
         setEditAboutMe(res.data.aboutMe || '');
         setEditPhone(res.data.phoneNumber || '');
+        setEditEmail(res.data.email || '');
       })
       .catch((err) => {
         console.error('Error fetching profile:', err);
@@ -64,13 +65,14 @@ export default function Profile() {
     }
   };
 
-  // Handle saving profile updates (text fields + avatar)
+  // Save profile updates (including email)
   const handleSaveProfile = () => {
     const formData = new FormData();
     formData.append('name', editName);
     formData.append('location', editLocation);
     formData.append('aboutMe', editAboutMe);
     formData.append('phoneNumber', editPhone);
+    formData.append('email', editEmail); // append email
 
     if (avatarFile) {
       formData.append('avatar', avatarFile);
@@ -80,10 +82,14 @@ export default function Profile() {
       .put(`${backendUrl}/customer/me`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data'
-        }
+          'Content-Type': 'multipart/form-data',
+        },
       })
+
+      
       .then((res) => {
+        console.log('PUT response data:', res.data); // <--- Must be inside the .then callback
+
         console.log('Profile updated:', res.data);
         setUser(res.data);
         setIsEditing(false);
@@ -96,12 +102,16 @@ export default function Profile() {
       });
   };
 
+  // Cancel editing and revert changes
   const handleCancelEdit = () => {
     setIsEditing(false);
-    setEditName(user.name || '');
-    setEditLocation(user.location || '');
-    setEditAboutMe(user.aboutMe || '');
-    setEditPhone(user.phoneNumber || '');
+    if (user) {
+      setEditName(user.name || '');
+      setEditLocation(user.location || '');
+      setEditAboutMe(user.aboutMe || '');
+      setEditPhone(user.phoneNumber || '');
+      setEditEmail(user.email || '');
+    }
     setAvatarFile(null);
   };
 
@@ -111,6 +121,7 @@ export default function Profile() {
 
   return (
     <div className={styles.profileContainer}>
+      {/* Header */}
       <header className={styles.header}>
         <div className={styles.logo} onClick={() => navigate('/')}>
           Hyre
@@ -128,7 +139,9 @@ export default function Profile() {
         />
       )}
 
+      {/* Main Profile Content */}
       <div className={styles.profileContent}>
+        {/* Left Column: Avatar & Basic Info */}
         <div className={styles.leftColumn}>
           <div className={styles.avatarWrapper}>
             {user.avatarUrl ? (
@@ -168,40 +181,26 @@ export default function Profile() {
                   value={editLocation}
                   onChange={(e) => setEditLocation(e.target.value)}
                 />
-
-                {/* New avatar file input */}
                 <label>Change Avatar</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAvatarChange}
-                />
+                <input type="file" accept="image/*" onChange={handleAvatarChange} />
               </div>
             )}
           </div>
         </div>
 
+        {/* Right Column: About, Contact Info, Reviews */}
         <div className={styles.rightColumn}>
           <div className={styles.editProfileRow}>
             {!isEditing ? (
-              <button
-                className={styles.editProfileBtn}
-                onClick={() => setIsEditing(true)}
-              >
+              <button className={styles.editProfileBtn} onClick={() => setIsEditing(true)}>
                 Edit profile
               </button>
             ) : (
               <>
-                <button
-                  className={styles.saveProfileBtn}
-                  onClick={handleSaveProfile}
-                >
+                <button className={styles.saveProfileBtn} onClick={handleSaveProfile}>
                   Save profile
                 </button>
-                <button
-                  className={styles.cancelProfileBtn}
-                  onClick={handleCancelEdit}
-                >
+                <button className={styles.cancelProfileBtn} onClick={handleCancelEdit}>
                   Cancel
                 </button>
               </>
@@ -212,7 +211,7 @@ export default function Profile() {
             <h3>About {user.name && user.name.split(' ')[0]}</h3>
             {!isEditing ? (
               <p className={styles.aboutText}>
-                {user.aboutMe || 'Tell hosts about yourself...'}
+                {user.aboutMe || 'Tell us a bit about yourself...'}
               </p>
             ) : (
               <>
@@ -230,7 +229,17 @@ export default function Profile() {
             <h4>Contact Info</h4>
             <ul>
               <li>
-                <strong>Email:</strong> {user.email}
+                <strong>Email:</strong>{' '}
+                {!isEditing ? (
+                  user.email
+                ) : (
+                  <input
+                    type="email"
+                    className={styles.inputField}
+                    value={editEmail}
+                    onChange={(e) => setEditEmail(e.target.value)}
+                  />
+                )}
               </li>
               <li>
                 <strong>Phone number:</strong>{' '}
@@ -246,8 +255,7 @@ export default function Profile() {
                 )}
               </li>
               <li>
-                <strong>Approved to drive:</strong>{' '}
-                {user.approvedToDrive ? 'Yes' : 'No'}
+                <strong>Approved to drive:</strong> {user.approvedToDrive ? 'Yes' : 'No'}
               </li>
             </ul>
           </div>

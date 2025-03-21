@@ -1,27 +1,21 @@
 // server/controllers/customerController.js
 const Customer = require('../models/Customer');
 
-// Existing verifyId function ...
-// exports.verifyId = ...
-
 // NEW FUNCTION: Get the current customer's profile
 exports.getCustomerProfile = async (req, res) => {
   try {
-    // auth middleware sets req.customer with the logged in customer's id
     const customerId = req.customer.id;
     const customer = await Customer.findById(customerId).select('-password');
     if (!customer) {
       return res.status(404).json({ msg: 'Customer not found' });
     }
-
-    // Return fields your frontend needs; you can adjust joinedDate as needed
     res.json({
       name: customer.name,
       location: customer.location || '',
       joinedDate: customer.createdAt ? new Date(customer.createdAt).toLocaleDateString() : 'N/A',
       aboutMe: customer.aboutMe || '',
       phoneNumber: customer.phoneNumber || '',
-      email: customer.email,
+      email: customer.email, // email is returned as-is
       approvedToDrive: !!customer.approvedToDrive,
       avatarUrl: customer.avatarUrl || ''
     });
@@ -33,15 +27,20 @@ exports.getCustomerProfile = async (req, res) => {
 
 exports.updateCustomerProfile = async (req, res) => {
   try {
-    // auth middleware sets req.customer = { id: decoded.id }
+    // Log what the server receives in the request body (aboutMe, location, etc.)
+    console.log('Received update data (req.body):', req.body);
+    // Log any uploaded file data (avatar)
+    console.log('Received file (req.file):', req.file);
+
     const customerId = req.customer.id;
 
-    // Collect fields from req.body
+    // Collect fields from req.body including email
     const updateData = {
       name: req.body.name,
       location: req.body.location,
       aboutMe: req.body.aboutMe,
-      phoneNumber: req.body.phoneNumber
+      phoneNumber: req.body.phoneNumber,
+      email: req.body.email, // new email update
     };
 
     // If a new avatar is uploaded, update avatarUrl
@@ -49,12 +48,17 @@ exports.updateCustomerProfile = async (req, res) => {
       updateData.avatarUrl = req.file.path; // e.g., "uploads/avatars/xyz.jpg"
     }
 
-    // Update customer in DB
+    // Log what we're sending to Mongoose
+    console.log('Update data for Mongoose:', updateData);
+
     const updatedCustomer = await Customer.findByIdAndUpdate(
       customerId,
       updateData,
       { new: true }
     ).select('-password');
+
+    // Log the result from Mongoose
+    console.log('Updated customer from DB:', updatedCustomer);
 
     if (!updatedCustomer) {
       return res.status(404).json({ msg: 'Customer not found' });
