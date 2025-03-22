@@ -15,7 +15,7 @@ import CarDetails from './pages/CarDetails';
 import Chat from './components/Chat';
 import Profile from './pages/Profile';
 
-// 1) Import your new Account and ChangePassword pages:
+// 1) Import your Account and ChangePassword pages:
 import AccountPage from './pages/AccountPage';
 import ChangePassword from './pages/ChangePassword';
 

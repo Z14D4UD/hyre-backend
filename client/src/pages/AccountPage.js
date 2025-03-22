@@ -1,4 +1,5 @@
 // client/src/pages/AccountPage.js
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -11,17 +12,19 @@ export default function AccountPage() {
   const accountType = localStorage.getItem('accountType');
   const isCustomer = token && accountType === 'customer';
 
+  // Side menu toggling
   const [menuOpen, setMenuOpen] = useState(false);
   const toggleMenu = () => setMenuOpen(!menuOpen);
   const closeMenu = () => setMenuOpen(false);
 
+  // Basic user data
   const [user, setUser] = useState(null);
 
-  // Local fields
+  // Fields
   const [transmission, setTransmission] = useState('');
   const [affiliateCode, setAffiliateCode] = useState('');
 
-  // Suppose your backend is at:
+  // Suppose your backend is here:
   const backendUrl = process.env.REACT_APP_BACKEND_URL || 'https://hyre-backend.onrender.com/api';
 
   useEffect(() => {
@@ -30,6 +33,7 @@ export default function AccountPage() {
       navigate('/');
       return;
     }
+
     // Fetch account data
     axios
       .get(`${backendUrl}/account`, {
@@ -45,6 +49,7 @@ export default function AccountPage() {
       });
   }, [isCustomer, navigate, backendUrl, token]);
 
+  // Use affiliate code
   const handleUseAffiliateCode = () => {
     if (!affiliateCode) return alert('Please enter a code.');
     axios
@@ -62,6 +67,7 @@ export default function AccountPage() {
       });
   };
 
+  // Save Transmission
   const handleSaveTransmission = () => {
     axios
       .put(
@@ -79,11 +85,13 @@ export default function AccountPage() {
       });
   };
 
+  // Download My Data
   const handleDownloadData = () => {
-    // Trigger a download
+    // This triggers a file download from the backend
     window.location.href = `${backendUrl}/account/download?token=${token}`;
   };
 
+  // Close Account
   const handleCloseAccount = () => {
     if (!window.confirm('Are you sure you want to close your account?')) {
       return;
@@ -105,97 +113,131 @@ export default function AccountPage() {
   };
 
   if (!user) {
-    return <div className={styles.accountContainer}>Loading account...</div>;
+    return <div className={styles.container}>Loading account...</div>;
   }
 
-  // Side menu toggling
   return (
-    <div className={styles.accountContainer}>
-      <header>
-        <h1>Account</h1>
+    <div className={styles.container}>
+      {/* Header with brand + menu icon */}
+      <header className={styles.header}>
+        <div className={styles.logo} onClick={() => navigate('/')}>
+          Hyre
+        </div>
+        <button className={styles.menuIcon} onClick={toggleMenu}>
+          ☰
+        </button>
       </header>
 
-      {/* The side menu */}
-      <SideMenuCustomer isOpen={menuOpen} toggleMenu={toggleMenu} closeMenu={closeMenu} />
-
-      {/* Contact Information */}
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>Contact Information</h2>
-        <p>Email: <strong>{user.email}</strong> <span style={{ color: 'green' }}>(Verified)</span></p>
-        <button
-          className={`${styles.button} ${styles.buttonPrimary}`}
-          onClick={() => navigate('/change-password')}
-        >
-          Change Password
-        </button>
-      </div>
-
-      {/* Transmission */}
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>Transmission</h2>
-        <p>Some cars on Turo do not have automatic transmissions. Are you an expert at driving manual transmissions?</p>
-        <select
-          className={styles.selectField}
-          value={transmission}
-          onChange={(e) => setTransmission(e.target.value)}
-        >
-          <option value="">Select your skill level</option>
-          <option value="No, I am not an expert">No, I am not an expert</option>
-          <option value="Yes, I am an expert">Yes, I am an expert</option>
-        </select>
-        <div className={styles.buttonRow}>
-          <button className={styles.button} onClick={handleSaveTransmission}>
-            Save changes
-          </button>
-        </div>
-      </div>
-
-      {/* Affiliate code */}
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>Use an affiliate code</h2>
-        <p>Enter an affiliate code to get 10% off your next booking, and the affiliate’s balance is updated.</p>
-        <input
-          type="text"
-          className={styles.inputField}
-          placeholder="Enter affiliate code"
-          value={affiliateCode}
-          onChange={(e) => setAffiliateCode(e.target.value)}
+      {/* Side menu */}
+      {isCustomer && (
+        <SideMenuCustomer
+          isOpen={menuOpen}
+          toggleMenu={toggleMenu}
+          closeMenu={closeMenu}
         />
-        <div className={styles.buttonRow}>
-          <button className={styles.button} onClick={handleUseAffiliateCode}>
-            Apply
+      )}
+
+      {/* Main content area */}
+      <div className={styles.content}>
+        <h1>Account</h1>
+
+        {/* Contact Information */}
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>Contact Information</h2>
+          <p>
+            Email: <strong>{user.email}</strong>{' '}
+            <span style={{ color: 'green' }}>(Verified)</span>
+          </p>
+          <button
+            className={`${styles.button} ${styles.buttonPrimary}`}
+            onClick={() => navigate('/change-password')}
+          >
+            Change Password
           </button>
         </div>
-      </div>
 
-      {/* Points */}
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>Loyalty Points</h2>
-        <p>You earn 10 points for each booking. Once you reach 500 points, you can request a reward by emailing us.</p>
-        <p>Your current points: <strong>{user.points || 0}</strong></p>
-        {user.points >= 500 && (
-          <p className={styles.loyaltyNote}>
-            Congratulations! You have enough points to claim a reward. Please email us to redeem.
+        {/* Transmission */}
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>Transmission</h2>
+          <p>
+            Some cars on Turo do not have automatic transmissions. Are you an
+            expert at driving manual transmissions?
           </p>
-        )}
-      </div>
+          <select
+            className={styles.selectField}
+            value={transmission}
+            onChange={(e) => setTransmission(e.target.value)}
+          >
+            <option value="">Select your skill level</option>
+            <option value="No, I am not an expert">No, I am not an expert</option>
+            <option value="Yes, I am an expert">Yes, I am an expert</option>
+          </select>
+          <div className={styles.buttonRow}>
+            <button className={styles.button} onClick={handleSaveTransmission}>
+              Save changes
+            </button>
+          </div>
+        </div>
 
-      {/* Download data */}
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>Download account data</h2>
-        <p>You can download a copy of all information we have about your account.</p>
-        <button className={styles.button} onClick={handleDownloadData}>
-          Download my data
-        </button>
-      </div>
+        {/* Affiliate code */}
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>Use an affiliate code</h2>
+          <p>
+            Enter an affiliate code to get 10% off your next booking, and the
+            affiliate’s balance is updated.
+          </p>
+          <input
+            type="text"
+            className={styles.inputField}
+            placeholder="Enter affiliate code"
+            value={affiliateCode}
+            onChange={(e) => setAffiliateCode(e.target.value)}
+          />
+          <div className={styles.buttonRow}>
+            <button className={styles.button} onClick={handleUseAffiliateCode}>
+              Apply
+            </button>
+          </div>
+        </div>
 
-      {/* Close account */}
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>Close account</h2>
-        <p>Once you close your account, all your data will be deleted permanently.</p>
-        <button className={`${styles.button} ${styles.buttonDanger}`} onClick={handleCloseAccount}>
-          Close my account
-        </button>
+        {/* Points */}
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>Loyalty Points</h2>
+          <p>
+            You earn 10 points for each booking. Once you reach 500 points, you can
+            request a reward by emailing us.
+          </p>
+          <p>
+            Your current points: <strong>{user.points || 0}</strong>
+          </p>
+          {user.points >= 500 && (
+            <p className={styles.loyaltyNote}>
+              Congratulations! You have enough points to claim a reward. Please
+              email us to redeem.
+            </p>
+          )}
+        </div>
+
+        {/* Download data */}
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>Download account data</h2>
+          <p>You can download a copy of all information we have about your account.</p>
+          <button className={styles.button} onClick={handleDownloadData}>
+            Download my data
+          </button>
+        </div>
+
+        {/* Close account */}
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>Close account</h2>
+          <p>Once you close your account, all your data will be deleted permanently.</p>
+          <button
+            className={`${styles.button} ${styles.buttonDanger}`}
+            onClick={handleCloseAccount}
+          >
+            Close my account
+          </button>
+        </div>
       </div>
     </div>
   );

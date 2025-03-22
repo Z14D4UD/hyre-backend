@@ -2,11 +2,20 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import SideMenuCustomer from '../components/SideMenuCustomer';
 import styles from '../styles/ChangePassword.module.css';
 
 export default function ChangePassword() {
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
+  const accountType = localStorage.getItem('accountType');
+  const isCustomer = token && accountType === 'customer';
+
+  // For toggling side menu
+  const [menuOpen, setMenuOpen] = useState(false);
+  const toggleMenu = () => setMenuOpen(!menuOpen);
+  const closeMenu = () => setMenuOpen(false);
+
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
 
@@ -17,7 +26,7 @@ export default function ChangePassword() {
       return alert('Please fill in both fields.');
     }
     axios
-      .put(`${backendUrl}/account/password`, 
+      .put(`${backendUrl}/account/password`,
         { oldPassword, newPassword },
         { headers: { Authorization: `Bearer ${token}` } }
       )
@@ -31,33 +40,59 @@ export default function ChangePassword() {
       });
   };
 
+  // If user is not a customer, redirect or show a message
+  if (!isCustomer) {
+    return <div className={styles.container}>Please log in as a customer.</div>;
+  }
+
   return (
-    <div className={styles.changePasswordContainer}>
-      <h1>Change Password</h1>
+    <div className={styles.container}>
+      {/* Header with brand + menu icon */}
+      <header className={styles.header}>
+        <div className={styles.logo} onClick={() => navigate('/')}>
+          Hyre
+        </div>
+        <button className={styles.menuIcon} onClick={toggleMenu}>
+          ☰
+        </button>
+      </header>
 
-      <div className={styles.fieldGroup}>
-        <label className={styles.label}>Old Password</label>
-        <input
-          type="password"
-          className={styles.inputField}
-          value={oldPassword}
-          onChange={(e) => setOldPassword(e.target.value)}
+      {/* Side menu */}
+      {isCustomer && (
+        <SideMenuCustomer
+          isOpen={menuOpen}
+          toggleMenu={toggleMenu}
+          closeMenu={closeMenu}
         />
-      </div>
+      )}
 
-      <div className={styles.fieldGroup}>
-        <label className={styles.label}>New Password</label>
-        <input
-          type="password"
-          className={styles.inputField}
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
-        />
-      </div>
+      <div className={styles.content}>
+        <h1>Change Password</h1>
 
-      <button className={styles.button} onClick={handleChangePassword}>
-        Update Password
-      </button>
+        <div className={styles.fieldGroup}>
+          <label className={styles.label}>Old Password</label>
+          <input
+            type="password"
+            className={styles.inputField}
+            value={oldPassword}
+            onChange={(e) => setOldPassword(e.target.value)}
+          />
+        </div>
+
+        <div className={styles.fieldGroup}>
+          <label className={styles.label}>New Password</label>
+          <input
+            type="password"
+            className={styles.inputField}
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+          />
+        </div>
+
+        <button className={styles.saveButton} onClick={handleChangePassword}>
+          Update Password
+        </button>
+      </div>
     </div>
   );
 }
