@@ -1,0 +1,85 @@
+/* client/src/pages/AccountPage.module.css */
+
+.accountContainer {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 1rem;
+    font-family: sans-serif;
+  }
+  
+  .section {
+    margin-bottom: 1.5rem;
+    background-color: #fafafa;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  }
+  
+  .sectionTitle {
+    margin-top: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+  
+  p,
+  label {
+    font-size: 0.95rem;
+    color: #333;
+    margin: 0.25rem 0;
+  }
+  
+  .selectField,
+  .inputField {
+    width: 100%;
+    padding: 0.5rem;
+    font-size: 0.95rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-top: 0.3rem;
+  }
+  
+  .buttonRow {
+    margin-top: 0.5rem;
+  }
+  
+  .button {
+    background-color: #fff;
+    color: #333;
+    border: 1px solid #ddd;
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    margin-right: 0.5rem;
+    transition: background-color 0.2s ease;
+  }
+  
+  .button:hover {
+    background-color: #f2f2f2;
+  }
+  
+  .buttonPrimary {
+    background-color: #38b6ff;
+    color: #fff;
+    border: none;
+  }
+  
+  .buttonPrimary:hover {
+    background-color: #30a2e0;
+  }
+  
+  .buttonDanger {
+    background-color: #e74c3c;
+    color: #fff;
+    border: none;
+  }
+  
+  .buttonDanger:hover {
+    background-color: #c0392b;
+  }
+  
+  .loyaltyNote {
+    color: green;
+    margin-top: 0.5rem;
+  }
+  

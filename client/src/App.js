@@ -15,6 +15,10 @@ import CarDetails from './pages/CarDetails';
 import Chat from './components/Chat';
 import Profile from './pages/Profile';
 
+// 1) Import your new Account and ChangePassword pages:
+import AccountPage from './pages/AccountPage';
+import ChangePassword from './pages/ChangePassword';
+
 function App() {
   return (
     <div>
@@ -38,6 +42,10 @@ function App() {
         <Route path="/chat" element={<Chat />} />
         <Route path="/insurance-legal" element={<div>Insurance & Legal Page</div>} />
         <Route path="/profile" element={<Profile />} />
+
+        {/* 2) Add the new Account and Change Password routes: */}
+        <Route path="/account" element={<AccountPage />} />
+        <Route path="/change-password" element={<ChangePassword />} />
 
         {/* Catch-all 404 */}
         <Route path="*" element={<div>404 - Not Found</div>} />

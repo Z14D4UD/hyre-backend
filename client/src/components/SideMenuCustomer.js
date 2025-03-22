@@ -27,6 +27,12 @@ export default function SideMenuCustomer({ isOpen, toggleMenu, closeMenu }) {
     }, 1000);
   };
 
+  // Navigate to any page
+  const goTo = (path) => {
+    closeMenu();
+    navigate(path);
+  };
+
   return (
     <div className={`${styles.sideMenu} ${isOpen ? styles.open : ''}`}>
       <div className={styles.menuHeader}>
@@ -36,38 +42,32 @@ export default function SideMenuCustomer({ isOpen, toggleMenu, closeMenu }) {
       </div>
 
       <ul className={styles.menuList}>
-        {/* When Profile is clicked, close the menu and navigate to /profile */}
-        <li
-          className={styles.menuItem}
-          onClick={() => {
-            closeMenu();
-            navigate('/profile');
-          }}
-        >
+        <li className={styles.menuItem}>
           <FaUser className={styles.icon} />
           <span>Profile</span>
         </li>
-        <li className={styles.menuItem} onClick={toggleMenu}>
+        {/* Add an Account link */}
+        <li className={styles.menuItem} onClick={() => goTo('/account')}>
           <FaUserCog className={styles.icon} />
           <span>Account</span>
         </li>
-        <li className={styles.menuItem} onClick={toggleMenu}>
+        <li className={styles.menuItem}>
           <FaClipboardList className={styles.icon} />
           <span>My Bookings</span>
         </li>
-        <li className={styles.menuItem} onClick={toggleMenu}>
+        <li className={styles.menuItem}>
           <FaEnvelope className={styles.icon} />
           <span>Messages</span>
         </li>
-        <li className={styles.menuItem} onClick={toggleMenu}>
+        <li className={styles.menuItem}>
           <FaQuestionCircle className={styles.icon} />
           <span>How Hyre Works</span>
         </li>
-        <li className={styles.menuItem} onClick={toggleMenu}>
+        <li className={styles.menuItem}>
           <FaPhone className={styles.icon} />
           <span>Contact Support</span>
         </li>
-        <li className={styles.menuItem} onClick={toggleMenu}>
+        <li className={styles.menuItem}>
           <FaBalanceScale className={styles.icon} />
           <span>Legal</span>
         </li>

@@ -5,6 +5,7 @@ module.exports = function (req, res, next) {
   // First, try to get the token from the custom header
   let token = req.header('x-auth-token');
   
+  
   // If not found, check for the standard Authorization header
   if (!token) {
     const authHeader = req.header('Authorization');
