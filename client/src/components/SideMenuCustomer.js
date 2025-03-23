@@ -1,3 +1,4 @@
+// client/src/components/SideMenuCustomer.js
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -46,15 +47,19 @@ export default function SideMenuCustomer({ isOpen, toggleMenu, closeMenu }) {
           <FaUser className={styles.icon} />
           <span>Profile</span>
         </li>
+
         {/* Account link */}
         <li className={styles.menuItem} onClick={() => goTo('/account')}>
           <FaUserCog className={styles.icon} />
           <span>Account</span>
         </li>
-        <li className={styles.menuItem}>
+
+        {/* My Bookings link */}
+        <li className={styles.menuItem} onClick={() => goTo('/bookings')}>
           <FaClipboardList className={styles.icon} />
           <span>My Bookings</span>
         </li>
+
         <li className={styles.menuItem}>
           <FaEnvelope className={styles.icon} />
           <span>Messages</span>
@@ -71,6 +76,7 @@ export default function SideMenuCustomer({ isOpen, toggleMenu, closeMenu }) {
           <FaBalanceScale className={styles.icon} />
           <span>Legal</span>
         </li>
+
         <li className={styles.menuItem} onClick={handleLogout}>
           <FaSignOutAlt className={styles.icon} />
           <span>Log Out</span>

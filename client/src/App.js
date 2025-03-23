@@ -16,6 +16,8 @@ import Chat from './components/Chat';
 import Profile from './pages/Profile';
 import AccountPage from './pages/AccountPage';
 import ChangePassword from './pages/ChangePassword';
+import BookingsPage from './pages/BookingsPage';
+
 
 function App() {
   return (
@@ -40,6 +42,8 @@ function App() {
         <Route path="/chat" element={<Chat />} />
         <Route path="/insurance-legal" element={<div>Insurance & Legal Page</div>} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/bookings" element={<BookingsPage />} />
+
 
         {/* Account and Change Password */}
         <Route path="/account" element={<AccountPage />} />

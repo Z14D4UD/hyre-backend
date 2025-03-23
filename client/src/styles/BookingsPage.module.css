@@ -1,0 +1,137 @@
+/* client/src/styles/BookingsPage.module.css */
+
+.container {
+    position: relative;
+    min-height: 100vh;
+    background-color: #fff;
+    font-family: 'Arial', sans-serif;
+    color: #333;
+  }
+  
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background-color: #fff;
+  }
+  .logo {
+    font-weight: 700;
+    font-size: 1.8rem;
+    color: #38b6ff;
+    cursor: pointer;
+  }
+  .menuIcon {
+    font-size: 1.4rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+  
+  /* Main content */
+  .content {
+    padding: 5rem 2rem 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .title {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+  }
+  
+  /* Empty State */
+  .emptyState {
+    background-color: #fafafa;
+    padding: 2rem;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  }
+  .emptyState h2 {
+    font-size: 1.6rem;
+    margin-bottom: 0.5rem;
+  }
+  .emptyState p {
+    margin-bottom: 1rem;
+  }
+  .startSearchingBtn {
+    background-color: #38b6ff;
+    color: #fff;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+  }
+  .startSearchingBtn:hover {
+    background-color: #30a2e0;
+  }
+  
+  /* Bookings sections */
+  .section {
+    margin-top: 2rem;
+  }
+  .sectionHeading {
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+  .bookingGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+  }
+  .bookingCard {
+    background-color: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease;
+  }
+  .bookingCard:hover {
+    transform: translateY(-2px);
+  }
+  .bookingImage {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+  }
+  .bookingInfo {
+    padding: 0.8rem;
+  }
+  .bookingInfo h3 {
+    margin: 0 0 0.3rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #333;
+  }
+  .bookingInfo p {
+    margin: 0.2rem 0;
+    font-size: 0.9rem;
+    color: #666;
+  }
+  
+  /* Loading state (if needed) */
+  .loading {
+    padding: 2rem;
+    text-align: center;
+    font-size: 1.2rem;
+  }
+  
+  /* Responsive */
+  @media (max-width: 600px) {
+    .content {
+      padding: 6rem 1rem 1rem;
+    }
+    .bookingGrid {
+      grid-template-columns: 1fr;
+    }
+  }
+  
