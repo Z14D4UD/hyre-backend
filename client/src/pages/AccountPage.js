@@ -11,26 +11,25 @@ export default function AccountPage() {
   const accountType = localStorage.getItem('accountType');
   const isCustomer = token && accountType === 'customer';
 
-  // For toggling the side menu
+  // Side menu toggling
   const [menuOpen, setMenuOpen] = useState(false);
-  const toggleMenu = () => setMenuOpen(!menuOpen);
+  const toggleMenu = () => setMenuOpen(prev => !prev);
   const closeMenu = () => setMenuOpen(false);
 
   // Local user data and transmission
   const [user, setUser] = useState(null);
   const [transmission, setTransmission] = useState('');
 
-  // Adjust this URL if needed
+  // Use your backend URL from environment
   const backendUrl = process.env.REACT_APP_BACKEND_URL || 'https://hyre-backend.onrender.com/api';
 
+  // Fetch account data
   useEffect(() => {
     if (!isCustomer) {
       alert('Please log in as a customer to view your account.');
       navigate('/');
       return;
     }
-
-    // Fetch account data from /api/account
     axios
       .get(`${backendUrl}/account`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -45,7 +44,7 @@ export default function AccountPage() {
       });
   }, [isCustomer, navigate, backendUrl, token]);
 
-  // Save Transmission to DB
+  // Save transmission: if user selects an option, save and update UI
   const handleSaveTransmission = () => {
     axios
       .put(
@@ -54,7 +53,7 @@ export default function AccountPage() {
         { headers: { Authorization: `Bearer ${token}` } }
       )
       .then((res) => {
-        // The server responds with the updated user object
+        console.log('PUT response data:', res.data);
         setUser(res.data);
         setTransmission(res.data.transmission || '');
         alert('Transmission preference saved.');
@@ -70,7 +69,7 @@ export default function AccountPage() {
     axios
       .get(`${backendUrl}/account/download`, {
         headers: { Authorization: `Bearer ${token}` },
-        responseType: 'blob', // important for binary data
+        responseType: 'blob', // ensures binary data is returned
       })
       .then((res) => {
         const pdfBlob = new Blob([res.data], { type: 'application/pdf' });
@@ -92,7 +91,6 @@ export default function AccountPage() {
   // Close account
   const handleCloseAccount = () => {
     if (!window.confirm('Are you sure you want to close your account?')) return;
-
     axios
       .delete(`${backendUrl}/account`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -117,28 +115,28 @@ export default function AccountPage() {
     <div className={styles.container}>
       {/* Header */}
       <header className={styles.header}>
-        <div className={styles.logo} onClick={() => navigate('/')}>
-          Hyre
-        </div>
-        <button className={styles.menuIcon} onClick={toggleMenu}>
-          ☰
-        </button>
+        <div className={styles.logo} onClick={() => navigate('/')}>Hyre</div>
+        <button className={styles.menuIcon} onClick={toggleMenu}>☰</button>
       </header>
 
       {/* Side Menu */}
       {isCustomer && (
-        <SideMenuCustomer isOpen={menuOpen} toggleMenu={toggleMenu} closeMenu={closeMenu} />
+        <SideMenuCustomer
+          isOpen={menuOpen}
+          toggleMenu={toggleMenu}
+          closeMenu={closeMenu}
+        />
       )}
 
+      {/* Main content area */}
       <div className={styles.content}>
         <h1>Account</h1>
 
-        {/* Contact Info */}
+        {/* Contact Information */}
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Contact Information</h2>
           <p>
-            Email: <strong>{user.email}</strong>{' '}
-            <span style={{ color: 'green' }}>(Verified)</span>
+            Email: <strong>{user.email}</strong> <span style={{ color: 'green' }}>(Verified)</span>
           </p>
           <button
             className={`${styles.button} ${styles.buttonPrimary}`}
@@ -149,64 +147,40 @@ export default function AccountPage() {
         </div>
 
         {/* Transmission Section */}
-<div className={styles.section}>
-  <h2 className={styles.sectionTitle}>Transmission</h2>
-  <p>
-    Some cars on Hyre do not have automatic transmissions. Can you drive a manual car?
-  </p>
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>Transmission</h2>
+          <p>
+            Some cars on Hyre do not have automatic transmissions. Can you drive a manual car?
+          </p>
+          {user.transmission && user.transmission !== '' ? (
+            <p><strong>Your transmission setting:</strong> {user.transmission}</p>
+          ) : (
+            <>
+              <select
+                className={styles.selectField}
+                value={transmission}
+                onChange={(e) => setTransmission(e.target.value)}
+              >
+                <option value="">Select your option</option>
+                <option value="No, I am not an expert">No, I am not an expert</option>
+                <option value="Yes, I can drive manual">Yes, I can drive manual</option>
+              </select>
+              <div className={styles.buttonRow}>
+                <button className={styles.button} onClick={handleSaveTransmission}>
+                  Save changes
+                </button>
+              </div>
+            </>
+          )}
+        </div>
 
-  {user.transmission && user.transmission !== '' ? (
-    <p>
-      <strong>Your transmission setting:</strong> {user.transmission}
-    </p>
-  ) : (
-    <>
-      <select
-        className={styles.selectField}
-        value={transmission}
-        onChange={(e) => setTransmission(e.target.value)}
-      >
-        <option value="">Select your option</option>
-        <option value="No, I am not an expert">No, I am not an expert</option>
-        <option value="Yes, I can drive manual">Yes, I can drive manual</option>
-      </select>
-      <div className={styles.buttonRow}>
-        <button
-          className={styles.button}
-          onClick={() => {
-            axios
-              .put(
-                `${backendUrl}/account`,
-                { transmission },
-                { headers: { Authorization: `Bearer ${token}` } }
-              )
-              .then((res) => {
-                setUser(res.data); // 🔁 update frontend view
-                setTransmission(res.data.transmission || '');
-              })
-              .catch((err) => {
-                console.error('Error updating transmission:', err);
-                alert('Failed to update transmission.');
-              });
-          }}
-        >
-          Save changes
-        </button>
-      </div>
-    </>
-  )}
-</div>
-
-        {/* Loyalty Points */}
+        {/* Loyalty Points Section */}
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Loyalty Points</h2>
           <p>
-            You earn 10 points for each booking. Once you reach 500 points, you can request a
-            reward by emailing us.
+            You earn 10 points for each booking. Once you reach 500 points, you can request a reward by emailing us.
           </p>
-          <p>
-            Your current points: <strong>{user.points || 0}</strong>
-          </p>
+          <p>Your current points: <strong>{user.points || 0}</strong></p>
           {user.points >= 500 && (
             <p className={styles.loyaltyNote}>
               Congratulations! You have enough points to claim a reward. Please email us to redeem.
@@ -214,7 +188,7 @@ export default function AccountPage() {
           )}
         </div>
 
-        {/* Download Data */}
+        {/* Download Data Section */}
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Download account data</h2>
           <p>Download a PDF copy of all information we have about your account.</p>
@@ -223,7 +197,7 @@ export default function AccountPage() {
           </button>
         </div>
 
-        {/* Close Account */}
+        {/* Close Account Section */}
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Close account</h2>
           <p>Once you close your account, all your data will be deleted permanently.</p>

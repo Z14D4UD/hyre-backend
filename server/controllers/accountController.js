@@ -14,9 +14,7 @@ const getAccount = async (req, res) => {
   try {
     const userId = req.customer.id;
     const user = await Customer.findById(userId);
-    if (!user) {
-      return res.status(404).json({ msg: 'User not found' });
-    }
+    if (!user) return res.status(404).json({ msg: 'User not found' });
     res.json({
       _id: user._id,
       email: user.email,
@@ -32,23 +30,17 @@ const getAccount = async (req, res) => {
   }
 };
 
-// PUT /api/account
+// PUT /api/account - update fields (e.g., transmission)
 const updateAccount = async (req, res) => {
   try {
     const userId = req.customer.id;
     const { transmission } = req.body;
-
-    // Update the user's transmission field
     const updated = await Customer.findByIdAndUpdate(
       userId,
       { transmission },
       { new: true }
     );
-    if (!updated) {
-      return res.status(404).json({ msg: 'User not found' });
-    }
-
-    // Return the updated user data
+    if (!updated) return res.status(404).json({ msg: 'User not found' });
     res.json({
       _id: updated._id,
       email: updated.email,
@@ -67,7 +59,10 @@ const updateAccount = async (req, res) => {
 // POST /api/account/use-affiliate-code
 const useAffiliateCode = async (req, res) => {
   try {
-    // ...
+    const userId = req.customer.id;
+    const { code } = req.body;
+    if (!code) return res.status(400).json({ msg: 'No code provided' });
+    // TODO: Look up affiliate by code, update affiliate balance, etc.
     res.json({ msg: 'Affiliate code applied. You get 10% off your next booking!' });
   } catch (error) {
     console.error('Error in useAffiliateCode:', error);
@@ -75,30 +70,73 @@ const useAffiliateCode = async (req, res) => {
   }
 };
 
-// PUT /api/account/password
+// PUT /api/account/password - change password
 const changePassword = async (req, res) => {
   try {
-    // ...
+    const userId = req.customer.id;
+    const { oldPassword, newPassword } = req.body;
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({ msg: 'Missing old or new password' });
+    }
+    const user = await Customer.findById(userId);
+    if (!user) return res.status(404).json({ msg: 'User not found' });
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) return res.status(400).json({ msg: 'Invalid old password' });
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+    await user.save();
+    res.json({ msg: 'Password updated' });
   } catch (error) {
     console.error('Error in changePassword:', error);
     res.status(500).json({ msg: 'Server error changing password' });
   }
 };
 
-// GET /api/account/download (PDFKit example)
+// GET /api/account/download - download account data as PDF
 const downloadData = async (req, res) => {
   try {
-    // ...
+    const userId = req.customer.id;
+    const user = await Customer.findById(userId).select('-password').lean();
+    if (!user) return res.status(404).json({ msg: 'User not found' });
+    
+    // Create a new PDF document
+    const doc = new PDFDocument();
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename="MyHyreData.pdf"');
+    doc.pipe(res);
+
+    // Add content to the PDF
+    doc.fontSize(18).text('Hyre Account Data', { underline: true });
+    doc.moveDown();
+    doc.fontSize(12).text(`Name: ${user.name || ''}`);
+    doc.text(`Email: ${user.email || ''}`);
+    doc.text(`Location: ${user.location || 'N/A'}`);
+    doc.text(`About: ${user.aboutMe || 'N/A'}`);
+    doc.text(`Phone Number: ${user.phoneNumber || 'N/A'}`);
+    doc.text(`Transmission: ${user.transmission || 'Not set'}`);
+    doc.text(`Points: ${user.points || 0}`);
+    if (user.createdAt) {
+      doc.text(`Joined: ${new Date(user.createdAt).toLocaleDateString()}`);
+    }
+    if (user.updatedAt) {
+      doc.text(`Updated: ${new Date(user.updatedAt).toLocaleDateString()}`);
+    }
+    doc.moveDown();
+    doc.fontSize(10).text('Thank you for using Hyre!', { align: 'center' });
+    doc.end();
   } catch (error) {
     console.error('Error in downloadData:', error);
     res.status(500).json({ msg: 'Server error generating PDF' });
   }
 };
 
-// DELETE /api/account
+// DELETE /api/account - close account
 const closeAccount = async (req, res) => {
   try {
-    // ...
+    const userId = req.customer.id;
+    const deleted = await Customer.findByIdAndDelete(userId);
+    if (!deleted) return res.status(404).json({ msg: 'User not found or already deleted' });
+    res.json({ msg: 'Account closed' });
   } catch (error) {
     console.error('Error in closeAccount:', error);
     res.status(500).json({ msg: 'Server error closing account' });

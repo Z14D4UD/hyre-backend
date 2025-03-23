@@ -1,3 +1,4 @@
+// client/src/pages/ChangePassword.js
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -10,9 +11,9 @@ export default function ChangePassword() {
   const accountType = localStorage.getItem('accountType');
   const isCustomer = token && accountType === 'customer';
 
-  // For toggling side menu
+  // Side menu state
   const [menuOpen, setMenuOpen] = useState(false);
-  const toggleMenu = () => setMenuOpen(!menuOpen);
+  const toggleMenu = () => setMenuOpen(prev => !prev);
   const closeMenu = () => setMenuOpen(false);
 
   const [oldPassword, setOldPassword] = useState('');
@@ -22,7 +23,8 @@ export default function ChangePassword() {
 
   const handleChangePassword = () => {
     if (!oldPassword || !newPassword) {
-      return alert('Please fill in both fields.');
+      alert('Please fill in both fields.');
+      return;
     }
     axios
       .put(
@@ -46,27 +48,19 @@ export default function ChangePassword() {
 
   return (
     <div className={styles.container}>
-      {/* Header with brand + menu icon */}
+      {/* Header */}
       <header className={styles.header}>
-        <div className={styles.logo} onClick={() => navigate('/')}>
-          Hyre
-        </div>
-        <button className={styles.menuIcon} onClick={toggleMenu}>
-          ☰
-        </button>
+        <div className={styles.logo} onClick={() => navigate('/')}>Hyre</div>
+        <button className={styles.menuIcon} onClick={toggleMenu}>☰</button>
       </header>
 
+      {/* Side Menu */}
       {isCustomer && (
-        <SideMenuCustomer
-          isOpen={menuOpen}
-          toggleMenu={toggleMenu}
-          closeMenu={closeMenu}
-        />
+        <SideMenuCustomer isOpen={menuOpen} toggleMenu={toggleMenu} closeMenu={closeMenu} />
       )}
 
       <div className={styles.content}>
         <h1>Change Password</h1>
-
         <div className={styles.fieldGroup}>
           <label className={styles.label}>Old Password</label>
           <input
@@ -76,7 +70,6 @@ export default function ChangePassword() {
             onChange={(e) => setOldPassword(e.target.value)}
           />
         </div>
-
         <div className={styles.fieldGroup}>
           <label className={styles.label}>New Password</label>
           <input
@@ -86,7 +79,6 @@ export default function ChangePassword() {
             onChange={(e) => setNewPassword(e.target.value)}
           />
         </div>
-
         <button className={styles.saveButton} onClick={handleChangePassword}>
           Update Password
         </button>

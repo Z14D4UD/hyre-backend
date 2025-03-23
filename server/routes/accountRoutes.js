@@ -14,7 +14,7 @@ const {
 // GET /api/account - fetch user account info
 router.get('/', authMiddleware, getAccount);
 
-// PUT /api/account - update fields (e.g. transmission)
+// PUT /api/account - update fields (e.g., transmission)
 router.put('/', authMiddleware, updateAccount);
 
 // POST /api/account/use-affiliate-code
