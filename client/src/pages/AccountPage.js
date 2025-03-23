@@ -42,7 +42,6 @@ export default function AccountPage() {
       });
   }, [isCustomer, navigate, backendUrl, token]);
 
-  // Save Transmission preference
   const handleSaveTransmission = () => {
     axios
       .put(
@@ -61,12 +60,11 @@ export default function AccountPage() {
       });
   };
 
-  // Download account data as PDF
   const handleDownloadData = () => {
     axios
       .get(`${backendUrl}/account/download`, {
         headers: { Authorization: `Bearer ${token}` },
-        responseType: 'blob', // important for binary data
+        responseType: 'blob',
       })
       .then((res) => {
         const pdfBlob = new Blob([res.data], { type: 'application/pdf' });
@@ -85,7 +83,6 @@ export default function AccountPage() {
       });
   };
 
-  // Close Account handler
   const handleCloseAccount = () => {
     if (!window.confirm('Are you sure you want to close your account?')) {
       return;
@@ -122,17 +119,12 @@ export default function AccountPage() {
       </header>
 
       {isCustomer && (
-        <SideMenuCustomer
-          isOpen={menuOpen}
-          toggleMenu={toggleMenu}
-          closeMenu={closeMenu}
-        />
+        <SideMenuCustomer isOpen={menuOpen} toggleMenu={toggleMenu} closeMenu={closeMenu} />
       )}
 
       <div className={styles.content}>
         <h1>Account</h1>
 
-        {/* Contact Information */}
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Contact Information</h2>
           <p>
@@ -147,12 +139,9 @@ export default function AccountPage() {
           </button>
         </div>
 
-        {/* Transmission Section */}
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Transmission</h2>
-          <p>
-            Some cars on Hyre do not have automatic transmissions. Can you drive a manual car?
-          </p>
+          <p>Some cars on Hyre do not have automatic transmissions. Can you drive a manual car?</p>
           {user.transmission && user.transmission !== '' ? (
             <p>
               <strong>Your transmission setting:</strong> {user.transmission}
@@ -177,7 +166,6 @@ export default function AccountPage() {
           )}
         </div>
 
-        {/* Loyalty Points Section */}
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Loyalty Points</h2>
           <p>
@@ -193,7 +181,6 @@ export default function AccountPage() {
           )}
         </div>
 
-        {/* Download Data Section */}
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Download account data</h2>
           <p>Download a PDF copy of all information we have about your account.</p>
@@ -202,14 +189,10 @@ export default function AccountPage() {
           </button>
         </div>
 
-        {/* Close Account Section */}
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Close account</h2>
           <p>Once you close your account, all your data will be deleted permanently.</p>
-          <button
-            className={`${styles.button} ${styles.buttonDanger}`}
-            onClick={handleCloseAccount}
-          >
+          <button className={`${styles.button} ${styles.buttonDanger}`} onClick={handleCloseAccount}>
             Close my account
           </button>
         </div>

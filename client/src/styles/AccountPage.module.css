@@ -1,5 +1,4 @@
-/* client/src/pages/AccountPage.module.css */
-
+/* client/src/styles/AccountPage.module.css */
 .container {
     position: relative;
     min-height: 100vh;
@@ -37,7 +36,7 @@
     cursor: pointer;
   }
   
-  /* Main content area below header */
+  /* Main content area */
   .content {
     padding: 5rem 2rem 2rem;
     max-width: 900px;

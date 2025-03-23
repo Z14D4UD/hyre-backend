@@ -9,10 +9,8 @@ const jwt = require('jsonwebtoken');
 // Helper to generate a random token
 const generateToken = () => crypto.randomBytes(20).toString('hex');
 
-// -------------------------
 // GET /api/account
-// -------------------------
-exports.getAccount = async (req, res) => {
+const getAccount = async (req, res) => {
   try {
     const userId = req.customer.id; // assuming auth middleware sets req.customer
     const user = await Customer.findById(userId);
@@ -32,10 +30,8 @@ exports.getAccount = async (req, res) => {
   }
 };
 
-// -------------------------
 // PUT /api/account - update fields (e.g., transmission)
-// -------------------------
-exports.updateAccount = async (req, res) => {
+const updateAccount = async (req, res) => {
   try {
     const userId = req.customer.id;
     const { transmission } = req.body;
@@ -60,10 +56,8 @@ exports.updateAccount = async (req, res) => {
   }
 };
 
-// -------------------------
 // POST /api/account/use-affiliate-code
-// -------------------------
-exports.useAffiliateCode = async (req, res) => {
+const useAffiliateCode = async (req, res) => {
   try {
     const userId = req.customer.id;
     const { code } = req.body;
@@ -76,10 +70,8 @@ exports.useAffiliateCode = async (req, res) => {
   }
 };
 
-// -------------------------
 // PUT /api/account/password - change password
-// -------------------------
-exports.changePassword = async (req, res) => {
+const changePassword = async (req, res) => {
   try {
     const userId = req.customer.id;
     const { oldPassword, newPassword } = req.body;
@@ -88,16 +80,13 @@ exports.changePassword = async (req, res) => {
     }
     const user = await Customer.findById(userId);
     if (!user) return res.status(404).json({ msg: 'User not found' });
-
     const isMatch = await bcrypt.compare(oldPassword, user.password);
     if (!isMatch) {
       return res.status(400).json({ msg: 'Invalid old password' });
     }
-
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(newPassword, salt);
     await user.save();
-
     res.json({ msg: 'Password updated' });
   } catch (error) {
     console.error('Error in changePassword:', error);
@@ -105,10 +94,8 @@ exports.changePassword = async (req, res) => {
   }
 };
 
-// -------------------------
 // GET /api/account/download - download account data as PDF
-// -------------------------
-exports.downloadData = async (req, res) => {
+const downloadData = async (req, res) => {
   try {
     const userId = req.customer.id;
     const user = await Customer.findById(userId).select('-password').lean();
@@ -121,7 +108,7 @@ exports.downloadData = async (req, res) => {
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'attachment; filename="MyHyreData.pdf"');
 
-    // Pipe PDF document to the response stream
+    // Pipe the PDF document to the response stream
     doc.pipe(res);
 
     // Add content to the PDF
@@ -143,7 +130,7 @@ exports.downloadData = async (req, res) => {
     doc.moveDown();
     doc.fontSize(10).text('Thank you for using Hyre!', { align: 'center' });
 
-    // Finalize the PDF
+    // Finalize the PDF and end the stream
     doc.end();
   } catch (error) {
     console.error('Error in downloadData:', error);
@@ -151,10 +138,8 @@ exports.downloadData = async (req, res) => {
   }
 };
 
-// -------------------------
 // DELETE /api/account - close account
-// -------------------------
-exports.closeAccount = async (req, res) => {
+const closeAccount = async (req, res) => {
   try {
     const userId = req.customer.id;
     const deleted = await Customer.findByIdAndDelete(userId);
@@ -169,9 +154,6 @@ exports.closeAccount = async (req, res) => {
   }
 };
 
-// -------------------------
-// EXPORTS
-// -------------------------
 module.exports = {
   getAccount,
   updateAccount,
@@ -179,5 +161,4 @@ module.exports = {
   changePassword,
   downloadData,
   closeAccount,
-  // Other functions (e.g., signup, login, confirmEmail) might be in a separate authController file.
 };

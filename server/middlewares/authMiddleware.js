@@ -18,7 +18,7 @@ module.exports = function (req, res, next) {
     if (decoded.accountType === 'customer') {
       req.customer = { id: decoded.id };
     }
-    // You can also set req.business or req.affiliate for other account types
+    // Add other account types if needed
     next();
   } catch (err) {
     res.status(401).json({ msg: 'Token is not valid' });

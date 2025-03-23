@@ -29,3 +29,4 @@ router.get('/download', authMiddleware, downloadData);
 // DELETE /api/account - close account
 router.delete('/', authMiddleware, closeAccount);
 
+module.exports = router;

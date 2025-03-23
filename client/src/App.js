@@ -1,3 +1,4 @@
+// client/src/App.js
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
@@ -13,8 +14,6 @@ import Search from './components/Search';
 import CarDetails from './pages/CarDetails';
 import Chat from './components/Chat';
 import Profile from './pages/Profile';
-
-// Import new pages
 import AccountPage from './pages/AccountPage';
 import ChangePassword from './pages/ChangePassword';
 
@@ -42,11 +41,11 @@ function App() {
         <Route path="/insurance-legal" element={<div>Insurance & Legal Page</div>} />
         <Route path="/profile" element={<Profile />} />
 
-        {/* New Account and Change Password Routes */}
+        {/* Account and Change Password */}
         <Route path="/account" element={<AccountPage />} />
         <Route path="/change-password" element={<ChangePassword />} />
 
-        {/* Catch-all 404 */}
+        {/* Catch-all */}
         <Route path="*" element={<div>404 - Not Found</div>} />
       </Routes>
     </div>
