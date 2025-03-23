@@ -148,36 +148,54 @@ export default function AccountPage() {
           </button>
         </div>
 
-        {/* Transmission */}
-        <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>Transmission</h2>
-          <p>Some cars on Hyre do not have automatic transmissions. Can you drive a manual car?</p>
+        {/* Transmission Section */}
+<div className={styles.section}>
+  <h2 className={styles.sectionTitle}>Transmission</h2>
+  <p>
+    Some cars on Hyre do not have automatic transmissions. Can you drive a manual car?
+  </p>
 
-          {user.transmission && user.transmission !== '' ? (
-            // If the user has a transmission set, display it:
-            <p>
-              <strong>Your transmission setting:</strong> {user.transmission}
-            </p>
-          ) : (
-            // Otherwise, show a dropdown to set it:
-            <>
-              <select
-                className={styles.selectField}
-                value={transmission}
-                onChange={(e) => setTransmission(e.target.value)}
-              >
-                <option value="">Select your option</option>
-                <option value="No, I am not an expert">No, I am not an expert</option>
-                <option value="Yes, I can drive manual">Yes, I can drive manual</option>
-              </select>
-              <div className={styles.buttonRow}>
-                <button className={styles.button} onClick={handleSaveTransmission}>
-                  Save changes
-                </button>
-              </div>
-            </>
-          )}
-        </div>
+  {user.transmission && user.transmission !== '' ? (
+    <p>
+      <strong>Your transmission setting:</strong> {user.transmission}
+    </p>
+  ) : (
+    <>
+      <select
+        className={styles.selectField}
+        value={transmission}
+        onChange={(e) => setTransmission(e.target.value)}
+      >
+        <option value="">Select your option</option>
+        <option value="No, I am not an expert">No, I am not an expert</option>
+        <option value="Yes, I can drive manual">Yes, I can drive manual</option>
+      </select>
+      <div className={styles.buttonRow}>
+        <button
+          className={styles.button}
+          onClick={() => {
+            axios
+              .put(
+                `${backendUrl}/account`,
+                { transmission },
+                { headers: { Authorization: `Bearer ${token}` } }
+              )
+              .then((res) => {
+                setUser(res.data); // 🔁 update frontend view
+                setTransmission(res.data.transmission || '');
+              })
+              .catch((err) => {
+                console.error('Error updating transmission:', err);
+                alert('Failed to update transmission.');
+              });
+          }}
+        >
+          Save changes
+        </button>
+      </div>
+    </>
+  )}
+</div>
 
         {/* Loyalty Points */}
         <div className={styles.section}>
