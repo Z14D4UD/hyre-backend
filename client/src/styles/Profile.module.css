@@ -1,5 +1,3 @@
-/* client/src/styles/Profile.module.css */
-
 .profileContainer {
   position: relative;
   min-height: 100vh;
@@ -14,7 +12,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 1rem 1.5rem;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   position: fixed;
   top: 0;
   left: 0;
@@ -22,12 +20,14 @@
   z-index: 100;
   background-color: #fff;
 }
+
 .logo {
   font-weight: 700;
   font-size: 1.8rem;
   color: #38b6ff;
   cursor: pointer;
 }
+
 .menuIcon {
   font-size: 1.4rem;
   background: none;
@@ -49,21 +49,23 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  /* removed background-color, box-shadow, border-radius */
   padding: 1rem;
 }
+
 .avatarWrapper {
   margin-bottom: 1rem;
   width: 150px;
   height: 150px;
   position: relative;
 }
+
 .avatar {
   width: 100%;
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
 }
+
 .avatarPlaceholder {
   width: 100%;
   height: 100%;
@@ -73,23 +75,28 @@
   align-items: center;
   justify-content: center;
 }
+
 .avatarInitials {
   font-size: 2rem;
   color: #666;
 }
+
 .profileInfo {
   text-align: center;
 }
+
 .profileName {
   font-size: 1.6rem;
   font-weight: 700;
   margin-bottom: 0.2rem;
 }
+
 .joinedDate {
   font-size: 0.9rem;
   color: #666;
   margin-bottom: 0.2rem;
 }
+
 .location {
   font-size: 0.95rem;
   color: #444;
@@ -101,6 +108,7 @@
   flex-direction: column;
   gap: 0.5rem;
 }
+
 .inputField {
   padding: 0.4rem;
   border: 1px solid #ccc;
@@ -115,11 +123,13 @@
   flex-direction: column;
   gap: 1.5rem;
 }
+
 .editProfileRow {
   display: flex;
   justify-content: flex-end;
   gap: 0.5rem;
 }
+
 .editProfileBtn,
 .saveProfileBtn,
 .cancelProfileBtn {
@@ -131,16 +141,19 @@
   cursor: pointer;
   font-size: 0.9rem;
 }
+
 .editProfileBtn:hover,
 .saveProfileBtn:hover,
 .cancelProfileBtn:hover {
   background-color: #f2f2f2;
 }
+
 .saveProfileBtn {
   background-color: #38b6ff;
   color: #fff;
   border: none;
 }
+
 .saveProfileBtn:hover {
   background-color: #30a2e0;
 }
@@ -150,16 +163,19 @@
   background-color: #fafafa;
   padding: 1rem;
   border-radius: 8px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 }
+
 .aboutSection h3 {
   margin-top: 0;
 }
+
 .aboutText {
   font-size: 0.95rem;
   line-height: 1.4;
   color: #333;
 }
+
 .textArea {
   width: 100%;
   height: 100px;
@@ -174,13 +190,15 @@
   background-color: #fafafa;
   padding: 1rem;
   border-radius: 8px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 }
+
 .verificationSection ul {
   margin: 0;
   padding: 0;
   list-style: none;
 }
+
 .verificationSection li {
   margin-bottom: 0.5rem;
   font-size: 0.95rem;
@@ -191,9 +209,10 @@
   background-color: #fafafa;
   padding: 1rem;
   border-radius: 8px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
   font-size: 0.95rem;
 }
+
 .reviewsSection h4 {
   margin-top: 0;
 }
@@ -211,9 +230,7 @@
     flex-direction: column;
     padding: 6rem 1rem 1rem;
   }
-  .leftColumn {
-    width: 100%;
-  }
+  .leftColumn,
   .rightColumn {
     width: 100%;
   }

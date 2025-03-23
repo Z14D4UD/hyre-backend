@@ -1,5 +1,4 @@
 // client/src/pages/AccountPage.js
-
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -17,14 +16,10 @@ export default function AccountPage() {
   const toggleMenu = () => setMenuOpen(!menuOpen);
   const closeMenu = () => setMenuOpen(false);
 
-  // Basic user data
+  // User data and transmission state
   const [user, setUser] = useState(null);
-
-  // Fields
   const [transmission, setTransmission] = useState('');
-  const [affiliateCode, setAffiliateCode] = useState('');
 
-  // Suppose your backend is here:
   const backendUrl = process.env.REACT_APP_BACKEND_URL || 'https://hyre-backend.onrender.com/api';
 
   useEffect(() => {
@@ -33,8 +28,6 @@ export default function AccountPage() {
       navigate('/');
       return;
     }
-
-    // Fetch account data
     axios
       .get(`${backendUrl}/account`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -49,25 +42,7 @@ export default function AccountPage() {
       });
   }, [isCustomer, navigate, backendUrl, token]);
 
-  // Use affiliate code
-  const handleUseAffiliateCode = () => {
-    if (!affiliateCode) return alert('Please enter a code.');
-    axios
-      .post(
-        `${backendUrl}/account/use-affiliate-code`,
-        { code: affiliateCode },
-        { headers: { Authorization: `Bearer ${token}` } }
-      )
-      .then((res) => {
-        alert(res.data.msg || 'Affiliate code applied!');
-      })
-      .catch((err) => {
-        console.error('Error applying code:', err);
-        alert(err.response?.data?.msg || 'Failed to apply code.');
-      });
-  };
-
-  // Save Transmission
+  // Save Transmission preference
   const handleSaveTransmission = () => {
     axios
       .put(
@@ -77,6 +52,7 @@ export default function AccountPage() {
       )
       .then((res) => {
         setUser(res.data);
+        setTransmission(res.data.transmission || '');
         alert('Transmission preference saved.');
       })
       .catch((err) => {
@@ -85,13 +61,31 @@ export default function AccountPage() {
       });
   };
 
-  // Download My Data
+  // Download account data as PDF
   const handleDownloadData = () => {
-    // This triggers a file download from the backend
-    window.location.href = `${backendUrl}/account/download?token=${token}`;
+    axios
+      .get(`${backendUrl}/account/download`, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob', // important for binary data
+      })
+      .then((res) => {
+        const pdfBlob = new Blob([res.data], { type: 'application/pdf' });
+        const url = window.URL.createObjectURL(pdfBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'MyHyreData.pdf';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      })
+      .catch((err) => {
+        console.error('Error downloading PDF:', err);
+        alert('Failed to download data.');
+      });
   };
 
-  // Close Account
+  // Close Account handler
   const handleCloseAccount = () => {
     if (!window.confirm('Are you sure you want to close your account?')) {
       return;
@@ -118,7 +112,6 @@ export default function AccountPage() {
 
   return (
     <div className={styles.container}>
-      {/* Header with brand + menu icon */}
       <header className={styles.header}>
         <div className={styles.logo} onClick={() => navigate('/')}>
           Hyre
@@ -128,7 +121,6 @@ export default function AccountPage() {
         </button>
       </header>
 
-      {/* Side menu */}
       {isCustomer && (
         <SideMenuCustomer
           isOpen={menuOpen}
@@ -137,7 +129,6 @@ export default function AccountPage() {
         />
       )}
 
-      {/* Main content area */}
       <div className={styles.content}>
         <h1>Account</h1>
 
@@ -156,78 +147,62 @@ export default function AccountPage() {
           </button>
         </div>
 
-        {/* Transmission */}
+        {/* Transmission Section */}
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Transmission</h2>
           <p>
-            Some cars on Turo do not have automatic transmissions. Are you an
-            expert at driving manual transmissions?
+            Some cars on Hyre do not have automatic transmissions. Can you drive a manual car?
           </p>
-          <select
-            className={styles.selectField}
-            value={transmission}
-            onChange={(e) => setTransmission(e.target.value)}
-          >
-            <option value="">Select your skill level</option>
-            <option value="No, I am not an expert">No, I am not an expert</option>
-            <option value="Yes, I am an expert">Yes, I am an expert</option>
-          </select>
-          <div className={styles.buttonRow}>
-            <button className={styles.button} onClick={handleSaveTransmission}>
-              Save changes
-            </button>
-          </div>
+          {user.transmission && user.transmission !== '' ? (
+            <p>
+              <strong>Your transmission setting:</strong> {user.transmission}
+            </p>
+          ) : (
+            <>
+              <select
+                className={styles.selectField}
+                value={transmission}
+                onChange={(e) => setTransmission(e.target.value)}
+              >
+                <option value="">Select your option</option>
+                <option value="No, I am not an expert">No, I am not an expert</option>
+                <option value="Yes, I can drive manual">Yes, I can drive manual</option>
+              </select>
+              <div className={styles.buttonRow}>
+                <button className={styles.button} onClick={handleSaveTransmission}>
+                  Save changes
+                </button>
+              </div>
+            </>
+          )}
         </div>
 
-        {/* Affiliate code */}
-        <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>Use an affiliate code</h2>
-          <p>
-            Enter an affiliate code to get 10% off your next booking, and the
-            affiliate’s balance is updated.
-          </p>
-          <input
-            type="text"
-            className={styles.inputField}
-            placeholder="Enter affiliate code"
-            value={affiliateCode}
-            onChange={(e) => setAffiliateCode(e.target.value)}
-          />
-          <div className={styles.buttonRow}>
-            <button className={styles.button} onClick={handleUseAffiliateCode}>
-              Apply
-            </button>
-          </div>
-        </div>
-
-        {/* Points */}
+        {/* Loyalty Points Section */}
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Loyalty Points</h2>
           <p>
-            You earn 10 points for each booking. Once you reach 500 points, you can
-            request a reward by emailing us.
+            You earn 10 points for each booking. Once you reach 500 points, you can request a reward by emailing us.
           </p>
           <p>
             Your current points: <strong>{user.points || 0}</strong>
           </p>
           {user.points >= 500 && (
             <p className={styles.loyaltyNote}>
-              Congratulations! You have enough points to claim a reward. Please
-              email us to redeem.
+              Congratulations! You have enough points to claim a reward. Please email us to redeem.
             </p>
           )}
         </div>
 
-        {/* Download data */}
+        {/* Download Data Section */}
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Download account data</h2>
-          <p>You can download a copy of all information we have about your account.</p>
+          <p>Download a PDF copy of all information we have about your account.</p>
           <button className={styles.button} onClick={handleDownloadData}>
             Download my data
           </button>
         </div>
 
-        {/* Close account */}
+        {/* Close Account Section */}
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Close account</h2>
           <p>Once you close your account, all your data will be deleted permanently.</p>

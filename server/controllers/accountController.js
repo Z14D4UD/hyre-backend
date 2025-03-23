@@ -1,14 +1,22 @@
 // server/controllers/accountController.js
-const Customer = require('../models/Customer'); // or "User" if your model is named differently
+const Customer = require('../models/Customer');
 const bcrypt = require('bcryptjs');
+const PDFDocument = require('pdfkit');
+const crypto = require('crypto');
+const sendEmail = require('../utils/sendEmail');
+const jwt = require('jsonwebtoken');
 
+// Helper to generate a random token
+const generateToken = () => crypto.randomBytes(20).toString('hex');
+
+// -------------------------
 // GET /api/account
+// -------------------------
 exports.getAccount = async (req, res) => {
   try {
-    const userId = req.customer.id; // or req.user.id if your auth sets it differently
+    const userId = req.customer.id; // assuming auth middleware sets req.customer
     const user = await Customer.findById(userId);
     if (!user) return res.status(404).json({ msg: 'User not found' });
-    // Return relevant fields
     res.json({
       _id: user._id,
       email: user.email,
@@ -24,12 +32,13 @@ exports.getAccount = async (req, res) => {
   }
 };
 
-// PUT /api/account - update fields (e.g. transmission)
+// -------------------------
+// PUT /api/account - update fields (e.g., transmission)
+// -------------------------
 exports.updateAccount = async (req, res) => {
   try {
     const userId = req.customer.id;
     const { transmission } = req.body;
-    // For example, just updating "transmission"
     const updated = await Customer.findByIdAndUpdate(
       userId,
       { transmission },
@@ -51,21 +60,15 @@ exports.updateAccount = async (req, res) => {
   }
 };
 
+// -------------------------
 // POST /api/account/use-affiliate-code
+// -------------------------
 exports.useAffiliateCode = async (req, res) => {
   try {
     const userId = req.customer.id;
     const { code } = req.body;
     if (!code) return res.status(400).json({ msg: 'No code provided' });
-
-    // TODO: Look up affiliate by "code", update affiliate's balance, etc.
-    // Example:
-    // const affiliate = await Affiliate.findOne({ code });
-    // if (!affiliate) return res.status(400).json({ msg: 'Invalid code' });
-    // affiliate.balance += <someAmount>;
-    // await affiliate.save();
-
-    // Also mark that user has 10% off next booking if needed
+    // TODO: Look up affiliate by code, update affiliate balance, etc.
     res.json({ msg: 'Affiliate code applied. You get 10% off your next booking!' });
   } catch (error) {
     console.error('Error in useAffiliateCode:', error);
@@ -73,7 +76,9 @@ exports.useAffiliateCode = async (req, res) => {
   }
 };
 
-// PUT /api/account/password
+// -------------------------
+// PUT /api/account/password - change password
+// -------------------------
 exports.changePassword = async (req, res) => {
   try {
     const userId = req.customer.id;
@@ -84,16 +89,13 @@ exports.changePassword = async (req, res) => {
     const user = await Customer.findById(userId);
     if (!user) return res.status(404).json({ msg: 'User not found' });
 
-    // Compare old password
     const isMatch = await bcrypt.compare(oldPassword, user.password);
     if (!isMatch) {
       return res.status(400).json({ msg: 'Invalid old password' });
     }
 
-    // Hash new password
     const salt = await bcrypt.genSalt(10);
-    const hashed = await bcrypt.hash(newPassword, salt);
-    user.password = hashed;
+    user.password = await bcrypt.hash(newPassword, salt);
     await user.save();
 
     res.json({ msg: 'Password updated' });
@@ -103,35 +105,55 @@ exports.changePassword = async (req, res) => {
   }
 };
 
-// GET /api/account/download
+// -------------------------
+// GET /api/account/download - download account data as PDF
+// -------------------------
 exports.downloadData = async (req, res) => {
   try {
     const userId = req.customer.id;
-    const user = await Customer.findById(userId).lean();
+    const user = await Customer.findById(userId).select('-password').lean();
     if (!user) return res.status(404).json({ msg: 'User not found' });
 
-    // Prepare data
-    const dataToDownload = {
-      name: user.name,
-      email: user.email,
-      transmission: user.transmission || '',
-      points: user.points || 0,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-      // etc.
-    };
+    // Create a new PDF document
+    const doc = new PDFDocument();
 
-    const jsonStr = JSON.stringify(dataToDownload, null, 2);
-    res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Content-Disposition', 'attachment; filename="myData.json"');
-    res.send(jsonStr);
+    // Set headers to prompt PDF download
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename="MyHyreData.pdf"');
+
+    // Pipe PDF document to the response stream
+    doc.pipe(res);
+
+    // Add content to the PDF
+    doc.fontSize(18).text('Hyre Account Data', { underline: true });
+    doc.moveDown();
+    doc.fontSize(12).text(`Name: ${user.name || ''}`);
+    doc.text(`Email: ${user.email || ''}`);
+    doc.text(`Location: ${user.location || 'N/A'}`);
+    doc.text(`About: ${user.aboutMe || 'N/A'}`);
+    doc.text(`Phone Number: ${user.phoneNumber || 'N/A'}`);
+    doc.text(`Transmission: ${user.transmission || 'Not set'}`);
+    doc.text(`Points: ${user.points || 0}`);
+    if (user.createdAt) {
+      doc.text(`Joined: ${new Date(user.createdAt).toLocaleDateString()}`);
+    }
+    if (user.updatedAt) {
+      doc.text(`Updated: ${new Date(user.updatedAt).toLocaleDateString()}`);
+    }
+    doc.moveDown();
+    doc.fontSize(10).text('Thank you for using Hyre!', { align: 'center' });
+
+    // Finalize the PDF
+    doc.end();
   } catch (error) {
     console.error('Error in downloadData:', error);
-    res.status(500).json({ msg: 'Server error downloading data' });
+    res.status(500).json({ msg: 'Server error generating PDF' });
   }
 };
 
-// DELETE /api/account
+// -------------------------
+// DELETE /api/account - close account
+// -------------------------
 exports.closeAccount = async (req, res) => {
   try {
     const userId = req.customer.id;
@@ -139,10 +161,23 @@ exports.closeAccount = async (req, res) => {
     if (!deleted) {
       return res.status(404).json({ msg: 'User not found or already deleted' });
     }
-    // TODO: remove any associated bookings, etc.
+    // TODO: Remove associated data (e.g., bookings) if needed
     res.json({ msg: 'Account closed' });
   } catch (error) {
     console.error('Error in closeAccount:', error);
     res.status(500).json({ msg: 'Server error closing account' });
   }
+};
+
+// -------------------------
+// EXPORTS
+// -------------------------
+module.exports = {
+  getAccount,
+  updateAccount,
+  useAffiliateCode,
+  changePassword,
+  downloadData,
+  closeAccount,
+  // Other functions (e.g., signup, login, confirmEmail) might be in a separate authController file.
 };

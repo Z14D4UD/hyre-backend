@@ -1,4 +1,3 @@
-// client/src/components/SideMenuCustomer.js
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -42,11 +41,12 @@ export default function SideMenuCustomer({ isOpen, toggleMenu, closeMenu }) {
       </div>
 
       <ul className={styles.menuList}>
-        <li className={styles.menuItem}>
+        {/* Profile link */}
+        <li className={styles.menuItem} onClick={() => goTo('/profile')}>
           <FaUser className={styles.icon} />
           <span>Profile</span>
         </li>
-        {/* Add an Account link */}
+        {/* Account link */}
         <li className={styles.menuItem} onClick={() => goTo('/account')}>
           <FaUserCog className={styles.icon} />
           <span>Account</span>

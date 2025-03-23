@@ -1,4 +1,3 @@
-// client/src/App.js
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
@@ -15,7 +14,7 @@ import CarDetails from './pages/CarDetails';
 import Chat from './components/Chat';
 import Profile from './pages/Profile';
 
-// 1) Import your Account and ChangePassword pages:
+// Import new pages
 import AccountPage from './pages/AccountPage';
 import ChangePassword from './pages/ChangePassword';
 
@@ -43,7 +42,7 @@ function App() {
         <Route path="/insurance-legal" element={<div>Insurance & Legal Page</div>} />
         <Route path="/profile" element={<Profile />} />
 
-        {/* 2) Add the new Account and Change Password routes: */}
+        {/* New Account and Change Password Routes */}
         <Route path="/account" element={<AccountPage />} />
         <Route path="/change-password" element={<ChangePassword />} />
 

@@ -1,4 +1,3 @@
-// client/src/pages/Profile.js
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -31,13 +30,12 @@ export default function Profile() {
   const [editLocation, setEditLocation] = useState('');
   const [editAboutMe, setEditAboutMe] = useState('');
   const [editPhone, setEditPhone] = useState('');
-  const [editEmail, setEditEmail] = useState(''); // new state for email
+  const [editEmail, setEditEmail] = useState('');
   const [avatarFile, setAvatarFile] = useState(null);
 
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
   console.log('Backend URL:', backendUrl);
 
-  // Load profile data on mount
   useEffect(() => {
     axios
       .get(`${backendUrl}/customer/me`, {
@@ -58,21 +56,19 @@ export default function Profile() {
       });
   }, [backendUrl, token]);
 
-  // Handle avatar file selection
   const handleAvatarChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       setAvatarFile(e.target.files[0]);
     }
   };
 
-  // Save profile updates (including email)
   const handleSaveProfile = () => {
     const formData = new FormData();
     formData.append('name', editName);
     formData.append('location', editLocation);
     formData.append('aboutMe', editAboutMe);
     formData.append('phoneNumber', editPhone);
-    formData.append('email', editEmail); // append email
+    formData.append('email', editEmail);
 
     if (avatarFile) {
       formData.append('avatar', avatarFile);
@@ -85,11 +81,7 @@ export default function Profile() {
           'Content-Type': 'multipart/form-data',
         },
       })
-
-      
       .then((res) => {
-        console.log('PUT response data:', res.data); // <--- Must be inside the .then callback
-
         console.log('Profile updated:', res.data);
         setUser(res.data);
         setIsEditing(false);
@@ -102,7 +94,6 @@ export default function Profile() {
       });
   };
 
-  // Cancel editing and revert changes
   const handleCancelEdit = () => {
     setIsEditing(false);
     if (user) {
@@ -121,7 +112,6 @@ export default function Profile() {
 
   return (
     <div className={styles.profileContainer}>
-      {/* Header */}
       <header className={styles.header}>
         <div className={styles.logo} onClick={() => navigate('/')}>
           Hyre
@@ -139,9 +129,7 @@ export default function Profile() {
         />
       )}
 
-      {/* Main Profile Content */}
       <div className={styles.profileContent}>
-        {/* Left Column: Avatar & Basic Info */}
         <div className={styles.leftColumn}>
           <div className={styles.avatarWrapper}>
             {user.avatarUrl ? (
@@ -188,7 +176,6 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Right Column: About, Contact Info, Reviews */}
         <div className={styles.rightColumn}>
           <div className={styles.editProfileRow}>
             {!isEditing ? (

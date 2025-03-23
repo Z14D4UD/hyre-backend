@@ -1,4 +1,3 @@
-// client/src/pages/ChangePassword.js
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -26,7 +25,8 @@ export default function ChangePassword() {
       return alert('Please fill in both fields.');
     }
     axios
-      .put(`${backendUrl}/account/password`,
+      .put(
+        `${backendUrl}/account/password`,
         { oldPassword, newPassword },
         { headers: { Authorization: `Bearer ${token}` } }
       )
@@ -40,7 +40,6 @@ export default function ChangePassword() {
       });
   };
 
-  // If user is not a customer, redirect or show a message
   if (!isCustomer) {
     return <div className={styles.container}>Please log in as a customer.</div>;
   }
@@ -57,7 +56,6 @@ export default function ChangePassword() {
         </button>
       </header>
 
-      {/* Side menu */}
       {isCustomer && (
         <SideMenuCustomer
           isOpen={menuOpen}

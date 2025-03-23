@@ -14,19 +14,19 @@ const {
 // GET /api/account - fetch user account info
 router.get('/', authMiddleware, getAccount);
 
-// PUT /api/account - update fields (transmission, etc.)
+// PUT /api/account - update fields (e.g., transmission)
 router.put('/', authMiddleware, updateAccount);
 
 // POST /api/account/use-affiliate-code
 router.post('/use-affiliate-code', authMiddleware, useAffiliateCode);
 
-// PUT /api/account/password
+// PUT /api/account/password - change password
 router.put('/password', authMiddleware, changePassword);
 
-// GET /api/account/download
+// GET /api/account/download - download account data as PDF
 router.get('/download', authMiddleware, downloadData);
 
-// DELETE /api/account
+// DELETE /api/account - close account
 router.delete('/', authMiddleware, closeAccount);
 
 module.exports = router;
