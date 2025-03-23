@@ -19,6 +19,8 @@ const carRoutes = require('./routes/carRoutes');
 const businessRoutes = require('./routes/businessRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const affiliateRoutes = require('./routes/affiliateRoutes');
+const accountRoutes = require('./routes/accountRoutes'); 
+
 
 const app = express();
 const server = http.createServer(app);
@@ -67,6 +69,7 @@ app.use('/api/cars', carRoutes);
 app.use('/api/business', businessRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/affiliates', affiliateRoutes);
+app.use('/api/account', accountRoutes);
 
 // 7) Setup Socket.io with matching CORS options
 const io = new Server(server, {
