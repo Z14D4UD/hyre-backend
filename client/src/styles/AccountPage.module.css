@@ -1,4 +1,5 @@
 /* client/src/styles/AccountPage.module.css */
+
 .container {
     position: relative;
     min-height: 100vh;
@@ -36,7 +37,6 @@
     cursor: pointer;
   }
   
-  /* Main content area */
   .content {
     padding: 5rem 2rem 2rem;
     max-width: 900px;
@@ -58,7 +58,6 @@
     margin-bottom: 0.5rem;
   }
   
-  .inputField,
   .selectField {
     width: 100%;
     padding: 0.5rem;
@@ -111,18 +110,5 @@
   .loyaltyNote {
     color: green;
     margin-top: 0.5rem;
-  }
-  
-  /* Responsive adjustments */
-  @media (max-width: 600px) {
-    .content {
-      padding: 6rem 1rem 1rem;
-    }
-    .logo {
-      font-size: 1.4rem;
-    }
-    .menuIcon {
-      font-size: 1.6rem;
-    }
   }
   

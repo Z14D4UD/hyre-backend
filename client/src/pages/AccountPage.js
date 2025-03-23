@@ -11,15 +11,16 @@ export default function AccountPage() {
   const accountType = localStorage.getItem('accountType');
   const isCustomer = token && accountType === 'customer';
 
-  // Side menu toggling
+  // For toggling the side menu
   const [menuOpen, setMenuOpen] = useState(false);
   const toggleMenu = () => setMenuOpen(!menuOpen);
   const closeMenu = () => setMenuOpen(false);
 
-  // User data and transmission state
+  // Local user data and transmission
   const [user, setUser] = useState(null);
   const [transmission, setTransmission] = useState('');
 
+  // Adjust this URL if needed
   const backendUrl = process.env.REACT_APP_BACKEND_URL || 'https://hyre-backend.onrender.com/api';
 
   useEffect(() => {
@@ -28,6 +29,8 @@ export default function AccountPage() {
       navigate('/');
       return;
     }
+
+    // Fetch account data from /api/account
     axios
       .get(`${backendUrl}/account`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -42,6 +45,7 @@ export default function AccountPage() {
       });
   }, [isCustomer, navigate, backendUrl, token]);
 
+  // Save Transmission to DB
   const handleSaveTransmission = () => {
     axios
       .put(
@@ -50,6 +54,7 @@ export default function AccountPage() {
         { headers: { Authorization: `Bearer ${token}` } }
       )
       .then((res) => {
+        // The server responds with the updated user object
         setUser(res.data);
         setTransmission(res.data.transmission || '');
         alert('Transmission preference saved.');
@@ -60,11 +65,12 @@ export default function AccountPage() {
       });
   };
 
+  // Download account data as PDF
   const handleDownloadData = () => {
     axios
       .get(`${backendUrl}/account/download`, {
         headers: { Authorization: `Bearer ${token}` },
-        responseType: 'blob',
+        responseType: 'blob', // important for binary data
       })
       .then((res) => {
         const pdfBlob = new Blob([res.data], { type: 'application/pdf' });
@@ -83,10 +89,10 @@ export default function AccountPage() {
       });
   };
 
+  // Close account
   const handleCloseAccount = () => {
-    if (!window.confirm('Are you sure you want to close your account?')) {
-      return;
-    }
+    if (!window.confirm('Are you sure you want to close your account?')) return;
+
     axios
       .delete(`${backendUrl}/account`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -109,6 +115,7 @@ export default function AccountPage() {
 
   return (
     <div className={styles.container}>
+      {/* Header */}
       <header className={styles.header}>
         <div className={styles.logo} onClick={() => navigate('/')}>
           Hyre
@@ -118,6 +125,7 @@ export default function AccountPage() {
         </button>
       </header>
 
+      {/* Side Menu */}
       {isCustomer && (
         <SideMenuCustomer isOpen={menuOpen} toggleMenu={toggleMenu} closeMenu={closeMenu} />
       )}
@@ -125,6 +133,7 @@ export default function AccountPage() {
       <div className={styles.content}>
         <h1>Account</h1>
 
+        {/* Contact Info */}
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Contact Information</h2>
           <p>
@@ -139,14 +148,18 @@ export default function AccountPage() {
           </button>
         </div>
 
+        {/* Transmission */}
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Transmission</h2>
           <p>Some cars on Hyre do not have automatic transmissions. Can you drive a manual car?</p>
+
           {user.transmission && user.transmission !== '' ? (
+            // If the user has a transmission set, display it:
             <p>
               <strong>Your transmission setting:</strong> {user.transmission}
             </p>
           ) : (
+            // Otherwise, show a dropdown to set it:
             <>
               <select
                 className={styles.selectField}
@@ -166,10 +179,12 @@ export default function AccountPage() {
           )}
         </div>
 
+        {/* Loyalty Points */}
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Loyalty Points</h2>
           <p>
-            You earn 10 points for each booking. Once you reach 500 points, you can request a reward by emailing us.
+            You earn 10 points for each booking. Once you reach 500 points, you can request a
+            reward by emailing us.
           </p>
           <p>
             Your current points: <strong>{user.points || 0}</strong>
@@ -181,6 +196,7 @@ export default function AccountPage() {
           )}
         </div>
 
+        {/* Download Data */}
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Download account data</h2>
           <p>Download a PDF copy of all information we have about your account.</p>
@@ -189,6 +205,7 @@ export default function AccountPage() {
           </button>
         </div>
 
+        {/* Close Account */}
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Close account</h2>
           <p>Once you close your account, all your data will be deleted permanently.</p>
