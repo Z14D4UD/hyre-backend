@@ -5,24 +5,26 @@ const MessageSchema = new mongoose.Schema({
   conversation: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Conversation',
-    required: true,
+    required: true
   },
   sender: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
-    // For advanced usage, we might do refPath: 'senderModel',
+    refPath: 'senderModel'
   },
   senderModel: {
     type: String,
     required: true,
-    enum: ['Customer', 'Business', 'Affiliate'], 
-    // adapt to your logic
+    enum: ['Customer', 'Business', 'Affiliate']
   },
   text: { type: String },
   attachment: { type: String }, // file path if an attachment is uploaded
 
-  // If you want advanced read-tracking per message:
-  // readBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Customer' }],
+  // NEW: track which user IDs have read this message
+  readBy: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Customer' // or if you have a union type, you'll need a different approach
+  }],
 }, { timestamps: true });
 
 module.exports = mongoose.model('Message', MessageSchema);

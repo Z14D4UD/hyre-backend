@@ -1,47 +1,52 @@
 // server/controllers/chatController.js
-
 const Conversation = require('../models/Conversation');
 const Message = require('../models/Message');
-const multer = require('multer');
-const path = require('path');
+const Booking = require('../models/Booking'); // or wherever your reservation is stored
 
 /**
- * GET /api/chat/conversations
- * Return a list of conversations the user is part of,
- * including their unreadCount, lastMessage, updatedAt, etc.
+ * GET /api/chat/conversations?filter=all|unread
+ * Return the list of conversations for the current user, optionally filtering by unread
  */
 exports.getConversations = async (req, res) => {
   try {
-    // Identify the user’s _id (customer or business)
-    const userId = req.customer ? req.customer.id : req.business.id;
+    // If you support both business & customer, pick the ID from whichever is set
+    const userId = req.customer ? req.customer.id
+                  : req.business ? req.business.id
+                  : null;
+
     if (!userId) {
-      return res.status(403).json({ msg: 'Not authorized' });
+      return res.status(401).json({ msg: 'Not authorized' });
     }
 
-    // Find conversations where participants.user == userId
-    const conversations = await Conversation.find({
-      'participants.user': userId,
-    })
+    // Basic conversation query
+    let query = { participants: userId };
+
+    // If user wants to filter by “unread,” find conversations that have at least one unread message for this user
+    // For a simple approach, you can store readBy array in each message. We'll do a naive approach:
+    //  - get all conversations
+    //  - if filter=unread, we only keep those that have at least one message not read by user
+    const filter = req.query.filter || 'all'; // e.g. “all” or “unread”
+
+    let conversations = await Conversation.find(query)
       .sort({ updatedAt: -1 })
       .lean();
 
-    // We can do a map to figure out the unreadCount for this user
-    const results = conversations.map((conv) => {
-      // find participant subdoc for this user
-      const part = conv.participants.find((p) => p.user.toString() === userId);
-      const unreadCount = part ? part.unreadCount : 0;
+    // Attach “unreadCount” or “hasUnread” to each conversation
+    for (let conv of conversations) {
+      // Count messages that do not have userId in readBy
+      const unreadCount = await Message.countDocuments({
+        conversation: conv._id,
+        'readBy': { $ne: userId }
+      });
+      conv.unreadCount = unreadCount;
+    }
 
-      return {
-        _id: conv._id,
-        name: conv.name || 'Conversation',
-        lastMessage: conv.lastMessage || '',
-        updatedAt: conv.updatedAt,
-        // participants: conv.participants, // optional
-        unreadCount,
-      };
-    });
+    // If filter=unread, only keep convs with unreadCount>0
+    if (filter === 'unread') {
+      conversations = conversations.filter((c) => c.unreadCount > 0);
+    }
 
-    res.json(results);
+    res.json(conversations);
   } catch (error) {
     console.error('Error fetching conversations:', error);
     res.status(500).json({ msg: 'Server error fetching conversations' });
@@ -50,19 +55,34 @@ exports.getConversations = async (req, res) => {
 
 /**
  * GET /api/chat/conversations/:conversationId/messages
- * Return the messages in this conversation
+ * Return messages in a conversation. Also optionally attach booking/reservation info if the conversation references it
  */
 exports.getMessages = async (req, res) => {
   try {
     const { conversationId } = req.params;
-    // We can also verify that user is part of this conversation, if needed
-    // For now, we skip that step.
+
+    // Optionally fetch conversation to see if there's a booking/reservation
+    const conversation = await Conversation.findById(conversationId).lean();
+    if (!conversation) {
+      return res.status(404).json({ msg: 'Conversation not found' });
+    }
+
+    // If conversation has a bookingId, we can fetch the booking details to show
+    let bookingDetails = null;
+    if (conversation.bookingId) {
+      // For example, if your booking is stored in a Booking model
+      bookingDetails = await Booking.findById(conversation.bookingId).lean();
+    }
 
     const messages = await Message.find({ conversation: conversationId })
       .sort({ createdAt: 1 })
       .lean();
 
-    res.json(messages);
+    res.json({
+      conversation,
+      messages,
+      bookingDetails
+    });
   } catch (error) {
     console.error('Error fetching messages:', error);
     res.status(500).json({ msg: 'Server error fetching messages' });
@@ -71,51 +91,40 @@ exports.getMessages = async (req, res) => {
 
 /**
  * POST /api/chat/conversations/:conversationId/messages
- * Send a new message (with optional text + attachment).
- * We'll increment unreadCount for the other participants.
+ * Create a new message with optional attachment
  */
 exports.sendMessage = async (req, res) => {
   try {
     const { conversationId } = req.params;
-    const userId = req.customer ? req.customer.id : req.business.id;
-    const senderModel = req.customer ? 'Customer' : 'Business';
+    const userId = req.customer ? req.customer.id
+                  : req.business ? req.business.id
+                  : null;
+    const senderModel = req.customer ? 'Customer'
+                      : req.business ? 'Business'
+                      : null;
+
+    if (!userId) {
+      return res.status(401).json({ msg: 'Not authorized' });
+    }
 
     const { text } = req.body;
-    // If we have an attachment, it's in req.file.path
-    const attachmentPath = req.file ? req.file.path : null;
 
-    // Create and save the message
+    // Create new message
     const newMessage = new Message({
       conversation: conversationId,
       sender: userId,
       senderModel,
-      text: text,
-      attachment: attachmentPath,
+      text: text || '',
+      attachment: req.file ? req.file.path : undefined,
+      readBy: [userId], // Mark as read by the sender
     });
     await newMessage.save();
 
-    // Update conversation:
-    // - lastMessage = text (or "Attachment" if text is empty)
-    // - updatedAt = now
-    // - increment unreadCount for participants who are not sender
-    const convo = await Conversation.findById(conversationId);
-    if (!convo) {
-      return res.status(404).json({ msg: 'Conversation not found' });
-    }
-
-    // lastMessage
-    const lastMessageText = text || (attachmentPath ? 'Attachment' : '');
-    convo.lastMessage = lastMessageText;
-    convo.updatedAt = new Date();
-
-    // Increase unreadCount for the other participants
-    convo.participants.forEach((p) => {
-      if (p.user.toString() !== userId) {
-        p.unreadCount = (p.unreadCount || 0) + 1;
-      }
+    // Update conversation's last message and timestamp
+    await Conversation.findByIdAndUpdate(conversationId, {
+      lastMessage: text,
+      updatedAt: new Date(),
     });
-
-    await convo.save();
 
     res.json(newMessage);
   } catch (error) {
@@ -125,28 +134,55 @@ exports.sendMessage = async (req, res) => {
 };
 
 /**
- * PUT /api/chat/conversations/:conversationId/mark-read
- * Mark conversation as read for the current user.
+ * PUT /api/chat/conversations/:conversationId/messages/:messageId/read
+ * Mark a single message as read by the current user
  */
-exports.markConversationRead = async (req, res) => {
+exports.markMessageRead = async (req, res) => {
   try {
-    const { conversationId } = req.params;
-    const userId = req.customer ? req.customer.id : req.business.id;
+    const { conversationId, messageId } = req.params;
+    const userId = req.customer ? req.customer.id
+                  : req.business ? req.business.id
+                  : null;
 
-    const convo = await Conversation.findById(conversationId);
-    if (!convo) {
-      return res.status(404).json({ msg: 'Conversation not found' });
+    const message = await Message.findOne({
+      _id: messageId,
+      conversation: conversationId
+    });
+    if (!message) {
+      return res.status(404).json({ msg: 'Message not found' });
     }
 
-    // set unreadCount = 0 for this user
-    convo.participants.forEach((p) => {
-      if (p.user.toString() === userId) {
-        p.unreadCount = 0;
-      }
-    });
-    await convo.save();
+    // If userId is not in readBy, add it
+    if (!message.readBy.includes(userId)) {
+      message.readBy.push(userId);
+      await message.save();
+    }
 
-    return res.json({ success: true });
+    res.json({ msg: 'Message marked as read' });
+  } catch (error) {
+    console.error('Error marking message read:', error);
+    res.status(500).json({ msg: 'Server error marking message read' });
+  }
+};
+
+/**
+ * PUT /api/chat/conversations/:conversationId/read
+ * Mark all messages in a conversation as read
+ */
+exports.markAllReadInConversation = async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const userId = req.customer ? req.customer.id
+                  : req.business ? req.business.id
+                  : null;
+
+    // Mark all messages in conversation as read
+    await Message.updateMany(
+      { conversation: conversationId, readBy: { $ne: userId } },
+      { $push: { readBy: userId } }
+    );
+
+    res.json({ msg: 'All messages in conversation marked as read' });
   } catch (error) {
     console.error('Error marking conversation read:', error);
     res.status(500).json({ msg: 'Server error marking conversation read' });
