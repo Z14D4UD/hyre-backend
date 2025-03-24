@@ -27,13 +27,7 @@ exports.getCustomerProfile = async (req, res) => {
 
 exports.updateCustomerProfile = async (req, res) => {
   try {
-    // Log what the server receives in the request body (aboutMe, location, etc.)
-    console.log('Received update data (req.body):', req.body);
-    // Log any uploaded file data (avatar)
-    console.log('Received file (req.file):', req.file);
-
     const customerId = req.customer.id;
-
     // Collect fields from req.body including email
     const updateData = {
       name: req.body.name,
@@ -43,22 +37,15 @@ exports.updateCustomerProfile = async (req, res) => {
       email: req.body.email, // new email update
     };
 
-    // If a new avatar is uploaded, update avatarUrl
     if (req.file) {
       updateData.avatarUrl = req.file.path; // e.g., "uploads/avatars/xyz.jpg"
     }
-
-    // Log what we're sending to Mongoose
-    console.log('Update data for Mongoose:', updateData);
 
     const updatedCustomer = await Customer.findByIdAndUpdate(
       customerId,
       updateData,
       { new: true }
     ).select('-password');
-
-    // Log the result from Mongoose
-    console.log('Updated customer from DB:', updatedCustomer);
 
     if (!updatedCustomer) {
       return res.status(404).json({ msg: 'Customer not found' });

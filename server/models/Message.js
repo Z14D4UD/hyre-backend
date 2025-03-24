@@ -6,6 +6,7 @@ const MessageSchema = new mongoose.Schema({
   senderModel: { type: String, required: true, enum: ['Customer', 'Business', 'Affiliate'] },
   text: { type: String },
   attachment: { type: String }, // file path if an attachment is uploaded
+  read: { type: Boolean, default: false }  // new field to mark message as read
 }, { timestamps: true });
 
 module.exports = mongoose.model('Message', MessageSchema);

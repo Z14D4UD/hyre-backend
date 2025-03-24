@@ -1,3 +1,4 @@
+// client/src/pages/MessagesPage.js
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -8,70 +9,88 @@ export default function MessagesPage() {
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
   const accountType = localStorage.getItem('accountType');
-  const isUser = token && (accountType === 'customer' || accountType === 'business');
+  const isCustomer = token && accountType === 'customer';
 
+  // Redirect if not a customer
+  useEffect(() => {
+    if (!isCustomer) {
+      alert('Please log in as a customer to view your messages.');
+      navigate('/');
+    }
+  }, [isCustomer, navigate]);
+
+  // Side menu state
   const [menuOpen, setMenuOpen] = useState(false);
   const toggleMenu = () => setMenuOpen(!menuOpen);
   const closeMenu = () => setMenuOpen(false);
 
+  // Conversations and messages
+  const [conversations, setConversations] = useState([]);
+  const [selectedConv, setSelectedConv] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [attachment, setAttachment] = useState(null);
+  const messagesEndRef = useRef(null);
+
+  // Replace with your backend URL from .env
   const backendUrl = process.env.REACT_APP_BACKEND_URL || 'https://hyre-backend.onrender.com/api';
 
-  const [conversations, setConversations] = useState([]);
-  const [activeConversation, setActiveConversation] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [messageText, setMessageText] = useState('');
-  const [attachment, setAttachment] = useState(null);
-
-  const chatThreadRef = useRef(null);
-
+  // Fetch conversations on mount
   useEffect(() => {
-    if (!isUser) {
-      alert('Please log in to view messages.');
-      navigate('/');
-      return;
-    }
     axios
-      .get(`${backendUrl}/chat/conversations`, { headers: { Authorization: `Bearer ${token}` } })
+      .get(`${backendUrl}/chat/conversations`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
       .then((res) => {
         setConversations(res.data);
         if (res.data.length > 0) {
-          handleSelectConversation(res.data[0]);
+          selectConversation(res.data[0]._id);
         }
       })
       .catch((err) => {
         console.error('Error fetching conversations:', err);
-        alert('Failed to fetch conversations.');
+        alert('Failed to load conversations.');
       });
-  }, [isUser, backendUrl, token, navigate]);
+  }, [backendUrl, token]);
 
-  const handleSelectConversation = (convo) => {
-    setActiveConversation(convo);
+  // Fetch messages when a conversation is selected
+  const selectConversation = (conversationId) => {
+    setSelectedConv(conversationId);
     axios
-      .get(`${backendUrl}/chat/conversations/${convo._id}/messages`, { headers: { Authorization: `Bearer ${token}` } })
+      .get(`${backendUrl}/chat/conversations/${conversationId}/messages`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
       .then((res) => {
         setMessages(res.data);
+        scrollToBottom();
       })
       .catch((err) => {
         console.error('Error fetching messages:', err);
-        alert('Failed to fetch messages.');
+        alert('Failed to load messages.');
       });
   };
 
-  const handleAttachment = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setAttachment(e.target.files[0]);
+  // Scroll chat window to bottom
+  const scrollToBottom = () => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  // Handle sending a message
   const handleSendMessage = () => {
-    if (!messageText && !attachment) return;
+    if (!newMessage && !attachment) return alert('Please enter a message or attach a file.');
     const formData = new FormData();
-    formData.append('text', messageText);
+    formData.append('text', newMessage);
     if (attachment) {
       formData.append('attachment', attachment);
     }
     axios
-      .post(`${backendUrl}/chat/conversations/${activeConversation._id}/messages`, formData, {
+      .post(`${backendUrl}/chat/conversations/${selectedConv}/messages`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data',
@@ -79,7 +98,7 @@ export default function MessagesPage() {
       })
       .then((res) => {
         setMessages((prev) => [...prev, res.data]);
-        setMessageText('');
+        setNewMessage('');
         setAttachment(null);
       })
       .catch((err) => {
@@ -88,93 +107,104 @@ export default function MessagesPage() {
       });
   };
 
-  useEffect(() => {
-    if (chatThreadRef.current) {
-      chatThreadRef.current.scrollTop = chatThreadRef.current.scrollHeight;
+  // Handle file change
+  const handleAttachmentChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setAttachment(e.target.files[0]);
     }
-  }, [messages]);
+  };
 
-  if (!isUser) return null;
+  // Render each conversation with unread count and "Show Reservation" if available
+  const renderConversationItem = (conv) => (
+    <div
+      key={conv._id}
+      className={`${styles.conversationItem} ${selectedConv === conv._id ? styles.activeConv : ''}`}
+      onClick={() => selectConversation(conv._id)}
+    >
+      <div className={styles.convTitle}>
+        {conv.name || conv.participants.join(', ')}
+      </div>
+      {conv.unreadCount > 0 && (
+        <div className={styles.unreadBadge}>{conv.unreadCount}</div>
+      )}
+      {conv.reservationId && (
+        <button className={styles.showReservationBtn} onClick={() => navigate(`/reservation/${conv.reservationId}`)}>
+          Show Reservation
+        </button>
+      )}
+      {conv.lastMessage && (
+        <div className={styles.lastMessage}>
+          {conv.lastMessage.length > 40 ? conv.lastMessage.substring(0, 40) + '...' : conv.lastMessage}
+        </div>
+      )}
+    </div>
+  );
 
   return (
-    <div className={styles.messagesContainer}>
+    <div className={styles.container}>
+      {/* Header */}
       <header className={styles.header}>
         <div className={styles.logo} onClick={() => navigate('/')}>Hyre</div>
         <button className={styles.menuIcon} onClick={toggleMenu}>☰</button>
       </header>
-      {(accountType === 'customer' || accountType === 'business') && (
+
+      {/* Side Menu */}
+      {isCustomer && (
         <SideMenuCustomer isOpen={menuOpen} toggleMenu={toggleMenu} closeMenu={closeMenu} />
       )}
+
+      {/* Main Content */}
       <div className={styles.mainContent}>
-        <div className={styles.leftColumn}>
-          <div className={styles.conversationsHeader}>
-            <h2>Messages</h2>
-          </div>
-          <div className={styles.conversationList}>
-            {conversations.map((convo) => (
-              <div
-                key={convo._id}
-                className={activeConversation && convo._id === activeConversation._id ? styles.conversationActive : styles.conversationItem}
-                onClick={() => handleSelectConversation(convo)}
-              >
-                <div className={styles.conversationName}>{convo.name || 'Conversation'}</div>
-                <div className={styles.conversationLastMessage}>{convo.lastMessage}</div>
-                <div className={styles.conversationDate}>{new Date(convo.updatedAt).toLocaleDateString()}</div>
-              </div>
-            ))}
-          </div>
+        <div className={styles.sidebar}>
+          <h2>Conversations</h2>
+          {conversations.length === 0 ? (
+            <p>No conversations yet.</p>
+          ) : (
+            conversations.map(renderConversationItem)
+          )}
         </div>
 
-        <div className={styles.centerColumn}>
-          {activeConversation ? (
+        <div className={styles.chatWindow}>
+          {selectedConv ? (
             <>
-              <div className={styles.chatHeader}>
-                <div className={styles.chatHeaderName}>{activeConversation.name || 'Chat'}</div>
-              </div>
-              <div className={styles.chatThread} ref={chatThreadRef}>
+              <div className={styles.messagesContainer}>
                 {messages.map((msg) => (
-                  <div key={msg._id} className={msg.sender === token ? styles.messageRowRight : styles.messageRowLeft}>
-                    <div className={styles.messageBubble}>
-                      <div className={styles.messageText}>{msg.text}</div>
-                      {msg.attachment && (
-                        <div className={styles.attachment}>Attachment: {msg.attachment}</div>
-                      )}
-                      <div className={styles.messageMeta}>
-                        {msg.senderName || 'Sender'} • {new Date(msg.createdAt).toLocaleString()}
+                  <div
+                    key={msg._id}
+                    className={`${styles.messageItem} ${msg.senderModel === 'Customer' ? styles.sent : styles.received}`}
+                  >
+                    {msg.attachment && (
+                      <div className={styles.attachmentPreview}>
+                        <a href={`${backendUrl}/${msg.attachment}`} target="_blank" rel="noopener noreferrer">
+                          View Attachment
+                        </a>
                       </div>
-                    </div>
+                    )}
+                    {msg.text && <p>{msg.text}</p>}
+                    <span className={styles.timestamp}>
+                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
                   </div>
                 ))}
+                <div ref={messagesEndRef} />
               </div>
-              <div className={styles.chatInputRow}>
-                <input type="file" className={styles.fileInput} onChange={handleAttachment} />
+              <div className={styles.messageInputContainer}>
                 <input
                   type="text"
-                  className={styles.chatInput}
-                  placeholder="Type a message..."
-                  value={messageText}
-                  onChange={(e) => setMessageText(e.target.value)}
+                  className={styles.messageInput}
+                  placeholder="Type your message..."
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
                 />
+                <input type="file" className={styles.fileInput} onChange={handleAttachmentChange} />
                 <button className={styles.sendButton} onClick={handleSendMessage}>Send</button>
               </div>
             </>
           ) : (
-            <div className={styles.noConversationSelected}>Select a conversation to start messaging.</div>
-          )}
-        </div>
-
-        <div className={styles.rightColumn}>
-          <div className={styles.reservationHeader}>
-            <h3>Reservation</h3>
-          </div>
-          <div className={styles.reservationBody}>
-            <img src={require('../assets/car.jpg')} alt="Booking preview" className={styles.reservationImage} />
-            <div className={styles.reservationDetails}>
-              <h4>Your dates are no longer available</h4>
-              <p>The listing you were looking for is not available for your selected dates. Please keep searching for other options.</p>
-              <button className={styles.keepSearchingBtn} onClick={() => navigate('/search')}>Keep searching</button>
+            <div className={styles.emptyChat}>
+              <p>Select a conversation to view messages.</p>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
