@@ -17,7 +17,7 @@ import Profile from './pages/Profile';
 import AccountPage from './pages/AccountPage';
 import ChangePassword from './pages/ChangePassword';
 import BookingsPage from './pages/BookingsPage';
-
+import MessagesPage from './pages/MessagesPage'; // <-- Import your Messages page
 
 function App() {
   return (
@@ -43,11 +43,13 @@ function App() {
         <Route path="/insurance-legal" element={<div>Insurance & Legal Page</div>} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/bookings" element={<BookingsPage />} />
-
-
+        
         {/* Account and Change Password */}
         <Route path="/account" element={<AccountPage />} />
         <Route path="/change-password" element={<ChangePassword />} />
+
+        {/* Messages Route */}
+        <Route path="/messages" element={<MessagesPage />} />
 
         {/* Catch-all */}
         <Route path="*" element={<div>404 - Not Found</div>} />

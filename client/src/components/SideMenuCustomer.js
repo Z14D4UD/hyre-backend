@@ -27,7 +27,7 @@ export default function SideMenuCustomer({ isOpen, toggleMenu, closeMenu }) {
     }, 1000);
   };
 
-  // Navigate to any page
+  // Helper function to navigate to a specific path and close the menu
   const goTo = (path) => {
     closeMenu();
     navigate(path);
@@ -40,27 +40,24 @@ export default function SideMenuCustomer({ isOpen, toggleMenu, closeMenu }) {
           &times;
         </button>
       </div>
-
       <ul className={styles.menuList}>
         {/* Profile link */}
         <li className={styles.menuItem} onClick={() => goTo('/profile')}>
           <FaUser className={styles.icon} />
           <span>Profile</span>
         </li>
-
         {/* Account link */}
         <li className={styles.menuItem} onClick={() => goTo('/account')}>
           <FaUserCog className={styles.icon} />
           <span>Account</span>
         </li>
-
         {/* My Bookings link */}
         <li className={styles.menuItem} onClick={() => goTo('/bookings')}>
           <FaClipboardList className={styles.icon} />
           <span>My Bookings</span>
         </li>
-
-        <li className={styles.menuItem}>
+        {/* Messages link */}
+        <li className={styles.menuItem} onClick={() => goTo('/messages')}>
           <FaEnvelope className={styles.icon} />
           <span>Messages</span>
         </li>
@@ -76,7 +73,6 @@ export default function SideMenuCustomer({ isOpen, toggleMenu, closeMenu }) {
           <FaBalanceScale className={styles.icon} />
           <span>Legal</span>
         </li>
-
         <li className={styles.menuItem} onClick={handleLogout}>
           <FaSignOutAlt className={styles.icon} />
           <span>Log Out</span>
