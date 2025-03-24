@@ -4,9 +4,9 @@ import { Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
-import Dashboard from './components/Dashboard';
-import CustomerDashboard from './components/CustomerDashboard';
-import AffiliateDashboard from './components/AffiliateDashboard';
+import Dashboard from './components/Dashboard';              // Business Dashboard
+import CustomerDashboard from './components/CustomerDashboard';  // Customer Dashboard
+import AffiliateDashboard from './components/AffiliateDashboard'; // Affiliate Dashboard
 import CarUpload from './pages/CarUpload';
 import IdVerification from './components/IdVerification';
 import Payment from './components/Payment';
@@ -17,9 +17,7 @@ import Profile from './pages/Profile';
 import AccountPage from './pages/AccountPage';
 import ChangePassword from './pages/ChangePassword';
 import BookingsPage from './pages/BookingsPage';
-
-// 1) Import the new MessagesPage
-import MessagesPage from './pages/MessagesPage';
+import MessagesPage from './pages/MessagesPage'; // new route for messages
 
 function App() {
   return (
@@ -45,11 +43,11 @@ function App() {
         <Route path="/insurance-legal" element={<div>Insurance & Legal Page</div>} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/bookings" element={<BookingsPage />} />
+        <Route path="/messages" element={<MessagesPage />} />
+
+        {/* Account and Change Password */}
         <Route path="/account" element={<AccountPage />} />
         <Route path="/change-password" element={<ChangePassword />} />
-
-        {/* 2) Add a route for /messages */}
-        <Route path="/messages" element={<MessagesPage />} />
 
         {/* Catch-all */}
         <Route path="*" element={<div>404 - Not Found</div>} />

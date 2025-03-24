@@ -6,9 +6,7 @@ const ConversationSchema = new mongoose.Schema({
   name: { type: String },
   lastMessage: { type: String },
   updatedAt: { type: Date, default: Date.now },
-
-  // Optional: link to a booking/reservation
-  bookingId: { type: mongoose.Schema.Types.ObjectId, ref: 'Booking' },
+  bookingId: { type: mongoose.Schema.Types.ObjectId, ref: 'Booking' }, // <-- add this if referencing a booking
 }, { timestamps: true });
 
 module.exports = mongoose.model('Conversation', ConversationSchema);

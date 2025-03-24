@@ -9,10 +9,10 @@ const {
   getMessages,
   sendMessage,
   markMessageRead,
-  markAllReadInConversation
+  markAllReadInConversation,
 } = require('../controllers/chatController');
 
-// GET /api/chat/conversations?filter=all|unread
+// GET /api/chat/conversations?filter=all|unread&search=...
 router.get('/conversations', authMiddleware, getConversations);
 
 // GET /api/chat/conversations/:conversationId/messages
@@ -20,25 +20,20 @@ router.get('/conversations/:conversationId/messages', authMiddleware, getMessage
 
 // POST /api/chat/conversations/:conversationId/messages
 // with optional attachment
-router.post(
-  '/conversations/:conversationId/messages',
+router.post('/conversations/:conversationId/messages',
   authMiddleware,
   upload.single('attachment'),
   sendMessage
 );
 
 // PUT /api/chat/conversations/:conversationId/messages/:messageId/read
-// Mark a specific message as read
-router.put(
-  '/conversations/:conversationId/messages/:messageId/read',
+router.put('/conversations/:conversationId/messages/:messageId/read',
   authMiddleware,
   markMessageRead
 );
 
 // PUT /api/chat/conversations/:conversationId/read
-// Mark all messages in a conversation as read
-router.put(
-  '/conversations/:conversationId/read',
+router.put('/conversations/:conversationId/read',
   authMiddleware,
   markAllReadInConversation
 );
