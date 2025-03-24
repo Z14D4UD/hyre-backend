@@ -1,10 +1,19 @@
+// server/models/Conversation.js
 const mongoose = require('mongoose');
 
+const ParticipantSchema = new mongoose.Schema({
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' }, 
+  // or ref: 'Business' if you also allow businesses
+  // or a union approach if you have multiple user types
+  unreadCount: { type: Number, default: 0 },
+});
+
 const ConversationSchema = new mongoose.Schema({
-  participants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Customer' }],
+  participants: [ParticipantSchema], 
+  // e.g., [ { user: <ObjectId>, unreadCount: 3 }, ... ]
+
   name: { type: String },
   lastMessage: { type: String },
-  reservationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Reservation', default: null }, // optional reservation id
   updatedAt: { type: Date, default: Date.now },
 }, { timestamps: true });
 

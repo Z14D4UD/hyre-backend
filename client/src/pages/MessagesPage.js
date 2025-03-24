@@ -1,5 +1,4 @@
-// client/src/pages/MessagesPage.js
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import SideMenuCustomer from '../components/SideMenuCustomer';
@@ -10,199 +9,311 @@ export default function MessagesPage() {
   const token = localStorage.getItem('token');
   const accountType = localStorage.getItem('accountType');
   const isCustomer = token && accountType === 'customer';
+  const isBusiness = token && accountType === 'business';
 
-  // Redirect if not a customer
-  useEffect(() => {
-    if (!isCustomer) {
-      alert('Please log in as a customer to view your messages.');
-      navigate('/');
-    }
-  }, [isCustomer, navigate]);
-
-  // Side menu state
+  // Side menu
   const [menuOpen, setMenuOpen] = useState(false);
   const toggleMenu = () => setMenuOpen(!menuOpen);
   const closeMenu = () => setMenuOpen(false);
 
-  // Conversations and messages
-  const [conversations, setConversations] = useState([]);
-  const [selectedConv, setSelectedConv] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState('');
-  const [attachment, setAttachment] = useState(null);
-  const messagesEndRef = useRef(null);
+  // Filter: "all" or "unread"
+  const [filter, setFilter] = useState('all');
 
-  // Replace with your backend URL from .env
+  // List of conversations
+  const [conversations, setConversations] = useState([]);
+  // Selected conversation
+  const [selectedConversation, setSelectedConversation] = useState(null);
+  // Messages for selected conversation
+  const [messages, setMessages] = useState([]);
+  // New message text
+  const [newMessageText, setNewMessageText] = useState('');
+  // File attachment
+  const [attachmentFile, setAttachmentFile] = useState(null);
+
   const backendUrl = process.env.REACT_APP_BACKEND_URL || 'https://hyre-backend.onrender.com/api';
+
+  // Check if user is logged in
+  useEffect(() => {
+    if (!token) {
+      alert('Please log in to view messages.');
+      navigate('/login');
+    }
+  }, [token, navigate]);
 
   // Fetch conversations on mount
   useEffect(() => {
-    axios
-      .get(`${backendUrl}/chat/conversations`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => {
-        setConversations(res.data);
-        if (res.data.length > 0) {
-          selectConversation(res.data[0]._id);
-        }
-      })
-      .catch((err) => {
-        console.error('Error fetching conversations:', err);
-        alert('Failed to load conversations.');
-      });
-  }, [backendUrl, token]);
+    if (token) {
+      axios
+        .get(`${backendUrl}/chat/conversations`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then((res) => {
+          setConversations(res.data);
+        })
+        .catch((err) => {
+          console.error('Error fetching conversations:', err);
+          alert('Failed to load conversations.');
+        });
+    }
+  }, [token, backendUrl]);
 
-  // Fetch messages when a conversation is selected
-  const selectConversation = (conversationId) => {
-    setSelectedConv(conversationId);
+  // When conversation is selected, fetch messages
+  useEffect(() => {
+    if (!selectedConversation) {
+      setMessages([]);
+      return;
+    }
+    // Mark conversation as read
+    markConversationRead(selectedConversation._id);
+
+    // Fetch messages
     axios
-      .get(`${backendUrl}/chat/conversations/${conversationId}/messages`, {
+      .get(`${backendUrl}/chat/conversations/${selectedConversation._id}/messages`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
         setMessages(res.data);
-        scrollToBottom();
       })
       .catch((err) => {
         console.error('Error fetching messages:', err);
         alert('Failed to load messages.');
       });
-  };
+  }, [selectedConversation, backendUrl, token]);
 
-  // Scroll chat window to bottom
-  const scrollToBottom = () => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+  // Mark as read
+  const markConversationRead = async (conversationId) => {
+    try {
+      await axios.put(
+        `${backendUrl}/chat/conversations/${conversationId}/mark-read`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      // set unreadCount=0 in local state
+      setConversations((prev) =>
+        prev.map((c) =>
+          c._id === conversationId ? { ...c, unreadCount: 0 } : c
+        )
+      );
+    } catch (err) {
+      console.error('Error marking read:', err);
     }
   };
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  // Handle sending a message
-  const handleSendMessage = () => {
-    if (!newMessage && !attachment) return alert('Please enter a message or attach a file.');
-    const formData = new FormData();
-    formData.append('text', newMessage);
-    if (attachment) {
-      formData.append('attachment', attachment);
+  // Filter the conversation list
+  const filteredConversations = conversations.filter((conv) => {
+    if (filter === 'unread') {
+      return conv.unreadCount && conv.unreadCount > 0;
     }
-    axios
-      .post(`${backendUrl}/chat/conversations/${selectedConv}/messages`, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
-        },
-      })
-      .then((res) => {
-        setMessages((prev) => [...prev, res.data]);
-        setNewMessage('');
-        setAttachment(null);
-      })
-      .catch((err) => {
-        console.error('Error sending message:', err);
-        alert('Failed to send message.');
-      });
+    return true;
+  });
+
+  // Select conversation
+  const handleSelectConversation = (conv) => {
+    setSelectedConversation(conv);
   };
 
-  // Handle file change
+  // Send new message
+  const handleSendMessage = async () => {
+    if (!selectedConversation) {
+      return alert('No conversation selected.');
+    }
+    if (!newMessageText && !attachmentFile) {
+      return alert('Type a message or attach a file.');
+    }
+    try {
+      const formData = new FormData();
+      formData.append('text', newMessageText);
+      if (attachmentFile) {
+        formData.append('attachment', attachmentFile);
+      }
+
+      const res = await axios.post(
+        `${backendUrl}/chat/conversations/${selectedConversation._id}/messages`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+
+      const newMsg = res.data;
+      setMessages((prev) => [...prev, newMsg]);
+      setNewMessageText('');
+      setAttachmentFile(null);
+
+      // Also, we might want to update the conversation’s lastMessage in local state
+      setConversations((prev) =>
+        prev.map((c) =>
+          c._id === selectedConversation._id
+            ? { ...c, lastMessage: newMsg.text || 'Attachment', updatedAt: new Date() }
+            : c
+        )
+      );
+    } catch (err) {
+      console.error('Error sending message:', err);
+      alert('Failed to send message.');
+    }
+  };
+
   const handleAttachmentChange = (e) => {
     if (e.target.files && e.target.files[0]) {
-      setAttachment(e.target.files[0]);
+      setAttachmentFile(e.target.files[0]);
     }
   };
-
-  // Render each conversation with unread count and "Show Reservation" if available
-  const renderConversationItem = (conv) => (
-    <div
-      key={conv._id}
-      className={`${styles.conversationItem} ${selectedConv === conv._id ? styles.activeConv : ''}`}
-      onClick={() => selectConversation(conv._id)}
-    >
-      <div className={styles.convTitle}>
-        {conv.name || conv.participants.join(', ')}
-      </div>
-      {conv.unreadCount > 0 && (
-        <div className={styles.unreadBadge}>{conv.unreadCount}</div>
-      )}
-      {conv.reservationId && (
-        <button className={styles.showReservationBtn} onClick={() => navigate(`/reservation/${conv.reservationId}`)}>
-          Show Reservation
-        </button>
-      )}
-      {conv.lastMessage && (
-        <div className={styles.lastMessage}>
-          {conv.lastMessage.length > 40 ? conv.lastMessage.substring(0, 40) + '...' : conv.lastMessage}
-        </div>
-      )}
-    </div>
-  );
 
   return (
     <div className={styles.container}>
       {/* Header */}
       <header className={styles.header}>
-        <div className={styles.logo} onClick={() => navigate('/')}>Hyre</div>
-        <button className={styles.menuIcon} onClick={toggleMenu}>☰</button>
+        <div className={styles.logo} onClick={() => navigate('/')}>
+          Hyre
+        </div>
+        <button className={styles.menuIcon} onClick={toggleMenu}>
+          ☰
+        </button>
       </header>
 
       {/* Side Menu */}
-      {isCustomer && (
-        <SideMenuCustomer isOpen={menuOpen} toggleMenu={toggleMenu} closeMenu={closeMenu} />
+      {(isCustomer || isBusiness) && (
+        <SideMenuCustomer
+          isOpen={menuOpen}
+          toggleMenu={toggleMenu}
+          closeMenu={closeMenu}
+        />
       )}
 
-      {/* Main Content */}
-      <div className={styles.mainContent}>
-        <div className={styles.sidebar}>
-          <h2>Conversations</h2>
-          {conversations.length === 0 ? (
-            <p>No conversations yet.</p>
+      <div className={styles.main}>
+        {/* Left: conversation list */}
+        <div className={styles.conversationsPanel}>
+          <div className={styles.filterRow}>
+            <button
+              className={filter === 'all' ? styles.filterActive : styles.filterButton}
+              onClick={() => setFilter('all')}
+            >
+              All
+            </button>
+            <button
+              className={filter === 'unread' ? styles.filterActive : styles.filterButton}
+              onClick={() => setFilter('unread')}
+            >
+              Unread
+            </button>
+          </div>
+
+          {filteredConversations.length === 0 ? (
+            <div className={styles.noConversations}>No conversations yet.</div>
           ) : (
-            conversations.map(renderConversationItem)
+            filteredConversations.map((conv) => (
+              <div
+                key={conv._id}
+                className={
+                  conv._id === selectedConversation?._id
+                    ? styles.conversationItemActive
+                    : styles.conversationItem
+                }
+                onClick={() => handleSelectConversation(conv)}
+              >
+                <div className={styles.conversationTop}>
+                  <div className={styles.conversationName}>
+                    {conv.name || 'Conversation'}
+                  </div>
+                  <div className={styles.conversationDate}>
+                    {new Date(conv.updatedAt).toLocaleDateString()}
+                  </div>
+                </div>
+                <div className={styles.lastMessage}>
+                  {conv.lastMessage || 'No messages yet.'}
+                </div>
+                {conv.unreadCount > 0 && (
+                  <div className={styles.unreadBadge}>{conv.unreadCount}</div>
+                )}
+              </div>
+            ))
           )}
         </div>
 
-        <div className={styles.chatWindow}>
-          {selectedConv ? (
+        {/* Right: chat area */}
+        <div className={styles.chatArea}>
+          {selectedConversation ? (
             <>
-              <div className={styles.messagesContainer}>
-                {messages.map((msg) => (
-                  <div
-                    key={msg._id}
-                    className={`${styles.messageItem} ${msg.senderModel === 'Customer' ? styles.sent : styles.received}`}
-                  >
-                    {msg.attachment && (
-                      <div className={styles.attachmentPreview}>
-                        <a href={`${backendUrl}/${msg.attachment}`} target="_blank" rel="noopener noreferrer">
-                          View Attachment
-                        </a>
-                      </div>
-                    )}
-                    {msg.text && <p>{msg.text}</p>}
-                    <span className={styles.timestamp}>
-                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  </div>
-                ))}
-                <div ref={messagesEndRef} />
+              <div className={styles.chatHeader}>
+                <h2>{selectedConversation.name || 'Conversation'}</h2>
+                {/* Show reservation button if relevant */}
+                <button
+                  className={styles.reservationButton}
+                  onClick={() => alert('Show reservation details (not yet implemented).')}
+                >
+                  Show reservation
+                </button>
               </div>
-              <div className={styles.messageInputContainer}>
+
+              <div className={styles.messagesList}>
+                {messages.length === 0 ? (
+                  <div className={styles.noMessages}>No messages yet.</div>
+                ) : (
+                  messages.map((msg) => (
+                    <div
+                      key={msg._id}
+                      className={
+                        msg.sender === (/* your user id if you store it */ '???')
+                          ? styles.myMessage
+                          : styles.otherMessage
+                      }
+                    >
+                      <div className={styles.messageContent}>
+                        {msg.attachment && (
+                          <div className={styles.attachment}>
+                            {/\.(gif|jpe?g|tiff|png|webp|bmp)$/i.test(msg.attachment) ? (
+                              <img
+                                src={`${backendUrl.replace('/api', '')}/${msg.attachment}`}
+                                alt="attachment"
+                              />
+                            ) : (
+                              <a
+                                href={`${backendUrl.replace('/api', '')}/${msg.attachment}`}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                Download Attachment
+                              </a>
+                            )}
+                          </div>
+                        )}
+                        <p>{msg.text}</p>
+                      </div>
+                      <div className={styles.messageMeta}>
+                        <span className={styles.messageDate}>
+                          {new Date(msg.createdAt).toLocaleTimeString()}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className={styles.inputRow}>
                 <input
                   type="text"
                   className={styles.messageInput}
                   placeholder="Type your message..."
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
+                  value={newMessageText}
+                  onChange={(e) => setNewMessageText(e.target.value)}
                 />
-                <input type="file" className={styles.fileInput} onChange={handleAttachmentChange} />
-                <button className={styles.sendButton} onClick={handleSendMessage}>Send</button>
+                <input
+                  type="file"
+                  onChange={handleAttachmentChange}
+                  className={styles.fileInput}
+                />
+                <button className={styles.sendButton} onClick={handleSendMessage}>
+                  Send
+                </button>
               </div>
             </>
           ) : (
-            <div className={styles.emptyChat}>
-              <p>Select a conversation to view messages.</p>
+            <div className={styles.selectConversation}>
+              Select a conversation to view messages.
             </div>
           )}
         </div>
