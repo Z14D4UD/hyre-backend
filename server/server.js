@@ -1,4 +1,3 @@
-// server.js
 const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
@@ -23,41 +22,31 @@ const accountRoutes = require('./routes/accountRoutes');
 const app = express();
 const server = http.createServer(app);
 
-// 1) Connect to DB
+// Connect to DB
 connectDB();
 
-// 2) Define allowed origins for CORS
+// Allowed origins for CORS
 const allowedOrigins = [
   'http://localhost:3000',
   'https://hyreuk.com',
-  // add any other allowed domains here
 ];
 
-// 3) Configure Express CORS
+// Configure Express middleware
 app.use(express.json());
-app.use(
-  cors({
-    origin: allowedOrigins,
-    credentials: true,
-  })
-);
-
-// 4) Serve static files from the uploads folder
+app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use('/uploads', express.static('uploads'));
 
-// 5) Setup session and Passport
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || 'secretKey',
-    resave: false,
-    saveUninitialized: false,
-  })
-);
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'secretKey',
+  resave: false,
+  saveUninitialized: false,
+}));
+
 app.use(passport.initialize());
 app.use(passport.session());
 require('./config/passport')(passport);
 
-// 6) Mount routes
+// Mount routes
 app.use('/api/auth', authRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/invoices', invoiceRoutes);
@@ -69,7 +58,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/affiliates', affiliateRoutes);
 app.use('/api/account', accountRoutes);
 
-// 7) Setup Socket.io with matching CORS options
+// Setup Socket.io
 const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
@@ -92,6 +81,5 @@ io.on('connection', (socket) => {
   });
 });
 
-// 8) Start server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

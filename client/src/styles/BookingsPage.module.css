@@ -46,19 +46,41 @@
     margin-bottom: 1rem;
   }
   
-  /* Empty State */
+  /* Empty State with Car Background and Dark Overlay */
   .emptyState {
-    background-color: #fafafa;
-    padding: 2rem;
+    position: relative;
     border-radius: 8px;
-    text-align: center;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+    min-height: 220px;
+    /* Use a relative URL to access the image in src/assets */
+    background-image: url('../assets/car3.jpg');
+    background-size: cover;
+    background-position: center;
   }
-  .emptyState h2 {
+  
+  .emptyState::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1;
+  }
+  
+  .emptyStateContent {
+    position: relative;
+    z-index: 2;
+    color: #fff;
+    padding: 2rem;
+  }
+  .emptyStateContent h2 {
     font-size: 1.6rem;
     margin-bottom: 0.5rem;
   }
-  .emptyState p {
+  .emptyStateContent p {
     margin-bottom: 1rem;
   }
   .startSearchingBtn {
@@ -118,7 +140,7 @@
     color: #666;
   }
   
-  /* Loading state (if needed) */
+  /* Loading state */
   .loading {
     padding: 2rem;
     text-align: center;

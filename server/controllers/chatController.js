@@ -1,34 +1,59 @@
-const Chat = require('../models/Chats');
+const Conversation = require('../models/Conversation');
+const Message = require('../models/Message');
 
-exports.getChatMessages = async (req, res) => {
+// GET /api/chat/conversations
+exports.getConversations = async (req, res) => {
   try {
-    const { room } = req.params;  // room could be a booking ID or a custom chat room identifier
-    const messages = await Chat.find({ room }).sort({ timestamp: 1 });
-    res.json(messages);
+    // For this example, we support both Customer and Business (adjust as needed)
+    const userId = req.customer ? req.customer.id : req.business.id;
+    const conversations = await Conversation.find({
+      participants: userId,
+    }).sort({ updatedAt: -1 });
+    res.json(conversations);
   } catch (error) {
-    console.error('Error retrieving chat messages:', error);
-    res.status(500).json({ msg: 'Server error retrieving chat messages' });
+    console.error('Error fetching conversations:', error);
+    res.status(500).json({ msg: 'Server error fetching conversations' });
   }
 };
 
-exports.sendChatMessage = async (req, res) => {
+// GET /api/chat/conversations/:conversationId/messages
+exports.getMessages = async (req, res) => {
   try {
-    const { room, message } = req.body;
-    // Determine sender from the auth middleware (req.customer or req.business)
-    const sender = req.customer ? req.customer.id : req.business.id;
-    const senderModel = req.customer ? 'Customer' : 'Business';
-    
-    const chatMessage = new Chat({
-      room,
-      message,
-      sender,
-      senderModel,
-      timestamp: Date.now(),
-    });
-    await chatMessage.save();
-    res.status(201).json(chatMessage);
+    const { conversationId } = req.params;
+    const messages = await Message.find({ conversation: conversationId }).sort({ createdAt: 1 });
+    res.json(messages);
   } catch (error) {
-    console.error('Error sending chat message:', error);
-    res.status(500).json({ msg: 'Server error sending chat message' });
+    console.error('Error fetching messages:', error);
+    res.status(500).json({ msg: 'Server error fetching messages' });
+  }
+};
+
+// POST /api/chat/conversations/:conversationId/messages
+exports.sendMessage = async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const userId = req.customer ? req.customer.id : req.business.id;
+    const senderModel = req.customer ? 'Customer' : 'Business';
+
+    const { text } = req.body;
+    const newMessage = new Message({
+      conversation: conversationId,
+      sender: userId,
+      senderModel,
+      text: text,
+      attachment: req.file ? req.file.path : undefined,
+    });
+    await newMessage.save();
+
+    // Update conversation's last message and timestamp
+    await Conversation.findByIdAndUpdate(conversationId, {
+      lastMessage: text,
+      updatedAt: new Date(),
+    });
+
+    res.json(newMessage);
+  } catch (error) {
+    console.error('Error sending message:', error);
+    res.status(500).json({ msg: 'Server error sending message' });
   }
 };

@@ -1,4 +1,3 @@
-// server/controllers/accountController.js
 const Customer = require('../models/Customer');
 const bcrypt = require('bcryptjs');
 const PDFDocument = require('pdfkit');
@@ -6,10 +5,7 @@ const crypto = require('crypto');
 const sendEmail = require('../utils/sendEmail');
 const jwt = require('jsonwebtoken');
 
-// Helper to generate a random token
-const generateToken = () => crypto.randomBytes(20).toString('hex');
-
-// GET /api/account
+// GET /api/account - fetch account info
 const getAccount = async (req, res) => {
   try {
     const userId = req.customer.id;
@@ -30,7 +26,7 @@ const getAccount = async (req, res) => {
   }
 };
 
-// PUT /api/account - update fields (e.g., transmission)
+// PUT /api/account - update account fields (e.g., transmission)
 const updateAccount = async (req, res) => {
   try {
     const userId = req.customer.id;
@@ -59,10 +55,7 @@ const updateAccount = async (req, res) => {
 // POST /api/account/use-affiliate-code
 const useAffiliateCode = async (req, res) => {
   try {
-    const userId = req.customer.id;
-    const { code } = req.body;
-    if (!code) return res.status(400).json({ msg: 'No code provided' });
-    // TODO: Look up affiliate by code, update affiliate balance, etc.
+    // This is a placeholder – implement your affiliate lookup and balance update logic.
     res.json({ msg: 'Affiliate code applied. You get 10% off your next booking!' });
   } catch (error) {
     console.error('Error in useAffiliateCode:', error);
@@ -81,7 +74,9 @@ const changePassword = async (req, res) => {
     const user = await Customer.findById(userId);
     if (!user) return res.status(404).json({ msg: 'User not found' });
     const isMatch = await bcrypt.compare(oldPassword, user.password);
-    if (!isMatch) return res.status(400).json({ msg: 'Invalid old password' });
+    if (!isMatch) {
+      return res.status(400).json({ msg: 'Invalid old password' });
+    }
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(newPassword, salt);
     await user.save();
@@ -98,14 +93,11 @@ const downloadData = async (req, res) => {
     const userId = req.customer.id;
     const user = await Customer.findById(userId).select('-password').lean();
     if (!user) return res.status(404).json({ msg: 'User not found' });
-    
-    // Create a new PDF document
+
     const doc = new PDFDocument();
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'attachment; filename="MyHyreData.pdf"');
     doc.pipe(res);
-
-    // Add content to the PDF
     doc.fontSize(18).text('Hyre Account Data', { underline: true });
     doc.moveDown();
     doc.fontSize(12).text(`Name: ${user.name || ''}`);

@@ -1,11 +1,9 @@
+// client/src/pages/BookingsPage.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SideMenuCustomer from '../components/SideMenuCustomer';
 import styles from '../styles/BookingsPage.module.css';
 
-/**
- * Example component for showing active and past bookings in a Turo-like style.
- */
 export default function BookingsPage() {
   const navigate = useNavigate();
 
@@ -19,12 +17,10 @@ export default function BookingsPage() {
   const toggleMenu = () => setMenuOpen(!menuOpen);
   const closeMenu = () => setMenuOpen(false);
 
-  // Placeholder for demonstration:
-  // In a real app, you'd fetch these from your backend (e.g., GET /api/bookings).
+  // Placeholder data – replace with your API call later
   const [activeBookings, setActiveBookings] = useState([]);
   const [pastBookings, setPastBookings] = useState([]);
 
-  // Simulate a fetch call on mount
   useEffect(() => {
     if (!isCustomer) {
       alert('Please log in as a customer to view your bookings.');
@@ -32,10 +28,10 @@ export default function BookingsPage() {
       return;
     }
 
-    // Example: replace with real API call
-    // Suppose we have an array of active and past booking objects
+    // For demonstration, we simulate fetching booking data.
+    // Replace with real API call (e.g., axios.get('/api/bookings'))
     const mockActive = [
-      // Uncomment to test an active booking
+      // Example active booking (uncomment to test)
       // {
       //   id: 'abc123',
       //   location: 'London, UK',
@@ -77,7 +73,6 @@ export default function BookingsPage() {
     return <div className={styles.loading}>Loading bookings...</div>;
   }
 
-  // If no active bookings, show empty state
   const hasActive = activeBookings.length > 0;
   const hasPast = pastBookings.length > 0;
 
@@ -103,25 +98,27 @@ export default function BookingsPage() {
       )}
 
       <div className={styles.content}>
-        <h1 className={styles.title}>Trips</h1>
+        <h1 className={styles.title}>Bookings</h1>
 
-        {/* If no active bookings */}
+        {/* Empty State: No Active Bookings */}
         {!hasActive && (
           <div className={styles.emptyState}>
-            <h2>No trips booked... yet!</h2>
-            <p>
-              Time to dust off your bags and start planning your next adventure.
-            </p>
-            <button
-              className={styles.startSearchingBtn}
-              onClick={() => navigate('/search')}
-            >
-              Start searching
-            </button>
+            <div className={styles.emptyStateContent}>
+              <h2>No trips booked... yet!</h2>
+              <p>
+                Time to dust off your bags and start planning your next adventure.
+              </p>
+              <button
+                className={styles.startSearchingBtn}
+                onClick={() => navigate('/search')}
+              >
+                Start searching
+              </button>
+            </div>
           </div>
         )}
 
-        {/* If active bookings exist, show them */}
+        {/* Active Bookings */}
         {hasActive && (
           <section className={styles.section}>
             <h2 className={styles.sectionHeading}>Active Bookings</h2>
