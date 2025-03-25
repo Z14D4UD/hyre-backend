@@ -1,23 +1,19 @@
 // client/src/pages/AboutHyre.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import SideMenuCustomer from '../components/SideMenuCustomer'; // If you want side menu for logged-in customers
-import SideMenu from '../components/SideMenu';                 // If you want side menu for guests
+import SideMenuCustomer from '../components/SideMenuCustomer';
 import styles from '../styles/AboutHyre.module.css';
 
 export default function AboutHyre() {
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
   const accountType = localStorage.getItem('accountType');
+  const isCustomer = token && accountType === 'customer';
 
-  // If you want to show the "customer" side menu if a user is logged in as a customer,
-  // otherwise show the "guest" side menu. (Optional)
+  // Side menu state
   const [menuOpen, setMenuOpen] = useState(false);
   const toggleMenu = () => setMenuOpen(!menuOpen);
   const closeMenu = () => setMenuOpen(false);
-
-  // Decide which side menu to show
-  const isCustomer = token && accountType === 'customer';
 
   return (
     <div className={styles.container}>
@@ -31,18 +27,21 @@ export default function AboutHyre() {
         </button>
       </header>
 
-      {/* Side Menu(s) - optional */}
-      {isCustomer ? (
-        <SideMenuCustomer isOpen={menuOpen} toggleMenu={toggleMenu} closeMenu={closeMenu} />
-      ) : (
-        <SideMenu isOpen={menuOpen} toggleMenu={toggleMenu} />
+      {/* If user is a customer, show side menu */}
+      {isCustomer && (
+        <SideMenuCustomer
+          isOpen={menuOpen}
+          toggleMenu={toggleMenu}
+          closeMenu={closeMenu}
+        />
       )}
 
       <div className={styles.content}>
-
-        {/* HERO SECTION with background image */}
+        {/* Hero Section */}
         <section className={styles.heroSection}>
+          {/* The overlay over the background image */}
           <div className={styles.heroOverlay}></div>
+
           <div className={styles.heroContent}>
             <h1>How Hyre Works</h1>
             <p>
@@ -57,33 +56,32 @@ export default function AboutHyre() {
 
         {/* Compare Section */}
         <section className={styles.compareSection}>
-          <h2>Hyre vs. Car Rental</h2>
+          <h2>Hyre vs. car rental</h2>
           <div className={styles.compareGrid}>
-            {/* Left column (Hyre) */}
+            {/* Hyre Column */}
             <div className={styles.compareColumn}>
               <h3>Hyre</h3>
               <ul>
-                <li className={styles.tickItem}>App-based experiences</li>
+                <li className={styles.tickItem}>Online experiences</li>
                 <li className={styles.tickItem}>No waiting in line</li>
-                <li className={styles.tickItem}>Thousands of unique makes &amp; models</li>
+                <li className={styles.tickItem}>Thousands of unique makes & models</li>
                 <li className={styles.tickItem}>Get the exact car you choose</li>
-                <li className={styles.tickItem}>Pickups &amp; flexible drop-offs</li>
-                <li className={styles.tickItem}>Local small businesses</li>
-                <li className={styles.tickItem}>Trusted hosts with real reviews</li>
+                <li className={styles.tickItem}>Pickups & flexible drop-offs</li>
+                <li className={styles.tickItem}>Great Rewards for boooking on Hyre</li>
+                <li className={styles.tickItem}>Trusted local businesses with real reviews</li>
               </ul>
             </div>
-
-            {/* Right column (Car Rental) */}
+            {/* Car Rental Column */}
             <div className={styles.compareColumn}>
               <h3>Car rental</h3>
               <ul>
-                <li className={styles.crossItem}>Standard rental counter experience</li>
-                <li className={styles.crossItem}>Waiting in line</li>
-                <li className={styles.crossItem}>Limited car selection</li>
-                <li className={styles.crossItem}>"Car or similar" guarantee</li>
-                <li className={styles.crossItem}>Pickup at retail depots only</li>
-                <li className={styles.crossItem}>Mostly large corporations</li>
-                <li className={styles.crossItem}>No direct communication with hosts</li>
+                <li className={styles.xItem}>Standard rental counter experience</li>
+                <li className={styles.xItem}>Waiting in line</li>
+                <li className={styles.xItem}>Limited car selection</li>
+                <li className={styles.xItem}>"Car or similar" guarantee</li>
+                <li className={styles.xItem}>Pickup at rental depots only</li>
+                <li className={styles.xItem}>Mostly large corporations</li>
+                <li className={styles.xItem}>Limited Support</li>
               </ul>
             </div>
           </div>
@@ -91,26 +89,28 @@ export default function AboutHyre() {
 
         {/* Booking Steps Section */}
         <section className={styles.bookingStepsSection}>
-          <div className={styles.bookingOverlay}></div>
-          <div className={styles.bookingContent}>
-            <h2>How to Book a Car</h2>
+          {/* Opacity overlay for background */}
+          <div className={styles.stepsOverlay}></div>
+
+          <div className={styles.stepsContent}>
+            <h2>How to book a car</h2>
             <div className={styles.stepsGrid}>
               <div className={styles.stepItem}>
                 <h3>1. Find the perfect car</h3>
                 <p>
-                  Just enter where and when you need a car, filter to find the best one for you, and
-                  read reviews from previous renters.
+                  Just enter where and when you need a car, filter to find the best one for you,
+                  and read reviews from previous renters.
                 </p>
               </div>
               <div className={styles.stepItem}>
                 <h3>2. Select a pickup location</h3>
                 <p>
-                  Grab a car nearby or get it delivered to various destinations, including many
-                  airports, train stations, or your home.
+                  Grab a car nearby or get delivered to various destinations, including many
+                  airports, train stations, or even your home.
                 </p>
               </div>
               <div className={styles.stepItem}>
-                <h3>3. Rent &amp; hit the road</h3>
+                <h3>3. Rent & hit the road</h3>
                 <p>
                   Your host sends you pickup details, and you’re all set! If you have questions,
                   you can easily chat with your host or contact support.
@@ -123,9 +123,9 @@ export default function AboutHyre() {
           </div>
         </section>
 
-        {/* Why Choose Hyre Section */}
+        {/* Why Section */}
         <section className={styles.whySection}>
-          <h2>Why Choose Hyre?</h2>
+          <h2>Why choose Hyre?</h2>
           <div className={styles.whyGrid}>
             <div className={styles.whyItem}>
               <h3>Enjoy a streamlined airport experience</h3>
@@ -137,15 +137,15 @@ export default function AboutHyre() {
             <div className={styles.whyItem}>
               <h3>Get personalized service from a local host</h3>
               <p>
-                Hyre hosts are local car rental businesses in your community, ready to help with your
-                travel needs.
+                Hyre hosts are local small businesses who share cars in their communities,
+                offering more flexible arrangements.
               </p>
             </div>
             <div className={styles.whyItem}>
-              <h3>Relax with support &amp; protection</h3>
+              <h3>Relax with support & damage protection</h3>
               <p>
-                24/7 support and roadside assistance means help is just a call away. Choose from a
-                range of coverage options.
+                24/7 support and roadside assistance mean help is just a call away. You can choose
+                from a range of protection plans.
               </p>
             </div>
           </div>

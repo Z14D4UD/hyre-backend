@@ -35,7 +35,7 @@
     cursor: pointer;
   }
   
-  /* Main content container */
+  /* Main content area */
   .content {
     margin-top: 72px; /* space for the header */
     display: flex;
@@ -43,27 +43,30 @@
     gap: 2rem;
   }
   
-  /* --- HERO SECTION with background image --- */
+  /* Hero Section ("How Hyre Works") */
   .heroSection {
     position: relative;
-    min-height: 350px;
+    min-height: 300px;
+    background: url('/src/assets/lambo.jpg') center center no-repeat;
+    background-size: cover;
     display: flex;
     align-items: center;
     justify-content: center;
-    /* background image + cover */
-    background: url('../assets/lambo.jpg') center/cover no-repeat;
+    padding: 2rem;
   }
   .heroOverlay {
     position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background-color: rgba(0,0,0,0.3); /* optional overlay */
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.3);
   }
   .heroContent {
     position: relative;
-    z-index: 2; /* above overlay */
-    padding: 2rem;
-    text-align: center;
-    color: #fff; /* text color for contrast */
+    max-width: 600px;
+    color: #fff;
+    text-align: left;
   }
   .heroContent h1 {
     font-size: 2rem;
@@ -86,7 +89,7 @@
     background-color: #30a2e0;
   }
   
-  /* --- COMPARE SECTION (Hyre vs Car Rental) --- */
+  /* Compare Section ("Hyre vs. car rental") */
   .compareSection {
     background: #fff;
     padding: 2rem;
@@ -111,6 +114,7 @@
     max-width: 400px;
     padding: 1rem;
     text-align: left;
+    margin: 0 auto;
   }
   .compareColumn h3 {
     font-size: 1.2rem;
@@ -126,44 +130,43 @@
     font-size: 0.95rem;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-  }
-  /* Ticks (left column) and crosses (right column) */
-  .tickItem::before {
-    content: "✔"; /* or use a background icon if you prefer */
-    color: green;
-  }
-  .crossItem::before {
-    content: "✖"; /* or "×", "✕", etc. */
-    color: red;
   }
   
-  /* --- BOOKING STEPS SECTION with background image + overlay --- */
+  /* For ticks and X styling: */
+  .tickItem::before {
+    content: '✔';
+    color: #38b6ff;
+    margin-right: 0.5rem;
+  }
+  .xItem::before {
+    content: '✖';
+    color: #ff4d4f;
+    margin-right: 0.5rem;
+  }
+  
+  /* Booking Steps Section ("How to book a car") */
   .bookingStepsSection {
     position: relative;
     min-height: 300px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    background: url('/src/assets/phone.jpg') center center no-repeat;
+    background-size: cover;
     padding: 2rem;
-    /* background image for the steps section */
-    background: url('../assets/phone.jpg') center/cover no-repeat;
-    margin: 0; /* remove default margin if any */
-  }
-  .bookingOverlay {
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background-color: rgba(0,0,0,0.3); /* optional overlay */
-  }
-  .bookingContent {
-    position: relative;
-    z-index: 2; /* above overlay */
-    width: 100%;
-    max-width: 1000px;
+    color: #fff;
     text-align: center;
-    color: #fff; /* text color for contrast */
   }
-  .bookingStepsSection h2 {
+  .stepsOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.3);
+  }
+  .stepsContent {
+    position: relative;
+    z-index: 1;
+  }
+  .stepsContent h2 {
     font-size: 1.8rem;
     margin-bottom: 1.5rem;
   }
@@ -175,18 +178,19 @@
     margin-bottom: 1.5rem;
   }
   .stepItem {
-    background-color: rgba(255,255,255,0.85);
+    background-color: rgba(255,255,255,0.9);
     border-radius: 8px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     flex: 1 1 250px;
     max-width: 300px;
     padding: 1rem;
     text-align: left;
-    color: #333; /* revert text color for readability */
+    margin: 0 auto;
   }
   .stepItem h3 {
     font-size: 1.1rem;
     margin-bottom: 0.5rem;
+    color: #333;
   }
   .stepItem p {
     font-size: 0.95rem;
@@ -205,7 +209,7 @@
     background-color: #30a2e0;
   }
   
-  /* --- WHY CHOOSE HYRE SECTION --- */
+  /* Why Section */
   .whySection {
     background-color: #fff;
     padding: 2rem;
@@ -229,6 +233,7 @@
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     padding: 1rem;
     text-align: left;
+    margin: 0 auto;
   }
   .whyItem h3 {
     font-size: 1.1rem;
@@ -255,7 +260,7 @@
   /* Responsive adjustments */
   @media (max-width: 900px) {
     .heroSection {
-      min-height: 300px;
+      padding: 2rem 1rem;
     }
     .compareGrid {
       flex-direction: column;
@@ -271,7 +276,18 @@
     }
   }
   
+  /* On smaller screens, reduce box padding/white space */
   @media (max-width: 600px) {
+    .stepItem,
+    .whyItem,
+    .compareColumn {
+      padding: 0.7rem;
+    }
+    .stepItem p,
+    .whyItem p,
+    .compareColumn li {
+      font-size: 0.85rem;
+    }
     .heroContent h1 {
       font-size: 1.6rem;
     }
