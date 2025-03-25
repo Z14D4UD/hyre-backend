@@ -1,3 +1,5 @@
+/* client/src/styles/AboutHyre.module.css */
+
 .container {
     position: relative;
     min-height: 100vh;
@@ -33,7 +35,7 @@
     cursor: pointer;
   }
   
-  /* Main content area */
+  /* Main content container */
   .content {
     margin-top: 72px; /* space for the header */
     display: flex;
@@ -41,25 +43,33 @@
     gap: 2rem;
   }
   
-  /* Hero Section ("How Hyre Works") */
+  /* --- HERO SECTION with background image --- */
   .heroSection {
+    position: relative;
+    min-height: 350px;
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
     justify-content: center;
+    /* background image + cover */
+    background: url('../assets/lambo.jpg') center/cover no-repeat;
+  }
+  .heroOverlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba(0,0,0,0.3); /* optional overlay */
+  }
+  .heroContent {
+    position: relative;
+    z-index: 2; /* above overlay */
     padding: 2rem;
-    background-color: #f9f9f9;
+    text-align: center;
+    color: #fff; /* text color for contrast */
   }
-  .heroText {
-    flex: 1 1 400px;
-    max-width: 600px;
-    margin: 1rem;
-  }
-  .heroText h1 {
+  .heroContent h1 {
     font-size: 2rem;
     margin-bottom: 1rem;
   }
-  .heroText p {
+  .heroContent p {
     font-size: 1.1rem;
     margin-bottom: 1.5rem;
   }
@@ -75,20 +85,8 @@
   .heroButton:hover {
     background-color: #30a2e0;
   }
-  .heroImageWrapper {
-    flex: 1 1 400px;
-    max-width: 500px;
-    margin: 1rem;
-    text-align: center;
-  }
-  .heroImage {
-    width: 100%;
-    height: auto;
-    border-radius: 8px;
-    object-fit: cover;
-  }
   
-  /* Compare Section ("Hyre vs. car rental") */
+  /* --- COMPARE SECTION (Hyre vs Car Rental) --- */
   .compareSection {
     background: #fff;
     padding: 2rem;
@@ -112,6 +110,7 @@
     flex: 1 1 250px;
     max-width: 400px;
     padding: 1rem;
+    text-align: left;
   }
   .compareColumn h3 {
     font-size: 1.2rem;
@@ -127,19 +126,42 @@
     font-size: 0.95rem;
     display: flex;
     align-items: center;
+    gap: 0.5rem;
   }
-  /* Optional bullet styling. You can remove or change to checkmarks vs. X. */
-  .compareColumn li::before {
-    content: '•';
-    color: #38b6ff;
-    margin-right: 0.5rem;
+  /* Ticks (left column) and crosses (right column) */
+  .tickItem::before {
+    content: "✔"; /* or use a background icon if you prefer */
+    color: green;
+  }
+  .crossItem::before {
+    content: "✖"; /* or "×", "✕", etc. */
+    color: red;
   }
   
-  /* Booking Steps Section ("How to book a car") */
+  /* --- BOOKING STEPS SECTION with background image + overlay --- */
   .bookingStepsSection {
-    background-color: #f9f9f9;
+    position: relative;
+    min-height: 300px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     padding: 2rem;
+    /* background image for the steps section */
+    background: url('../assets/phone.jpg') center/cover no-repeat;
+    margin: 0; /* remove default margin if any */
+  }
+  .bookingOverlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba(0,0,0,0.3); /* optional overlay */
+  }
+  .bookingContent {
+    position: relative;
+    z-index: 2; /* above overlay */
+    width: 100%;
+    max-width: 1000px;
     text-align: center;
+    color: #fff; /* text color for contrast */
   }
   .bookingStepsSection h2 {
     font-size: 1.8rem;
@@ -153,13 +175,14 @@
     margin-bottom: 1.5rem;
   }
   .stepItem {
-    background-color: #fff;
+    background-color: rgba(255,255,255,0.85);
     border-radius: 8px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     flex: 1 1 250px;
     max-width: 300px;
     padding: 1rem;
     text-align: left;
+    color: #333; /* revert text color for readability */
   }
   .stepItem h3 {
     font-size: 1.1rem;
@@ -182,7 +205,7 @@
     background-color: #30a2e0;
   }
   
-  /* Why Section ("Why choose Hyre?") */
+  /* --- WHY CHOOSE HYRE SECTION --- */
   .whySection {
     background-color: #fff;
     padding: 2rem;
@@ -232,7 +255,7 @@
   /* Responsive adjustments */
   @media (max-width: 900px) {
     .heroSection {
-      flex-direction: column-reverse;
+      min-height: 300px;
     }
     .compareGrid {
       flex-direction: column;
@@ -249,10 +272,10 @@
   }
   
   @media (max-width: 600px) {
-    .heroText h1 {
+    .heroContent h1 {
       font-size: 1.6rem;
     }
-    .heroText p {
+    .heroContent p {
       font-size: 1rem;
     }
     .compareSection h2,
@@ -271,4 +294,5 @@
       font-size: 0.9rem;
       padding: 0.5rem 1rem;
     }
-  }  
+  }
+  
