@@ -9,7 +9,7 @@ import {
   FaQuestionCircle,
   FaPhone,
   FaBalanceScale,
-  FaSignOutAlt
+  FaSignOutAlt,
 } from 'react-icons/fa';
 import styles from '../styles/SideMenuCustomer.module.css';
 
@@ -27,7 +27,6 @@ export default function SideMenuCustomer({ isOpen, toggleMenu, closeMenu }) {
     }, 1000);
   };
 
-  // Navigate to any page
   const goTo = (path) => {
     closeMenu();
     navigate(path);
@@ -40,7 +39,6 @@ export default function SideMenuCustomer({ isOpen, toggleMenu, closeMenu }) {
           &times;
         </button>
       </div>
-
       <ul className={styles.menuList}>
         {/* Profile link */}
         <li className={styles.menuItem} onClick={() => goTo('/profile')}>
@@ -62,15 +60,18 @@ export default function SideMenuCustomer({ isOpen, toggleMenu, closeMenu }) {
           <FaEnvelope className={styles.icon} />
           <span>Messages</span>
         </li>
-        <li className={styles.menuItem}>
+        {/* How Hyre Works link */}
+        <li className={styles.menuItem} onClick={() => goTo('/about-hyre')}>
           <FaQuestionCircle className={styles.icon} />
           <span>How Hyre Works</span>
         </li>
-        <li className={styles.menuItem}>
+        {/* Contact Support link */}
+        <li className={styles.menuItem} onClick={() => goTo('/contact-support')}>
           <FaPhone className={styles.icon} />
           <span>Contact Support</span>
         </li>
-        <li className={styles.menuItem}>
+        {/* Legal link */}
+        <li className={styles.menuItem} onClick={() => goTo('/legal')}>
           <FaBalanceScale className={styles.icon} />
           <span>Legal</span>
         </li>

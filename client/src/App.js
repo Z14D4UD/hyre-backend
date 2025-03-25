@@ -4,9 +4,9 @@ import { Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
-import Dashboard from './components/Dashboard';              // Business Dashboard
-import CustomerDashboard from './components/CustomerDashboard';  // Customer Dashboard
-import AffiliateDashboard from './components/AffiliateDashboard'; // Affiliate Dashboard
+import Dashboard from './components/Dashboard';
+import CustomerDashboard from './components/CustomerDashboard';
+import AffiliateDashboard from './components/AffiliateDashboard';
 import CarUpload from './pages/CarUpload';
 import IdVerification from './components/IdVerification';
 import Payment from './components/Payment';
@@ -17,9 +17,9 @@ import Profile from './pages/Profile';
 import AccountPage from './pages/AccountPage';
 import ChangePassword from './pages/ChangePassword';
 import BookingsPage from './pages/BookingsPage';
-import MessagesPage from './pages/MessagesPage'; // new route for messages
+import MessagesPage from './pages/MessagesPage';
 import AboutHyre from './pages/AboutHyre';
-
+// (Optionally add ContactSupport page when ready)
 
 function App() {
   return (
@@ -47,9 +47,8 @@ function App() {
         <Route path="/bookings" element={<BookingsPage />} />
         <Route path="/messages" element={<MessagesPage />} />
         <Route path="/about-hyre" element={<AboutHyre />} />
-
+        {/* Add Contact Support route when ready */}
         
-
         {/* Account and Change Password */}
         <Route path="/account" element={<AccountPage />} />
         <Route path="/change-password" element={<ChangePassword />} />

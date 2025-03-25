@@ -1,65 +1,63 @@
 /* client/src/styles/SideMenuCustomer.module.css */
-
 .sideMenu {
-    position: fixed;
-    top: 0;
-    right: -360px; /* Hidden off-screen by default */
-    width: 260px;
-    height: 100%;
-    background-color: #fff;
-    box-shadow: -2px 0 8px rgba(0,0,0,0.1);
-    transition: right 0.3s ease;
-    z-index: 9999;
-    display: flex;
-    flex-direction: column;
-    padding: 1rem;
-  }
-  
-  .sideMenu.open {
-    right: 0; /* Slides in when .open is applied */
-  }
-  
-  .menuHeader {
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: 1rem;
-  }
-  
-  .closeIcon {
-    background: none;
-    border: none;
-    font-size: 1.4rem;
-    cursor: pointer;
-  }
-  
-  .menuList {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-  
-  .menuItem {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.6rem 0;
-    font-size: 1rem;
-    color: #333;
-    cursor: pointer;
-    border-radius: 4px;
-    transition: background-color 0.2s ease;
-  }
-  
-  .menuItem:hover {
-    background-color: #f5f5f5;
-  }
-  
-  .icon {
-    font-size: 1.2rem;
-    color: #666;
-  }
-  
+  position: fixed;
+  top: 0;
+  right: -360px; /* Hidden off-screen by default */
+  width: 260px;
+  height: 100%;
+  background-color: #fff;
+  box-shadow: -2px 0 8px rgba(0,0,0,0.1);
+  transition: right 0.3s ease;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+}
+
+.sideMenu.open {
+  right: 0;
+}
+
+.menuHeader {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
+.closeIcon {
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  cursor: pointer;
+}
+
+.menuList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0;
+  font-size: 1rem;
+  color: #333;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.menuItem:hover {
+  background-color: #f5f5f5;
+}
+
+.icon {
+  font-size: 1.2rem;
+  color: #666;
+}

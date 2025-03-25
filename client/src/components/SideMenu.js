@@ -1,9 +1,9 @@
+// client/src/components/SideMenu.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-// 1) Import the side menu CSS module from src/styles
 import styles from '../styles/SideMenu.module.css';
-import { FaTimes, FaSignInAlt, FaUser, FaShieldAlt } from 'react-icons/fa';
+import { FaTimes, FaSignInAlt, FaUser, FaShieldAlt, FaQuestionCircle, FaPhone } from 'react-icons/fa';
 
 export default function SideMenu({ isOpen, toggleMenu }) {
   const navigate = useNavigate();
@@ -25,7 +25,6 @@ export default function SideMenu({ isOpen, toggleMenu }) {
   const handleCurrencyChange = (e) => {
     const cur = e.target.value;
     setCurrency(cur);
-    // Optionally persist currency in localStorage or context.
   };
 
   return (
@@ -44,6 +43,16 @@ export default function SideMenu({ isOpen, toggleMenu }) {
         <li className={styles.sideMenuItem} onClick={() => handleNavigation('/signup')}>
           <FaUser />
           {t('header.menu.signup')}
+        </li>
+        {/* New "How Hyre Works" link */}
+        <li className={styles.sideMenuItem} onClick={() => handleNavigation('/about-hyre')}>
+          <FaQuestionCircle />
+          How Hyre Works
+        </li>
+        {/* New "Contact Support" link */}
+        <li className={styles.sideMenuItem} onClick={() => handleNavigation('/contact-support')}>
+          <FaPhone />
+          Contact Support
         </li>
         <li className={styles.sideMenuItem} onClick={() => handleNavigation('/insurance-legal')}>
           <FaShieldAlt />
