@@ -20,6 +20,8 @@ import BookingsPage from './pages/BookingsPage';
 import MessagesPage from './pages/MessagesPage';
 import AboutHyre from './pages/AboutHyre';
 // (Optionally add ContactSupport page when ready)
+import ContactUs from './pages/ContactUs';
+
 
 function App() {
   return (
@@ -47,7 +49,8 @@ function App() {
         <Route path="/bookings" element={<BookingsPage />} />
         <Route path="/messages" element={<MessagesPage />} />
         <Route path="/about-hyre" element={<AboutHyre />} />
-        {/* Add Contact Support route when ready */}
+        <Route path="/contact-support" element={<ContactUs />} />
+
         
         {/* Account and Change Password */}
         <Route path="/account" element={<AccountPage />} />

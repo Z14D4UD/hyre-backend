@@ -1,0 +1,148 @@
+/* client/src/styles/ContactUs.module.css */
+
+.container {
+    position: relative;
+    min-height: 100vh;
+    background-color: #fff;
+    font-family: 'Arial', sans-serif;
+    color: #333;
+  }
+  
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background-color: #fff;
+  }
+  .logo {
+    font-weight: 700;
+    font-size: 1.8rem;
+    color: #38b6ff;
+    cursor: pointer;
+  }
+  .menuIcon {
+    font-size: 1.4rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+  
+  /* Main content */
+  .content {
+    display: flex;
+    flex-direction: row;
+    gap: 2rem;
+    margin-top: 70px; /* space for header */
+    padding: 2rem;
+  }
+  
+  /* Left column (contact info) */
+  .leftColumn {
+    flex: 1;
+    max-width: 300px;
+  }
+  .leftColumn h2 {
+    font-size: 1.6rem;
+    margin-bottom: 0.8rem;
+  }
+  .leftColumn p {
+    margin-bottom: 1rem;
+    font-size: 0.95rem;
+    color: #555;
+  }
+  .contactDetail {
+    margin-bottom: 1rem;
+  }
+  .contactLabel {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+  }
+  .contactDetail a {
+    color: #333;
+    text-decoration: none;
+  }
+  .contactDetail a:hover {
+    text-decoration: underline;
+  }
+  
+  /* Right column (form) */
+  .rightColumn {
+    flex: 2;
+    max-width: 600px;
+  }
+  .contactForm {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .formRow {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .formLabel {
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+  .formInput,
+  .formTextarea {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.95rem;
+  }
+  .formTextarea {
+    min-height: 80px;
+    resize: vertical;
+  }
+  .submitButton {
+    background-color: #38b6ff;
+    color: #fff;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    align-self: flex-start;
+  }
+  .submitButton:hover {
+    background-color: #30a2e0;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 900px) {
+    .content {
+      flex-direction: column;
+    }
+    .leftColumn,
+    .rightColumn {
+      max-width: 100%;
+    }
+  }
+  
+  @media (max-width: 600px) {
+    .leftColumn h2 {
+      font-size: 1.4rem;
+    }
+    .leftColumn p {
+      font-size: 0.9rem;
+    }
+    .formLabel {
+      font-size: 0.9rem;
+    }
+    .submitButton {
+      font-size: 0.9rem;
+      padding: 0.5rem 1rem;
+    }
+  }
+  
