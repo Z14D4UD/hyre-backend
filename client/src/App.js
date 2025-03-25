@@ -18,6 +18,8 @@ import AccountPage from './pages/AccountPage';
 import ChangePassword from './pages/ChangePassword';
 import BookingsPage from './pages/BookingsPage';
 import MessagesPage from './pages/MessagesPage'; // new route for messages
+import AboutHyre from './pages/AboutHyre';
+
 
 function App() {
   return (
@@ -44,6 +46,9 @@ function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/bookings" element={<BookingsPage />} />
         <Route path="/messages" element={<MessagesPage />} />
+        <Route path="/about-hyre" element={<AboutHyre />} />
+
+        
 
         {/* Account and Change Password */}
         <Route path="/account" element={<AccountPage />} />
