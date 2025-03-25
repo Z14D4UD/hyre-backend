@@ -3,7 +3,14 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import styles from '../styles/SideMenu.module.css';
-import { FaTimes, FaSignInAlt, FaUser, FaShieldAlt, FaQuestionCircle, FaPhone } from 'react-icons/fa';
+import {
+  FaTimes,
+  FaSignInAlt,
+  FaUser,
+  FaShieldAlt,
+  FaQuestionCircle,
+  FaPhone
+} from 'react-icons/fa';
 
 export default function SideMenu({ isOpen, toggleMenu }) {
   const navigate = useNavigate();
@@ -36,27 +43,32 @@ export default function SideMenu({ isOpen, toggleMenu }) {
       </div>
 
       <ul className={styles.sideMenuList}>
+        {/* Non-logged in: Login/Signup */}
         <li className={styles.sideMenuItem} onClick={() => handleNavigation('/login')}>
           <FaSignInAlt />
-          {t('header.menu.login')}
+          Log in
         </li>
         <li className={styles.sideMenuItem} onClick={() => handleNavigation('/signup')}>
           <FaUser />
-          {t('header.menu.signup')}
+          Sign up
         </li>
-        {/* New "How Hyre Works" link */}
+
+        {/* "How Hyre Works" (AboutHyre) */}
         <li className={styles.sideMenuItem} onClick={() => handleNavigation('/about-hyre')}>
           <FaQuestionCircle />
           How Hyre Works
         </li>
-        {/* New "Contact Support" link */}
+
+        {/* "Contact Support" */}
         <li className={styles.sideMenuItem} onClick={() => handleNavigation('/contact-support')}>
           <FaPhone />
           Contact Support
         </li>
+
+        {/* Insurance & Legal */}
         <li className={styles.sideMenuItem} onClick={() => handleNavigation('/insurance-legal')}>
           <FaShieldAlt />
-          {t('header.menu.insuranceLegal')}
+          Insurance & Legal
         </li>
       </ul>
 

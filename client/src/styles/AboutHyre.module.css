@@ -1,5 +1,3 @@
-/* client/src/styles/AboutHyre.module.css */
-
 .container {
     position: relative;
     min-height: 100vh;
@@ -43,36 +41,37 @@
     gap: 2rem;
   }
   
-  /* Hero Section ("How Hyre Works") */
+  /* Hero Section */
   .heroSection {
-    position: relative;
-    min-height: 300px;
-    background: url('/src/assets/lambo.jpg') center center no-repeat;
-    background-size: cover;
+    position: relative; /* for overlay */
+    padding: 4rem 2rem;
+    color: #fff; /* text color on top of the image */
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: center;
-    padding: 2rem;
   }
   .heroOverlay {
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
+    top: 0; 
+    left: 0; 
+    right: 0; 
     bottom: 0;
-    background: rgba(0,0,0,0.3);
+    background-color: rgba(0,0,0,0.4); /* dark overlay with 40% opacity */
+    z-index: 1;
   }
-  .heroContent {
+  .heroText {
     position: relative;
+    z-index: 2; /* above overlay */
+    flex: 1 1 400px;
     max-width: 600px;
-    color: #fff;
-    text-align: left;
+    margin: 1rem;
   }
-  .heroContent h1 {
+  .heroText h1 {
     font-size: 2rem;
     margin-bottom: 1rem;
   }
-  .heroContent p {
+  .heroText p {
     font-size: 1.1rem;
     margin-bottom: 1.5rem;
   }
@@ -89,7 +88,7 @@
     background-color: #30a2e0;
   }
   
-  /* Compare Section ("Hyre vs. car rental") */
+  /* Compare Section */
   .compareSection {
     background: #fff;
     padding: 2rem;
@@ -113,8 +112,6 @@
     flex: 1 1 250px;
     max-width: 400px;
     padding: 1rem;
-    text-align: left;
-    margin: 0 auto;
   }
   .compareColumn h3 {
     font-size: 1.2rem;
@@ -131,46 +128,43 @@
     display: flex;
     align-items: center;
   }
-  
-  /* For ticks and X styling: */
-  .tickItem::before {
-    content: '✔';
-    color: #38b6ff;
-    margin-right: 0.5rem;
+  /* Tick and cross classes */
+  .tick::before {
+    content: "✔ ";
+    color: green;
+    margin-right: 0.3rem;
   }
-  .xItem::before {
-    content: '✖';
-    color: #ff4d4f;
-    margin-right: 0.5rem;
+  .cross::before {
+    content: "✘ ";
+    color: red;
+    margin-right: 0.3rem;
   }
   
-  /* Booking Steps Section ("How to book a car") */
+  /* Booking Steps Section */
   .bookingStepsSection {
+    background: url('/src/assets/phone.jpg') center/cover no-repeat;
     position: relative;
-    min-height: 300px;
-    background: url('/src/assets/phone.jpg') center center no-repeat;
-    background-size: cover;
     padding: 2rem;
-    color: #fff;
     text-align: center;
+    color: #333;
   }
-  .stepsOverlay {
+  .bookingStepsSection::before {
+    /* optional semi-opaque overlay if you want */
+    content: "";
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.3);
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba(255,255,255,0.7);
+    z-index: 0;
   }
-  .stepsContent {
+  .bookingStepsSection h2 {
     position: relative;
     z-index: 1;
-  }
-  .stepsContent h2 {
     font-size: 1.8rem;
     margin-bottom: 1.5rem;
   }
   .stepsGrid {
+    position: relative;
+    z-index: 1;
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
@@ -178,7 +172,7 @@
     margin-bottom: 1.5rem;
   }
   .stepItem {
-    background-color: rgba(255,255,255,0.9);
+    background-color: #fff;
     border-radius: 8px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     flex: 1 1 250px;
@@ -190,13 +184,14 @@
   .stepItem h3 {
     font-size: 1.1rem;
     margin-bottom: 0.5rem;
-    color: #333;
   }
   .stepItem p {
     font-size: 0.95rem;
     color: #555;
   }
   .browseCarsBtn {
+    position: relative;
+    z-index: 1;
     background-color: #38b6ff;
     color: #fff;
     border: none;
@@ -209,7 +204,7 @@
     background-color: #30a2e0;
   }
   
-  /* Why Section */
+  /* Why choose Hyre? */
   .whySection {
     background-color: #fff;
     padding: 2rem;
@@ -233,7 +228,6 @@
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     padding: 1rem;
     text-align: left;
-    margin: 0 auto;
   }
   .whyItem h3 {
     font-size: 1.1rem;
@@ -260,8 +254,15 @@
   /* Responsive adjustments */
   @media (max-width: 900px) {
     .heroSection {
-      padding: 2rem 1rem;
+      flex-direction: column;
+      align-items: center;
+      padding: 3rem 1rem;
     }
+    .heroText {
+      max-width: 100%;
+      text-align: center;
+    }
+  
     .compareGrid {
       flex-direction: column;
       align-items: center;
@@ -276,22 +277,11 @@
     }
   }
   
-  /* On smaller screens, reduce box padding/white space */
   @media (max-width: 600px) {
-    .stepItem,
-    .whyItem,
-    .compareColumn {
-      padding: 0.7rem;
-    }
-    .stepItem p,
-    .whyItem p,
-    .compareColumn li {
-      font-size: 0.85rem;
-    }
-    .heroContent h1 {
+    .heroText h1 {
       font-size: 1.6rem;
     }
-    .heroContent p {
+    .heroText p {
       font-size: 1rem;
     }
     .compareSection h2,
@@ -304,6 +294,14 @@
     .whyItem h3 {
       font-size: 1rem;
     }
+  
+    /* Reduce box padding on mobile to avoid excessive whitespace */
+    .stepItem,
+    .whyItem,
+    .compareColumn {
+      padding: 0.8rem;
+    }
+  
     .browseCarsBtn,
     .findCarBtn,
     .heroButton {
