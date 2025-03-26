@@ -1,13 +1,12 @@
-// client/src/pages/ContactUs.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-// If user is logged in as a customer, we show SideMenuCustomer; otherwise SideMenu
+import axios from 'axios';
+// Show SideMenu for not logged in, and SideMenuCustomer for logged-in customers.
 import SideMenu from '../components/SideMenu';
 import SideMenuCustomer from '../components/SideMenuCustomer';
-
+import { FaInstagram } from 'react-icons/fa';
+import { SiTiktok } from 'react-icons/si';
 import styles from '../styles/ContactUs.module.css';
-import axios from 'axios';
 
 export default function ContactUs() {
   const navigate = useNavigate();
@@ -16,41 +15,32 @@ export default function ContactUs() {
   const accountType = localStorage.getItem('accountType');
   const isCustomer = token && accountType === 'customer';
 
-  // Side menu states
+  // Side menu state
   const [menuOpen, setMenuOpen] = useState(false);
   const toggleMenu = () => setMenuOpen(!menuOpen);
   const closeMenu = () => setMenuOpen(false);
 
-  // Form data
+  // Form state
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     company: '',
   });
 
-  // Adjust your backend URL
+  // Use your backend URL (set in your client .env)
   const backendUrl = process.env.REACT_APP_BACKEND_URL || 'https://hyre-backend.onrender.com/api';
 
-  // Handle changes in inputs
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Submit form => call our backend endpoint
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
-      // Send POST request to the backend
-      const res = await axios.post(
-        `${backendUrl}/support/contact`,
-        formData
-      );
-
-      // If success
+      // Send POST request to the /support/contact endpoint
+      await axios.post(`${backendUrl}/support/contact`, formData);
       alert('Thank you for contacting Hyre! We will get back to you soon.');
-      // Clear fields
       setFormData({ name: '', email: '', company: '' });
     } catch (err) {
       console.error('Error submitting contact form:', err);
@@ -70,26 +60,18 @@ export default function ContactUs() {
         </button>
       </header>
 
-      {/* Conditionally show side menu */}
+      {/* Side menu: show customer version if logged in, else the general side menu */}
       {isCustomer ? (
-        <SideMenuCustomer
-          isOpen={menuOpen}
-          toggleMenu={toggleMenu}
-          closeMenu={closeMenu}
-        />
+        <SideMenuCustomer isOpen={menuOpen} toggleMenu={toggleMenu} closeMenu={closeMenu} />
       ) : (
-        <SideMenu
-          isOpen={menuOpen}
-          toggleMenu={toggleMenu}
-        />
+        <SideMenu isOpen={menuOpen} toggleMenu={toggleMenu} />
       )}
 
       {/* Main content */}
       <div className={styles.content}>
-        {/* Left side: heading + form */}
+        {/* Left Section: Heading and Contact Form */}
         <div className={styles.leftSection}>
           <h1 className={styles.mainHeading}>Let's build something great together.</h1>
-
           <form className={styles.form} onSubmit={handleSubmit}>
             <input
               type="text"
@@ -112,19 +94,18 @@ export default function ContactUs() {
             <input
               type="text"
               name="company"
-              placeholder="Company Name"
+              placeholder="Enter your message"
               className={styles.inputField}
               value={formData.company}
               onChange={handleChange}
             />
-
             <button type="submit" className={styles.submitButton}>
               Submit
             </button>
           </form>
         </div>
 
-        {/* Right side: contact info */}
+        {/* Right Section: Contact Info with Social Icons */}
         <div className={styles.rightSection}>
           <div className={styles.contactItem}>
             <h2 className={styles.contactLabel}>Email</h2>
@@ -140,8 +121,14 @@ export default function ContactUs() {
           </div>
           <div className={styles.contactItem}>
             <h2 className={styles.contactLabel}>Instagram</h2>
-            <a href="https://instagram.com/hyre" className={styles.contactLink}>
-              @hyre
+            <a href="https://instagram.com/hyre" className={styles.contactLink} target="_blank" rel="noopener noreferrer">
+              <FaInstagram className={styles.socialIcon} />
+            </a>
+          </div>
+          <div className={styles.contactItem}>
+            <h2 className={styles.contactLabel}>TikTok</h2>
+            <a href="https://www.tiktok.com/@hyre" className={styles.contactLink} target="_blank" rel="noopener noreferrer">
+              <SiTiktok className={styles.socialIcon} />
             </a>
           </div>
         </div>

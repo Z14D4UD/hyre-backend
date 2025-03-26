@@ -1,3 +1,4 @@
+// server.js
 const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
@@ -18,20 +19,18 @@ const businessRoutes = require('./routes/businessRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const affiliateRoutes = require('./routes/affiliateRoutes');
 const accountRoutes = require('./routes/accountRoutes');
+const supportRoutes = require('./routes/supportRoutes'); // <-- IMPORTANT
 
 const app = express();
 const server = http.createServer(app);
 
-// Connect to DB
 connectDB();
 
-// Allowed origins for CORS
 const allowedOrigins = [
   'http://localhost:3000',
   'https://hyreuk.com',
 ];
 
-// Configure Express middleware
 app.use(express.json());
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use('/uploads', express.static('uploads'));
@@ -58,7 +57,9 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/affiliates', affiliateRoutes);
 app.use('/api/account', accountRoutes);
 
-// Setup Socket.io
+// ***** Add this line so "/api/support/contact" works *****
+app.use('/api/support', supportRoutes);
+
 const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
