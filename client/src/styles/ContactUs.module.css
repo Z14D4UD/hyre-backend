@@ -1,9 +1,15 @@
 .container {
     position: relative;
     min-height: 100vh;
+<<<<<<< HEAD
     background-color: #38b6ff; /* main blue background */
     font-family: 'Arial', sans-serif;
     color: #fff;
+=======
+    background-color: #38b6ff; /* main background */
+    font-family: 'Arial', sans-serif;
+    color: #fff; /* text color to contrast with the blue */
+>>>>>>> 1bb490d68a6bd2ef48b594421061faad46adcdc6
   }
   
   /* Header */
@@ -17,7 +23,11 @@
     left: 0;
     right: 0;
     z-index: 100;
+<<<<<<< HEAD
     background-color: #38b6ff;
+=======
+    background-color: #38b6ff; /* same color to blend in */
+>>>>>>> 1bb490d68a6bd2ef48b594421061faad46adcdc6
   }
   .logo {
     font-weight: 700;
@@ -40,7 +50,11 @@
     padding: 6rem 2rem 2rem; /* top padding to leave space for header */
   }
   
+<<<<<<< HEAD
   /* Left Section: Heading + Form */
+=======
+  /* Left section: big heading + form */
+>>>>>>> 1bb490d68a6bd2ef48b594421061faad46adcdc6
   .leftSection {
     flex: 1;
     display: flex;
@@ -61,7 +75,11 @@
     gap: 1rem;
   }
   .inputField {
+<<<<<<< HEAD
     background-color: rgba(255, 255, 255, 0.2);
+=======
+    background-color: rgba(255,255,255,0.2);
+>>>>>>> 1bb490d68a6bd2ef48b594421061faad46adcdc6
     border: none;
     padding: 0.8rem;
     border-radius: 4px;
@@ -70,7 +88,11 @@
     outline: none;
   }
   .inputField::placeholder {
+<<<<<<< HEAD
     color: rgba(255, 255, 255, 0.7);
+=======
+    color: rgba(255,255,255,0.7);
+>>>>>>> 1bb490d68a6bd2ef48b594421061faad46adcdc6
   }
   .submitButton {
     background-color: #fff;
@@ -86,7 +108,11 @@
     background-color: #f0f0f0;
   }
   
+<<<<<<< HEAD
   /* Right Section: Contact Info */
+=======
+  /* Right section: contact info */
+>>>>>>> 1bb490d68a6bd2ef48b594421061faad46adcdc6
   .rightSection {
     flex: 1;
     display: flex;
@@ -112,12 +138,15 @@
     text-decoration: underline;
   }
   
+<<<<<<< HEAD
   /* Social Icons */
   .socialIcon {
     font-size: 1.5rem;
     color: #fff;
   }
   
+=======
+>>>>>>> 1bb490d68a6bd2ef48b594421061faad46adcdc6
   /* Responsive */
   @media (max-width: 900px) {
     .content {
