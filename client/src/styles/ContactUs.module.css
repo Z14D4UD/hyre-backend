@@ -1,178 +1,161 @@
 .container {
-    position: relative;
-    min-height: 100vh;
-<<<<<<< HEAD
-    background-color: #38b6ff; /* main blue background */
-    font-family: 'Arial', sans-serif;
-    color: #fff;
-=======
-    background-color: #38b6ff; /* main background */
-    font-family: 'Arial', sans-serif;
-    color: #fff; /* text color to contrast with the blue */
->>>>>>> 1bb490d68a6bd2ef48b594421061faad46adcdc6
-  }
-  
-  /* Header */
-  .header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1rem 1.5rem;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 100;
-<<<<<<< HEAD
-    background-color: #38b6ff;
-=======
-    background-color: #38b6ff; /* same color to blend in */
->>>>>>> 1bb490d68a6bd2ef48b594421061faad46adcdc6
-  }
-  .logo {
-    font-weight: 700;
-    font-size: 1.8rem;
-    cursor: pointer;
-  }
-  .menuIcon {
-    font-size: 1.4rem;
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: #fff;
-  }
-  
-  /* Main content container */
+  position: relative;
+  min-height: 100vh;
+  background-color: #38b6ff; /* main background */
+  font-family: 'Arial', sans-serif;
+  color: #fff; /* text color to contrast with the blue */
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background-color: #38b6ff; /* same color to blend in */
+}
+
+.logo {
+  font-weight: 700;
+  font-size: 1.8rem;
+  cursor: pointer;
+}
+
+.menuIcon {
+  font-size: 1.4rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #fff;
+}
+
+/* Main content container */
+.content {
+  display: flex;
+  flex-direction: row;
+  gap: 2rem;
+  padding: 6rem 2rem 2rem; /* top padding to leave space for header */
+}
+
+/* Left section: big heading + form */
+.leftSection {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 600px;
+  gap: 2rem;
+}
+
+.mainHeading {
+  font-size: 2.2rem;
+  line-height: 1.2;
+  margin: 0;
+  color: #fff;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.inputField {
+  background-color: rgba(255,255,255,0.2);
+  border: none;
+  padding: 0.8rem;
+  border-radius: 4px;
+  font-size: 1rem;
+  color: #fff;
+  outline: none;
+}
+
+.inputField::placeholder {
+  color: rgba(255,255,255,0.7);
+}
+
+.submitButton {
+  background-color: #fff;
+  color: #38b6ff;
+  border: none;
+  padding: 0.8rem 1.2rem;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.submitButton:hover {
+  background-color: #f0f0f0;
+}
+
+/* Right section: contact info */
+.rightSection {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 400px;
+  gap: 2rem;
+}
+
+.contactItem {
+  margin-bottom: 1rem;
+}
+
+.contactLabel {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+}
+
+.contactLink {
+  color: #fff;
+  text-decoration: none;
+  font-size: 1rem;
+}
+
+.contactLink:hover {
+  text-decoration: underline;
+}
+
+/* Social icon size if needed */
+.socialIcon {
+  font-size: 1.4rem;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
   .content {
-    display: flex;
-    flex-direction: row;
-    gap: 2rem;
-    padding: 6rem 2rem 2rem; /* top padding to leave space for header */
-  }
-  
-<<<<<<< HEAD
-  /* Left Section: Heading + Form */
-=======
-  /* Left section: big heading + form */
->>>>>>> 1bb490d68a6bd2ef48b594421061faad46adcdc6
-  .leftSection {
-    flex: 1;
-    display: flex;
     flex-direction: column;
-    justify-content: center;
-    max-width: 600px;
-    gap: 2rem;
+    padding: 5rem 1rem 1rem;
   }
+  .leftSection,
+  .rightSection {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
   .mainHeading {
-    font-size: 2.2rem;
-    line-height: 1.2;
-    margin: 0;
-    color: #fff;
-  }
-  .form {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
+    font-size: 1.8rem;
   }
   .inputField {
-<<<<<<< HEAD
-    background-color: rgba(255, 255, 255, 0.2);
-=======
-    background-color: rgba(255,255,255,0.2);
->>>>>>> 1bb490d68a6bd2ef48b594421061faad46adcdc6
-    border: none;
-    padding: 0.8rem;
-    border-radius: 4px;
-    font-size: 1rem;
-    color: #fff;
-    outline: none;
-  }
-  .inputField::placeholder {
-<<<<<<< HEAD
-    color: rgba(255, 255, 255, 0.7);
-=======
-    color: rgba(255,255,255,0.7);
->>>>>>> 1bb490d68a6bd2ef48b594421061faad46adcdc6
+    font-size: 0.95rem;
   }
   .submitButton {
-    background-color: #fff;
-    color: #38b6ff;
-    border: none;
-    padding: 0.8rem 1.2rem;
-    border-radius: 4px;
-    font-size: 1rem;
-    cursor: pointer;
-    font-weight: 600;
-  }
-  .submitButton:hover {
-    background-color: #f0f0f0;
-  }
-  
-<<<<<<< HEAD
-  /* Right Section: Contact Info */
-=======
-  /* Right section: contact info */
->>>>>>> 1bb490d68a6bd2ef48b594421061faad46adcdc6
-  .rightSection {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    max-width: 400px;
-    gap: 2rem;
-  }
-  .contactItem {
-    margin-bottom: 1rem;
+    font-size: 0.95rem;
+    padding: 0.6rem 1rem;
   }
   .contactLabel {
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin-bottom: 0.3rem;
-  }
-  .contactLink {
-    color: #fff;
-    text-decoration: none;
     font-size: 1rem;
   }
-  .contactLink:hover {
-    text-decoration: underline;
+  .contactLink {
+    font-size: 0.9rem;
   }
-  
-<<<<<<< HEAD
-  /* Social Icons */
-  .socialIcon {
-    font-size: 1.5rem;
-    color: #fff;
-  }
-  
-=======
->>>>>>> 1bb490d68a6bd2ef48b594421061faad46adcdc6
-  /* Responsive */
-  @media (max-width: 900px) {
-    .content {
-      flex-direction: column;
-      padding: 5rem 1rem 1rem;
-    }
-    .leftSection, .rightSection {
-      max-width: 100%;
-    }
-  }
-  @media (max-width: 600px) {
-    .mainHeading {
-      font-size: 1.8rem;
-    }
-    .inputField {
-      font-size: 0.95rem;
-    }
-    .submitButton {
-      font-size: 0.95rem;
-      padding: 0.6rem 1rem;
-    }
-    .contactLabel {
-      font-size: 1rem;
-    }
-    .contactLink {
-      font-size: 0.9rem;
-    }
-  }
-  
+}
