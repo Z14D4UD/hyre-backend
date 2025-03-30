@@ -21,6 +21,8 @@ import MessagesPage from './pages/MessagesPage';
 import AboutHyre from './pages/AboutHyre';
 // (Optionally add ContactSupport page when ready)
 import ContactUs from './pages/ContactUs';
+import LegalPage from './pages/LegalPage';
+
 
 
 function App() {
@@ -50,6 +52,8 @@ function App() {
         <Route path="/messages" element={<MessagesPage />} />
         <Route path="/about-hyre" element={<AboutHyre />} />
         <Route path="/contact-support" element={<ContactUs />} />
+        <Route path="/legal" element={<LegalPage />} />
+
 
         
         {/* Account and Change Password */}

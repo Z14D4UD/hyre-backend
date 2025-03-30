@@ -1,0 +1,134 @@
+/* client/src/styles/LegalPage.module.css */
+
+.container {
+    position: relative;
+    min-height: 100vh;
+    background-color: #fff;
+    font-family: 'Arial', sans-serif;
+    color: #333;
+  }
+  
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background-color: #fff;
+  }
+  .logo {
+    font-weight: 700;
+    font-size: 1.8rem;
+    color: #38b6ff; /* brand color */
+    cursor: pointer;
+  }
+  .menuIcon {
+    font-size: 1.4rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+  
+  /* Main content area below header */
+  .content {
+    margin-top: 72px; /* space for fixed header */
+    padding: 2rem;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  
+  /* Page title */
+  .title {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+  
+  /* Example sub-navigation for legal links */
+  .navBar {
+    background-color: #fafafa;
+    padding: 0.8rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  }
+  .navLinks {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    justify-content: center;
+  }
+  .navLinks li {
+    cursor: pointer;
+    color: #333;
+    font-size: 0.95rem;
+    padding: 0.4rem 0.6rem;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+  }
+  .navLinks li:hover {
+    background-color: #f2f2f2;
+  }
+  
+  /* The main legal text container */
+  .legalContent {
+    background-color: #fff;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .legalContent h2 {
+    font-size: 1.6rem;
+    margin-top: 0;
+  }
+  .legalContent h3 {
+    font-size: 1.2rem;
+    margin-top: 1.2rem;
+  }
+  .legalContent p {
+    margin-bottom: 1rem;
+    line-height: 1.4;
+    font-size: 0.95rem;
+    color: #555;
+  }
+  .legalContent a {
+    color: #38b6ff;
+    text-decoration: none;
+  }
+  .legalContent a:hover {
+    text-decoration: underline;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 600px) {
+    .content {
+      padding: 1rem;
+    }
+    .title {
+      font-size: 1.6rem;
+    }
+    .legalContent {
+      padding: 1rem;
+    }
+    .legalContent h2 {
+      font-size: 1.4rem;
+    }
+    .legalContent h3 {
+      font-size: 1.1rem;
+    }
+    .legalContent p {
+      font-size: 0.9rem;
+    }
+  }
+  

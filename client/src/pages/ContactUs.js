@@ -11,7 +11,7 @@ import styles from '../styles/ContactUs.module.css';
 
 export default function ContactUs() {
   const navigate = useNavigate();
-  
+
   const token = localStorage.getItem('token');
   const accountType = localStorage.getItem('accountType');
   const isCustomer = token && accountType === 'customer';
@@ -21,15 +21,17 @@ export default function ContactUs() {
   const toggleMenu = () => setMenuOpen(!menuOpen);
   const closeMenu = () => setMenuOpen(false);
 
-  // Form state
+  // Form state: add "phone" and keep "company"
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     company: '',
+    phone: '',
   });
 
-  // Use your backend URL from your client .env
-  const backendUrl = process.env.REACT_APP_BACKEND_URL || 'https://hyre-backend.onrender.com/api';
+  // Use your backend URL (from your client .env)
+  const backendUrl =
+    process.env.REACT_APP_BACKEND_URL || 'https://hyre-backend.onrender.com/api';
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -42,7 +44,8 @@ export default function ContactUs() {
       // Send POST request to the /support/contact endpoint
       await axios.post(`${backendUrl}/support/contact`, formData);
       alert('Thank you for contacting Hyre! We will get back to you soon.');
-      setFormData({ name: '', email: '', company: '' });
+      // Clear fields
+      setFormData({ name: '', email: '', company: '', phone: '' });
     } catch (err) {
       console.error('Error submitting contact form:', err);
       alert('Failed to send message. Please try again later.');
@@ -63,7 +66,11 @@ export default function ContactUs() {
 
       {/* Side menu: show customer version if logged in, else the general side menu */}
       {isCustomer ? (
-        <SideMenuCustomer isOpen={menuOpen} toggleMenu={toggleMenu} closeMenu={closeMenu} />
+        <SideMenuCustomer
+          isOpen={menuOpen}
+          toggleMenu={toggleMenu}
+          closeMenu={closeMenu}
+        />
       ) : (
         <SideMenu isOpen={menuOpen} toggleMenu={toggleMenu} />
       )}
@@ -95,9 +102,17 @@ export default function ContactUs() {
             <input
               type="text"
               name="company"
-              placeholder="Enter your message"
+              placeholder="Company"
               className={styles.inputField}
               value={formData.company}
+              onChange={handleChange}
+            />
+            <input
+              type="text"
+              name="phone"
+              placeholder="Phone Number"
+              className={styles.inputField}
+              value={formData.phone}
               onChange={handleChange}
             />
             <button type="submit" className={styles.submitButton}>
