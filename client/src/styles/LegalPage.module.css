@@ -3,9 +3,9 @@
 .container {
     position: relative;
     min-height: 100vh;
-    background-color: #fff;
     font-family: 'Arial', sans-serif;
     color: #333;
+    background-color: #fff;
   }
   
   /* Header */
@@ -22,12 +22,14 @@
     z-index: 100;
     background-color: #fff;
   }
+  
   .logo {
     font-weight: 700;
     font-size: 1.8rem;
-    color: #38b6ff; /* brand color */
+    color: #38b6ff;
     cursor: pointer;
   }
+  
   .menuIcon {
     font-size: 1.4rem;
     background: none;
@@ -35,99 +37,109 @@
     cursor: pointer;
   }
   
-  /* Main content area below header */
-  .content {
-    margin-top: 72px; /* space for fixed header */
-    padding: 2rem;
-    max-width: 1200px;
-    margin-left: auto;
-    margin-right: auto;
+  /* Hero Section */
+  .heroSection {
+    position: relative;
+    width: 100%;
+    height: 40vh;
+    background: url('/src/assets/legal.jpg') center center / cover no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 72px; /* to clear the header */
   }
   
-  /* Page title */
-  .title {
-    font-size: 2rem;
-    margin-bottom: 1rem;
+  .heroOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.4);
+  }
+  
+  .heroContent {
+    position: relative;
+    z-index: 2;
     text-align: center;
+    color: #fff;
+    padding: 1rem;
   }
   
-  /* Example sub-navigation for legal links */
-  .navBar {
-    background-color: #fafafa;
-    padding: 0.8rem;
-    border-radius: 8px;
-    margin-bottom: 1.5rem;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  .heroTitle {
+    font-size: 2.2rem;
+    margin-bottom: 0.5rem;
   }
-  .navLinks {
-    list-style: none;
+  
+  .heroSubtitle {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .sectionLinksContainer {
     display: flex;
     flex-wrap: wrap;
-    gap: 1rem;
-    margin: 0;
-    padding: 0;
+    gap: 0.5rem;
     justify-content: center;
   }
-  .navLinks li {
-    cursor: pointer;
-    color: #333;
-    font-size: 0.95rem;
-    padding: 0.4rem 0.6rem;
+  
+  .sectionLink {
+    background-color: #38b6ff;
+    border: none;
+    color: #fff;
+    padding: 0.4rem 0.8rem;
     border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
     transition: background-color 0.2s ease;
   }
-  .navLinks li:hover {
-    background-color: #f2f2f2;
+  
+  .sectionLink:hover {
+    background-color: #30a2e0;
   }
   
-  /* The main legal text container */
-  .legalContent {
-    background-color: #fff;
-    padding: 1.5rem;
-    border-radius: 8px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  /* Main Content */
+  .mainContent {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 0 1rem;
   }
   
-  .legalContent h2 {
-    font-size: 1.6rem;
-    margin-top: 0;
+  .legalSection {
+    margin-bottom: 2rem;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 1rem;
   }
-  .legalContent h3 {
-    font-size: 1.2rem;
-    margin-top: 1.2rem;
+  
+  .sectionTitle {
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin: 1rem 0 0.5rem;
+    color: #38b6ff;
   }
-  .legalContent p {
-    margin-bottom: 1rem;
-    line-height: 1.4;
+  
+  .sectionContent {
     font-size: 0.95rem;
+    line-height: 1.5;
     color: #555;
   }
-  .legalContent a {
-    color: #38b6ff;
-    text-decoration: none;
-  }
-  .legalContent a:hover {
-    text-decoration: underline;
-  }
   
-  /* Responsive adjustments */
+  /* Responsive Adjustments */
   @media (max-width: 600px) {
-    .content {
-      padding: 1rem;
-    }
-    .title {
+    .heroTitle {
       font-size: 1.6rem;
     }
-    .legalContent {
-      padding: 1rem;
+    .heroSubtitle {
+      font-size: 1rem;
     }
-    .legalContent h2 {
-      font-size: 1.4rem;
+    .sectionLink {
+      font-size: 0.85rem;
+      padding: 0.3rem 0.6rem;
     }
-    .legalContent h3 {
-      font-size: 1.1rem;
+    .sectionTitle {
+      font-size: 1.2rem;
     }
-    .legalContent p {
+    .sectionContent {
       font-size: 0.9rem;
     }
   }

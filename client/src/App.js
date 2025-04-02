@@ -22,6 +22,8 @@ import AboutHyre from './pages/AboutHyre';
 // (Optionally add ContactSupport page when ready)
 import ContactUs from './pages/ContactUs';
 import LegalPage from './pages/LegalPage';
+import Dashboard from './components/Dashboard'; // <-- import it
+
 
 
 

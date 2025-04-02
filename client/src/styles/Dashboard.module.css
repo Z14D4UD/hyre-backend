@@ -1,0 +1,244 @@
+/* client/src/styles/Dashboard.module.css */
+
+/* Container for the entire dashboard */
+.dashboardContainer {
+    display: flex;
+    min-height: 100vh;
+    background: #f8f9fa;
+    font-family: 'Roboto', sans-serif;
+  }
+  
+  /* Header (top bar) */
+  .header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background-color: #fff;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.5rem;
+    z-index: 1000;
+  }
+  
+  .logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .menuIcon {
+    font-size: 1.25rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+  
+  /* Main content: offset from the left to accommodate the side menu */
+  .mainContent {
+    flex: 1;
+    margin-top: 60px; /* height of header */
+    padding: 1.5rem;
+    transition: margin-left 0.3s ease;
+    /* if your side menu is fixed width, you might do margin-left: 250px; when open */
+  }
+  
+  /* Page title */
+  .pageTitle {
+    margin-bottom: 1rem;
+  }
+  
+  .pageTitle h1 {
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+  }
+  
+  .pageTitle span {
+    color: #888;
+  }
+  
+  /* Stats cards */
+  .statsCards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .card {
+    background: #fff;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .card h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: #666;
+    margin-bottom: 0.5rem;
+  }
+  
+  .card p {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: bold;
+  }
+  
+  /* Row that contains charts & side panels */
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  
+  /* Left column (line chart + bar chart) */
+  .leftColumn {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  /* Right column (doughnut chart + reminders) */
+  .rightColumn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  /* Chart cards */
+  .chartCard {
+    background: #fff;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .chartCard h2 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+  }
+  
+  /* Rent Status chart labels */
+  .rentStatusLabels {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  .rentStatusLabels div {
+    font-size: 0.9rem;
+    display: flex;
+    justify-content: space-between;
+    color: #333;
+  }
+  
+  /* Reminders card */
+  .remindersCard {
+    background: #fff;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .remindersCard h2 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+  }
+  
+  .remindersCard ul {
+    list-style: disc;
+    padding-left: 1.25rem;
+    margin: 0;
+  }
+  
+  .remindersCard ul li {
+    margin-bottom: 0.5rem;
+  }
+  
+  /* Table section */
+  .tableSection {
+    margin-top: 1.5rem;
+    background: #fff;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  /* Table header with search/filter */
+  .tableHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+  
+  .tableHeader h2 {
+    margin: 0;
+    font-size: 1.1rem;
+  }
+  
+  .tableSearch {
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  .tableSearch input {
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  .tableSearch button {
+    padding: 0.5rem 1rem;
+    background: #4f3cc9;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .bookingsTable {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .bookingsTable th, .bookingsTable td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+    font-size: 0.9rem;
+  }
+  
+  .bookingsTable thead {
+    background: #f2f2f2;
+  }
+  
+  .bookingsTable tbody tr:hover {
+    background: #fafafa;
+  }
+  
+  /* Status labels */
+  .hired {
+    color: #2ecc71;
+    font-weight: 600;
+  }
+  
+  .pending {
+    color: #f1c40f;
+    font-weight: 600;
+  }
+  
+  .cancelled {
+    color: #e74c3c;
+    font-weight: 600;
+  }
+  

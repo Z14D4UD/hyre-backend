@@ -4,9 +4,10 @@ import { FaSearch } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-// Import both menus
+// Import all menus
 import SideMenu from '../components/SideMenu';
 import SideMenuCustomer from '../components/SideMenuCustomer';
+import SideMenuBusiness from '../components/SideMenuBusiness'; // import the business menu
 
 import FeaturedBusinesses from '../components/FeaturedBusinesses';
 import LocationAutocomplete from '../components/LocationAutoComplete';
@@ -28,8 +29,9 @@ export default function Home() {
   const token = (localStorage.getItem('token') || '').trim();
   const accountType = (localStorage.getItem('accountType') || '').toLowerCase();
 
-  // Determine if a customer is logged in
+  // Determine if a customer or business is logged in
   const isCustomerLoggedIn = token !== '' && accountType === 'customer';
+  const isBusinessLoggedIn = token !== '' && accountType === 'business';
 
   // Toggle menu open/closed
   const toggleMenu = () => setMenuOpen(!menuOpen);
@@ -62,8 +64,14 @@ export default function Home() {
         </button>
       </header>
 
-      {/* Render customer menu only if logged in as customer, else default menu */}
-      {isCustomerLoggedIn ? (
+      {/* Render appropriate side menu based on user account type */}
+      {isBusinessLoggedIn ? (
+        <SideMenuBusiness
+          isOpen={menuOpen}
+          toggleMenu={toggleMenu}
+          closeMenu={closeMenu}
+        />
+      ) : isCustomerLoggedIn ? (
         <SideMenuCustomer
           isOpen={menuOpen}
           toggleMenu={toggleMenu}

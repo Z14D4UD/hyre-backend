@@ -1,7 +1,7 @@
 // client/src/pages/Login.js
 import React, { useState } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import styles from '../styles/Login.module.css';
 
@@ -12,45 +12,40 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  // Click brand to go home
+  // Clicking the brand takes the user home
   const goHome = () => {
     navigate('/');
   };
 
-  // Handle login form
+  // Handle login form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/auth/login`, {
         email,
-        password
+        password,
       });
 
       // Destructure the fields from the server response
-      const { token, user, accountType, redirectUrl } = res.data;
+      const { token, accountType } = res.data;
 
-      // Save the token in localStorage
+      // Save the token and accountType in localStorage
       localStorage.setItem('token', token);
-
-      // Also store the accountType in localStorage
       localStorage.setItem('accountType', accountType);
 
       console.log('Server returned accountType:', accountType);
-      console.log('Server returned redirectUrl:', redirectUrl);
 
-      // If accountType is "customer", ALWAYS go to home page ("/")
-      if (accountType?.toLowerCase() === 'customer') {
+      // Redirect customers and businesses to the Home page
+      if (
+        accountType?.toLowerCase() === 'customer' ||
+        accountType?.toLowerCase() === 'business'
+      ) {
         navigate('/');
         return;
       }
 
-      // Otherwise, use the server's redirectUrl if present,
-      // or fallback to "/dashboard"
-      if (redirectUrl) {
-        navigate(redirectUrl);
-      } else {
-        navigate('/dashboard');
-      }
+      // Fallback for any other account types if necessary
+      navigate('/dashboard');
     } catch (error) {
       console.error(error.response?.data || error);
       alert(error.response?.data?.msg || 'Login failed');
@@ -64,7 +59,7 @@ export default function Login() {
         {/* Desktop wave shape */}
         <div className={styles.desktopWave}></div>
 
-        {/* Brand container in center (desktop), near bottom (mobile) */}
+        {/* Brand container (click to go home) */}
         <div className={styles.brandContainer} onClick={goHome}>
           <div className={styles.brandTitle}>Hyre</div>
         </div>
@@ -94,9 +89,10 @@ export default function Login() {
               required
             />
 
-            <a className={styles.forgotPassword} href="/forgot-password">
+            {/* Changed forgot password link to navigate to ChangePassword page */}
+            <Link className={styles.forgotPassword} to="/change-password">
               Forgot your password?
-            </a>
+            </Link>
 
             <button className={styles.loginButton} type="submit">
               {t('Login')}
@@ -105,9 +101,9 @@ export default function Login() {
 
           <div className={styles.signupRow}>
             Don't have an account?
-            <a className={styles.signupLink} href="/signup">
+            <Link className={styles.signupLink} to="/signup">
               Sign Up
-            </a>
+            </Link>
           </div>
         </div>
       </div>
