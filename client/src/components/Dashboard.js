@@ -24,6 +24,8 @@ import { Line, Bar, Doughnut } from 'react-chartjs-2';
 import SideMenuBusiness from './SideMenuBusiness';
 import styles from '../styles/Dashboard.module.css';
 
+
+
 // 2. Chart.js registration (still near the top, but after all imports)
 ChartJS.register(
   CategoryScale,
@@ -86,6 +88,9 @@ export default function Dashboard() {
     }
     if (token) fetchData();
   }, [token]);
+
+  console.log("Token from localStorage:", token);
+
 
   // Prepare chart data
   const earningsChartData = {

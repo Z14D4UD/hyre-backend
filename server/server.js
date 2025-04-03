@@ -20,6 +20,7 @@ const paymentRoutes = require('./routes/paymentRoutes');
 const affiliateRoutes = require('./routes/affiliateRoutes');
 const accountRoutes = require('./routes/accountRoutes');
 const supportRoutes = require('./routes/supportRoutes');
+const businessRoutes = require('./routes/businessRoutes');
 
 const app = express();
 const server = http.createServer(app);
