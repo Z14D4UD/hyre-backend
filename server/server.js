@@ -15,12 +15,11 @@ const invoiceRoutes = require('./routes/invoiceRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const customerRoutes = require('./routes/customerRoutes');
 const carRoutes = require('./routes/carRoutes');
-const businessRoutes = require('./routes/businessRoutes');
+const businessRoutes = require('./routes/businessRoutes');  // Only declare once
 const paymentRoutes = require('./routes/paymentRoutes');
 const affiliateRoutes = require('./routes/affiliateRoutes');
 const accountRoutes = require('./routes/accountRoutes');
 const supportRoutes = require('./routes/supportRoutes');
-const businessRoutes = require('./routes/businessRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -58,7 +57,6 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/affiliates', affiliateRoutes);
 app.use('/api/account', accountRoutes);
 app.use('/api/support', supportRoutes);
-
 
 const io = new Server(server, {
   cors: {
