@@ -1,6 +1,6 @@
 // client/src/components/Dashboard.js
 
-// 1. All imports at the top
+// 1. All imports at the very top
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -57,7 +57,7 @@ export default function Dashboard() {
   // Retrieve token from localStorage
   const token = (localStorage.getItem('token') || '').trim();
   console.log("Token from localStorage:", token); // For debugging
-  // Set the Axios header
+  // Set the Axios header with the token
   const axiosConfig = {
     headers: {
       Authorization: `Bearer ${token}`
@@ -70,22 +70,27 @@ export default function Dashboard() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const baseUrl = process.env.REACT_APP_BACKEND_URL;
+        const baseUrl = process.env.REACT_APP_BACKEND_URL; // e.g., https://hyre-backend.onrender.com/api
         // Fetch business stats
-        const statsRes = await axios.get(`${baseUrl}/api/business/stats`, axiosConfig);
+        const statsRes = await axios.get(`${baseUrl}/business/stats`, axiosConfig);
         setStats(statsRes.data);
         // Fetch earnings data
-        const earningsRes = await axios.get(`${baseUrl}/api/business/earnings`, axiosConfig);
+        const earningsRes = await axios.get(`${baseUrl}/business/earnings`, axiosConfig);
         setEarningsData(earningsRes.data);
         // Fetch bookings overview data
-        const bookingsOverviewRes = await axios.get(`${baseUrl}/api/business/bookingsOverview`, axiosConfig);
+        const bookingsOverviewRes = await axios.get(`${baseUrl}/business/bookingsOverview`, axiosConfig);
         setBookingsOverviewData(bookingsOverviewRes.data);
         // Fetch my bookings for this business
-        const bookingsRes = await axios.get(`${baseUrl}/api/bookings/mybookings`, axiosConfig);
+        const bookingsRes = await axios.get(`${baseUrl}/bookings/mybookings`, axiosConfig);
         setCarBookings(bookingsRes.data);
         setLoading(false);
       } catch (error) {
-        console.error('Error fetching dashboard data:', error);
+        if (error.response && error.response.status === 401) {
+          console.log('Unauthorized – redirecting to login');
+          navigate('/login');
+        } else {
+          console.error('Error fetching dashboard data:', error);
+        }
         setLoading(false);
       }
     }
@@ -133,7 +138,7 @@ export default function Dashboard() {
     <header className={styles.header}>
       <div
         className={styles.logo}
-        style={{ color: '#38b6ff' }}  // Set logo color here
+        style={{ color: '#38b6ff' }}
         onClick={() => navigate('/')}
       >
         Hyre
