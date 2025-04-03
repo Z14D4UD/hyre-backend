@@ -8,9 +8,10 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const sendEmail = require('../utils/sendEmail');
 
+// Helper to generate random tokens for email confirmation
 const generateToken = () => crypto.randomBytes(20).toString('hex');
 
-// Define signup as a constant function
+// Signup function
 const signup = async (req, res) => {
   const { name, email, password, accountType } = req.body;
   try {
@@ -22,14 +23,27 @@ const signup = async (req, res) => {
       const hashedPassword = await bcrypt.hash(password, salt);
       const emailConfirmationToken = generateToken();
 
-      business = new Business({ name, email, password: hashedPassword, emailConfirmationToken });
+      business = new Business({
+        name,
+        email,
+        password: hashedPassword,
+        emailConfirmationToken
+      });
       await business.save();
 
       const confirmUrl = `${process.env.FRONTEND_URL}/confirm/${emailConfirmationToken}`;
       const message = `Please confirm your email by clicking this link: ${confirmUrl}`;
-      await sendEmail({ email: business.email, subject: 'Hyre Account Confirmation', message });
+      await sendEmail({
+        email: business.email,
+        subject: 'Hyre Account Confirmation',
+        message
+      });
 
-      const token = jwt.sign({ id: business._id, accountType: 'business' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+      const token = jwt.sign(
+        { id: business._id, accountType: 'business' },
+        process.env.JWT_SECRET,
+        { expiresIn: '1h' }
+      );
       return res.json({
         token,
         business,
@@ -46,7 +60,11 @@ const signup = async (req, res) => {
       customer = new Customer({ name, email, password: hashedPassword });
       await customer.save();
 
-      const token = jwt.sign({ id: customer._id, accountType: 'customer' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+      const token = jwt.sign(
+        { id: customer._id, accountType: 'customer' },
+        process.env.JWT_SECRET,
+        { expiresIn: '1h' }
+      );
       return res.json({
         token,
         customer,
@@ -61,10 +79,19 @@ const signup = async (req, res) => {
       const hashedPassword = await bcrypt.hash(password, salt);
       const affiliateCode = crypto.randomBytes(4).toString('hex').toUpperCase();
 
-      affiliate = new Affiliate({ name, email, password: hashedPassword, affiliateCode });
+      affiliate = new Affiliate({
+        name,
+        email,
+        password: hashedPassword,
+        affiliateCode
+      });
       await affiliate.save();
 
-      const token = jwt.sign({ id: affiliate._id, accountType: 'affiliate' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+      const token = jwt.sign(
+        { id: affiliate._id, accountType: 'affiliate' },
+        process.env.JWT_SECRET,
+        { expiresIn: '1h' }
+      );
       return res.json({
         token,
         affiliate,
@@ -80,7 +107,7 @@ const signup = async (req, res) => {
   }
 };
 
-// Define login as a constant function
+// Login function
 const login = async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -103,7 +130,12 @@ const login = async (req, res) => {
       return res.status(400).json({ msg: 'Invalid credentials' });
     }
 
-    const token = jwt.sign({ id: user._id, accountType }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign(
+      { id: user._id, accountType },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
     let redirectUrl = '/dashboard';
     if (accountType === 'business') redirectUrl = '/dashboard/business';
     else if (accountType === 'customer') redirectUrl = '/dashboard/customer';
@@ -116,7 +148,7 @@ const login = async (req, res) => {
   }
 };
 
-// Updated confirmEmail: confirms the user's email and sends back an HTML confirmation message
+// Confirm Email function
 const confirmEmail = async (req, res) => {
   const token = req.params.token;
   try {
@@ -161,7 +193,6 @@ const googleCallback = (req, res) => {
   res.json({ msg: 'googleCallback not implemented yet.' });
 };
 
-// Export all functions using the same variable names
 module.exports = {
   signup,
   login,
