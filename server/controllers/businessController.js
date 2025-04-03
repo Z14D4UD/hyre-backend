@@ -23,7 +23,6 @@ exports.verifyID = async (req, res) => {
 };
 
 exports.getStats = async (req, res) => {
-  // Defensive check: ensure that req.business exists
   if (!req.business) {
     console.error("getStats: req.business is undefined", req);
     return res.status(403).json({ msg: 'Forbidden: not a business user' });
@@ -32,7 +31,7 @@ exports.getStats = async (req, res) => {
   try {
     // Calculate total revenue by summing totalAmount from bookings for this business
     const totalRevenueResult = await Booking.aggregate([
-      { $match: { business: mongoose.Types.ObjectId(businessId) } },
+      { $match: { business: new mongoose.Types.ObjectId(businessId) } },
       { $group: { _id: null, total: { $sum: "$totalAmount" } } }
     ]);
     const totalRevenue = totalRevenueResult[0] ? totalRevenueResult[0].total : 0;
@@ -45,7 +44,7 @@ exports.getStats = async (req, res) => {
     
     // Count rented cars by grouping unique car IDs that have bookings
     const rentedCarsResult = await Booking.aggregate([
-      { $match: { business: mongoose.Types.ObjectId(businessId) } },
+      { $match: { business: new mongoose.Types.ObjectId(businessId) } },
       { $group: { _id: "$car" } },
       { $count: "count" }
     ]);
@@ -63,7 +62,6 @@ exports.getStats = async (req, res) => {
 };
 
 exports.getEarnings = async (req, res) => {
-  // Defensive check
   if (!req.business) {
     console.error("getEarnings: req.business is undefined", req);
     return res.status(403).json({ msg: 'Forbidden: not a business user' });
@@ -72,7 +70,7 @@ exports.getEarnings = async (req, res) => {
   try {
     // Group bookings by month (based on startDate) and sum totalAmount as earnings
     const earnings = await Booking.aggregate([
-      { $match: { business: mongoose.Types.ObjectId(businessId) } },
+      { $match: { business: new mongoose.Types.ObjectId(businessId) } },
       {
         $group: {
           _id: { $month: "$startDate" },
@@ -94,7 +92,6 @@ exports.getEarnings = async (req, res) => {
 };
 
 exports.getBookingsOverview = async (req, res) => {
-  // Defensive check
   if (!req.business) {
     console.error("getBookingsOverview: req.business is undefined", req);
     return res.status(403).json({ msg: 'Forbidden: not a business user' });
@@ -103,7 +100,7 @@ exports.getBookingsOverview = async (req, res) => {
   try {
     // Group bookings by month (using startDate) and count them
     const bookingsOverview = await Booking.aggregate([
-      { $match: { business: mongoose.Types.ObjectId(businessId) } },
+      { $match: { business: new mongoose.Types.ObjectId(businessId) } },
       {
         $group: {
           _id: { $month: "$startDate" },
