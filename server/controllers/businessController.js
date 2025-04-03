@@ -5,7 +5,7 @@ const Booking = require('../models/Booking');
 const Car = require('../models/Car');
 
 exports.verifyID = async (req, res) => {
-  const businessId = req.business.id;
+  const businessId = req.business?.id;
   const idDocumentPath = req.file ? req.file.path : '';
   if (!idDocumentPath)
     return res.status(400).json({ msg: 'No ID document uploaded' });
@@ -17,15 +17,20 @@ exports.verifyID = async (req, res) => {
     );
     res.json({ msg: 'ID verified successfully', business });
   } catch (error) {
-    console.error(error);
+    console.error('Error in verifyID:', error.stack);
     res.status(500).send('Server error');
   }
 };
 
 exports.getStats = async (req, res) => {
+  // Defensive check: ensure that req.business exists
+  if (!req.business) {
+    console.error("getStats: req.business is undefined", req);
+    return res.status(403).json({ msg: 'Forbidden: not a business user' });
+  }
   const businessId = req.business.id;
   try {
-    // Calculate total revenue by summing the totalAmount field of all bookings for this business
+    // Calculate total revenue by summing totalAmount from bookings for this business
     const totalRevenueResult = await Booking.aggregate([
       { $match: { business: mongoose.Types.ObjectId(businessId) } },
       { $group: { _id: null, total: { $sum: "$totalAmount" } } }
@@ -38,7 +43,7 @@ exports.getStats = async (req, res) => {
     // Count total cars for this business using the Car model
     const totalCars = await Car.countDocuments({ business: businessId });
     
-    // Count rented cars by finding the unique car IDs that have bookings
+    // Count rented cars by grouping unique car IDs that have bookings
     const rentedCarsResult = await Booking.aggregate([
       { $match: { business: mongoose.Types.ObjectId(businessId) } },
       { $group: { _id: "$car" } },
@@ -52,12 +57,17 @@ exports.getStats = async (req, res) => {
     const stats = { totalRevenue, rentedCars, bookings, activeCars };
     res.json(stats);
   } catch (error) {
-    console.error(error);
+    console.error('Error in getStats:', error.stack);
     res.status(500).json({ msg: 'Server error while fetching stats' });
   }
 };
 
 exports.getEarnings = async (req, res) => {
+  // Defensive check
+  if (!req.business) {
+    console.error("getEarnings: req.business is undefined", req);
+    return res.status(403).json({ msg: 'Forbidden: not a business user' });
+  }
   const businessId = req.business.id;
   try {
     // Group bookings by month (based on startDate) and sum totalAmount as earnings
@@ -71,19 +81,24 @@ exports.getEarnings = async (req, res) => {
       },
       { $sort: { "_id": 1 } }
     ]);
-    // Prepare an array for 12 months (index 0 = January, etc.)
+    // Prepare an array for 12 months (January = index 0)
     const monthlyEarnings = Array(12).fill(0);
     earnings.forEach(item => {
       monthlyEarnings[item._id - 1] = item.totalEarnings;
     });
     res.json(monthlyEarnings);
   } catch (error) {
-    console.error(error);
+    console.error('Error in getEarnings:', error.stack);
     res.status(500).json({ msg: 'Server error while fetching earnings' });
   }
 };
 
 exports.getBookingsOverview = async (req, res) => {
+  // Defensive check
+  if (!req.business) {
+    console.error("getBookingsOverview: req.business is undefined", req);
+    return res.status(403).json({ msg: 'Forbidden: not a business user' });
+  }
   const businessId = req.business.id;
   try {
     // Group bookings by month (using startDate) and count them
@@ -104,7 +119,7 @@ exports.getBookingsOverview = async (req, res) => {
     });
     res.json(monthlyBookings);
   } catch (error) {
-    console.error(error);
+    console.error('Error in getBookingsOverview:', error.stack);
     res.status(500).json({ msg: 'Server error while fetching bookings overview' });
   }
 };
