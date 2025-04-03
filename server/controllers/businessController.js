@@ -1,5 +1,8 @@
 // server/controllers/businessController.js
+const mongoose = require('mongoose');
 const Business = require('../models/Business');
+const Booking = require('../models/Booking');
+const Car = require('../models/Car');
 
 exports.verifyID = async (req, res) => {
   const businessId = req.business.id;
@@ -22,13 +25,31 @@ exports.verifyID = async (req, res) => {
 exports.getStats = async (req, res) => {
   const businessId = req.business.id;
   try {
-    // Replace with real queries/calculations
-    const stats = {
-      totalRevenue: 10000,
-      rentedCars: 50,
-      bookings: 120,
-      activeCars: 10
-    };
+    // Calculate total revenue by summing the totalAmount field of all bookings for this business
+    const totalRevenueResult = await Booking.aggregate([
+      { $match: { business: mongoose.Types.ObjectId(businessId) } },
+      { $group: { _id: null, total: { $sum: "$totalAmount" } } }
+    ]);
+    const totalRevenue = totalRevenueResult[0] ? totalRevenueResult[0].total : 0;
+
+    // Count total bookings for this business
+    const bookings = await Booking.countDocuments({ business: businessId });
+
+    // Count total cars for this business using the Car model
+    const totalCars = await Car.countDocuments({ business: businessId });
+    
+    // Count rented cars by finding the unique car IDs that have bookings
+    const rentedCarsResult = await Booking.aggregate([
+      { $match: { business: mongoose.Types.ObjectId(businessId) } },
+      { $group: { _id: "$car" } },
+      { $count: "count" }
+    ]);
+    const rentedCars = rentedCarsResult[0] ? rentedCarsResult[0].count : 0;
+
+    // For active cars, assuming all cars are active (adjust if you add an "active" flag)
+    const activeCars = totalCars;
+
+    const stats = { totalRevenue, rentedCars, bookings, activeCars };
     res.json(stats);
   } catch (error) {
     console.error(error);
@@ -39,9 +60,23 @@ exports.getStats = async (req, res) => {
 exports.getEarnings = async (req, res) => {
   const businessId = req.business.id;
   try {
-    // Replace with your aggregation logic
-    const earnings = [12000, 14500, 10000, 18500, 21000, 16500, 18000, 22000, 24000, 20000, 25000, 27000];
-    res.json(earnings);
+    // Group bookings by month (based on startDate) and sum totalAmount as earnings
+    const earnings = await Booking.aggregate([
+      { $match: { business: mongoose.Types.ObjectId(businessId) } },
+      {
+        $group: {
+          _id: { $month: "$startDate" },
+          totalEarnings: { $sum: "$totalAmount" }
+        }
+      },
+      { $sort: { "_id": 1 } }
+    ]);
+    // Prepare an array for 12 months (index 0 = January, etc.)
+    const monthlyEarnings = Array(12).fill(0);
+    earnings.forEach(item => {
+      monthlyEarnings[item._id - 1] = item.totalEarnings;
+    });
+    res.json(monthlyEarnings);
   } catch (error) {
     console.error(error);
     res.status(500).json({ msg: 'Server error while fetching earnings' });
@@ -51,9 +86,23 @@ exports.getEarnings = async (req, res) => {
 exports.getBookingsOverview = async (req, res) => {
   const businessId = req.business.id;
   try {
-    // Replace with real monthly booking counts
-    const bookingsOverview = [985, 760, 890, 700, 1100, 900, 1200, 950, 780, 650, 1000, 1150];
-    res.json(bookingsOverview);
+    // Group bookings by month (using startDate) and count them
+    const bookingsOverview = await Booking.aggregate([
+      { $match: { business: mongoose.Types.ObjectId(businessId) } },
+      {
+        $group: {
+          _id: { $month: "$startDate" },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { "_id": 1 } }
+    ]);
+    // Prepare an array for 12 months
+    const monthlyBookings = Array(12).fill(0);
+    bookingsOverview.forEach(item => {
+      monthlyBookings[item._id - 1] = item.count;
+    });
+    res.json(monthlyBookings);
   } catch (error) {
     console.error(error);
     res.status(500).json({ msg: 'Server error while fetching bookings overview' });
