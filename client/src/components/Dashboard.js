@@ -1,6 +1,6 @@
 // client/src/components/Dashboard.js
 
-// 1. All imports at the very top
+// 1. All imports at the top
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -24,9 +24,7 @@ import { Line, Bar, Doughnut } from 'react-chartjs-2';
 import SideMenuBusiness from './SideMenuBusiness';
 import styles from '../styles/Dashboard.module.css';
 
-
-
-// 2. Chart.js registration (still near the top, but after all imports)
+// 2. Chart.js registration
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -58,7 +56,13 @@ export default function Dashboard() {
 
   // Retrieve token from localStorage
   const token = (localStorage.getItem('token') || '').trim();
-  const axiosConfig = { headers: { Authorization: `Bearer ${token}` } };
+  console.log("Token from localStorage:", token); // For debugging
+  // Set the Axios header
+  const axiosConfig = {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  };
 
   const toggleMenu = () => setMenuOpen(!menuOpen);
   const closeMenu = () => setMenuOpen(false);
@@ -67,19 +71,18 @@ export default function Dashboard() {
     async function fetchData() {
       try {
         const baseUrl = process.env.REACT_APP_BACKEND_URL;
-        // Example calls to fetch data:
+        // Fetch business stats
         const statsRes = await axios.get(`${baseUrl}/api/business/stats`, axiosConfig);
         setStats(statsRes.data);
-
+        // Fetch earnings data
         const earningsRes = await axios.get(`${baseUrl}/api/business/earnings`, axiosConfig);
         setEarningsData(earningsRes.data);
-
+        // Fetch bookings overview data
         const bookingsOverviewRes = await axios.get(`${baseUrl}/api/business/bookingsOverview`, axiosConfig);
         setBookingsOverviewData(bookingsOverviewRes.data);
-
+        // Fetch my bookings for this business
         const bookingsRes = await axios.get(`${baseUrl}/api/bookings/mybookings`, axiosConfig);
         setCarBookings(bookingsRes.data);
-
         setLoading(false);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -87,10 +90,7 @@ export default function Dashboard() {
       }
     }
     if (token) fetchData();
-  }, [token]);
-
-  console.log("Token from localStorage:", token);
-
+  }, [token, navigate]);
 
   // Prepare chart data
   const earningsChartData = {
@@ -128,9 +128,16 @@ export default function Dashboard() {
     (booking.car && booking.car.make && booking.car.make.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
+  // Render header with Hyre logo in #38b6ff
   const renderHeader = () => (
     <header className={styles.header}>
-      <div className={styles.logo} onClick={() => navigate('/')}>Hyre</div>
+      <div
+        className={styles.logo}
+        style={{ color: '#38b6ff' }}  // Set logo color here
+        onClick={() => navigate('/')}
+      >
+        Hyre
+      </div>
       <button className={styles.menuIcon} onClick={toggleMenu}>☰</button>
     </header>
   );
