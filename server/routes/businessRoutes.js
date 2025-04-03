@@ -27,5 +27,6 @@ router.post('/verify-id', authMiddleware, upload.single('idDocument'), verifyID)
 router.get('/stats', authMiddleware, getStats);
 router.get('/earnings', authMiddleware, getEarnings);
 router.get('/bookingsOverview', authMiddleware, getBookingsOverview);
+router.get('/stats', getStats);
 
 module.exports = router;

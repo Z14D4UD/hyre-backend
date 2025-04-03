@@ -57,6 +57,8 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/affiliates', affiliateRoutes);
 app.use('/api/account', accountRoutes);
 app.use('/api/support', supportRoutes);
+app.use('/api/business', businessRoutes);
+
 
 const io = new Server(server, {
   cors: {
