@@ -1,8 +1,14 @@
+// server/routes/businessRoutes.js
 const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middlewares/authMiddleware');
 const upload = require('../middlewares/uploadMiddleware');
-const { verifyID } = require('../controllers/businessController');
+const {
+  verifyID,
+  getStats,
+  getEarnings,
+  getBookingsOverview
+} = require('../controllers/businessController');
 const Business = require('../models/Business');
 
 router.get('/featured', async (req, res) => {
@@ -16,5 +22,10 @@ router.get('/featured', async (req, res) => {
 });
 
 router.post('/verify-id', authMiddleware, upload.single('idDocument'), verifyID);
+
+// Dashboard endpoints
+router.get('/stats', authMiddleware, getStats);
+router.get('/earnings', authMiddleware, getEarnings);
+router.get('/bookingsOverview', authMiddleware, getBookingsOverview);
 
 module.exports = router;

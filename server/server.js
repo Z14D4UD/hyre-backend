@@ -19,7 +19,7 @@ const businessRoutes = require('./routes/businessRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const affiliateRoutes = require('./routes/affiliateRoutes');
 const accountRoutes = require('./routes/accountRoutes');
-const supportRoutes = require('./routes/supportRoutes'); // <-- IMPORTANT
+const supportRoutes = require('./routes/supportRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -56,8 +56,6 @@ app.use('/api/business', businessRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/affiliates', affiliateRoutes);
 app.use('/api/account', accountRoutes);
-
-// ***** Add this line so "/api/support/contact" works *****
 app.use('/api/support', supportRoutes);
 
 const io = new Server(server, {

@@ -14,7 +14,8 @@ const {
 router.post('/', createBooking);
 router.get('/', getBookings);
 router.get('/my', authMiddleware, getMyBookings); // Handles bookings for all account types
-router.get('/customer', authMiddleware, getCustomerBookings); // For customer-specific bookings (if needed)
+router.get('/mybookings', authMiddleware, getMyBookings); // Alias route
+router.get('/customer', authMiddleware, getCustomerBookings);
 router.get('/invoice/:id', generateInvoice);
 router.post('/payout', authMiddleware, requestPayout);
 

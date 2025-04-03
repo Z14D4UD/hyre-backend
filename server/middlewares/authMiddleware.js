@@ -1,4 +1,4 @@
-// server/middleware/auth.js
+// server/middlewares/authMiddleware.js
 const jwt = require('jsonwebtoken');
 
 module.exports = function (req, res, next) {
@@ -17,8 +17,11 @@ module.exports = function (req, res, next) {
     req.accountType = decoded.accountType;
     if (decoded.accountType === 'customer') {
       req.customer = { id: decoded.id };
+    } else if (decoded.accountType === 'business') {
+      req.business = { id: decoded.id };
+    } else if (decoded.accountType === 'affiliate') {
+      req.affiliate = { id: decoded.id };
     }
-    // Add other account types if needed
     next();
   } catch (err) {
     res.status(401).json({ msg: 'Token is not valid' });

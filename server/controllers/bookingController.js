@@ -37,7 +37,7 @@ exports.createBooking = async (req, res) => {
         return res.status(400).json({ msg: 'Invalid affiliate code' });
       }
       bookingData.affiliate = affiliate._id;
-      const commission = basePrice * 0.10; // 10% commission
+      const commission = basePrice * 0.10;
       affiliate.earnings += commission;
       await affiliate.save();
     }
@@ -45,7 +45,7 @@ exports.createBooking = async (req, res) => {
     const booking = new Booking(bookingData);
     await booking.save();
     
-    // Update business balance (if applicable)
+    // Update business balance
     if (businessId) {
       await Business.findByIdAndUpdate(businessId, { $inc: { balance: payout } });
     }

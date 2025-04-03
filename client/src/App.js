@@ -19,13 +19,8 @@ import ChangePassword from './pages/ChangePassword';
 import BookingsPage from './pages/BookingsPage';
 import MessagesPage from './pages/MessagesPage';
 import AboutHyre from './pages/AboutHyre';
-// (Optionally add ContactSupport page when ready)
 import ContactUs from './pages/ContactUs';
 import LegalPage from './pages/LegalPage';
-import Dashboard from './components/Dashboard'; // <-- import it
-
-
-
 
 function App() {
   return (
@@ -56,8 +51,6 @@ function App() {
         <Route path="/contact-support" element={<ContactUs />} />
         <Route path="/legal" element={<LegalPage />} />
 
-
-        
         {/* Account and Change Password */}
         <Route path="/account" element={<AccountPage />} />
         <Route path="/change-password" element={<ChangePassword />} />

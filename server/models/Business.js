@@ -1,3 +1,4 @@
+// server/models/Business.js
 const mongoose = require('mongoose');
 
 const BusinessSchema = new mongoose.Schema({
@@ -8,8 +9,8 @@ const BusinessSchema = new mongoose.Schema({
   verified: { type: Boolean, default: false },
   balance: { type: Number, default: 0 },
   isFeatured: { type: Boolean, default: false },
-  image: { type: String },       // URL to a featured image
-  description: { type: String }  // Short description
+  image: { type: String },
+  description: { type: String }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Business', BusinessSchema);
