@@ -1,47 +1,77 @@
-// server/routes/businessRoutes.js
-const express = require('express');
-const router = express.Router();
-const authMiddleware = require('../middlewares/authMiddleware');
-const upload = require('../middlewares/uploadMiddleware');
-const {
-  verifyID,
-  getStats,
-  getEarnings,
-  getBookingsOverview
-} = require('../controllers/businessController');
-const Business = require('../models/Business');
+// server/controllers/businessListingController.js
+const Listing = require('../models/Listing');
 
-// Import profile controller functions
-const { getBusinessProfile, updateBusinessProfile } = require('../controllers/businessProfileController');
-
-// Import listing controller function
-const { createListing } = require('../controllers/businessListingController');
-
-// Route to get featured businesses
-router.get('/featured', async (req, res) => {
+exports.createListing = async (req, res) => {
   try {
-    const featured = await Business.find({ isFeatured: true });
-    res.json(featured);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    // Ensure the user is a business user
+    if (!req.business) {
+      return res.status(403).json({ msg: 'Forbidden: Not a business user' });
+    }
+
+    // Get business ID
+    const businessId = req.business.id;
+
+    // Extract fields from the request body
+    const {
+      title,
+      description,
+      make,
+      model,
+      year,
+      mileage,
+      fuelType,
+      engineSize,
+      transmission,
+      pricePerDay,
+      availability,
+      address,
+      terms,
+      gps,
+      bluetooth,
+      heatedSeats,
+      parkingSensors,
+      backupCamera,
+      appleCarPlay,
+      androidAuto
+    } = req.body;
+
+    // Process uploaded images (multiple files)
+    let imagePaths = [];
+    if (req.files && req.files.length > 0) {
+      imagePaths = req.files.map(file => file.path); // e.g., "uploads/1616161616-filename.jpg"
+    }
+
+    // Create a new Listing object
+    const newListing = new Listing({
+      business: businessId,
+      title,
+      description,
+      make,
+      model,
+      year,
+      mileage,
+      fuelType,
+      engineSize,
+      transmission,
+      pricePerDay,
+      availability,
+      address,
+      terms,
+      gps: gps === 'true' || gps === true,
+      bluetooth: bluetooth === 'true' || bluetooth === true,
+      heatedSeats: heatedSeats === 'true' || heatedSeats === true,
+      parkingSensors: parkingSensors === 'true' || parkingSensors === true,
+      backupCamera: backupCamera === 'true' || backupCamera === true,
+      appleCarPlay: appleCarPlay === 'true' || appleCarPlay === true,
+      androidAuto: androidAuto === 'true' || androidAuto === true,
+      images: imagePaths,
+    });
+
+    await newListing.save();
+
+    res.status(201).json({ msg: 'Listing created successfully', listing: newListing });
+  } catch (error) {
+    console.error('Error creating listing:', error.stack);
+    res.status(500).json({ msg: 'Server error while creating listing' });
   }
-});
-
-// Route to verify business ID
-router.post('/verify-id', authMiddleware, upload.single('idDocument'), verifyID);
-
-// Dashboard endpoints
-router.get('/stats', authMiddleware, getStats);
-router.get('/earnings', authMiddleware, getEarnings);
-router.get('/bookingsOverview', authMiddleware, getBookingsOverview);
-
-// Business Profile endpoints (for "My Profile" page)
-router.get('/me', authMiddleware, getBusinessProfile);
-router.put('/me', authMiddleware, upload.single('avatar'), updateBusinessProfile);
-
-// NEW: Listing Creation endpoint (for adding new listings)
-// This route allows up to 10 image files to be uploaded under the field name "images"
-router.post('/listings', authMiddleware, upload.array('images', 10), createListing);
-
-module.exports = router;
+};
