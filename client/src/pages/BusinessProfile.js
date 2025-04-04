@@ -38,13 +38,16 @@ export default function BusinessProfile() {
   // Reviews state
   const [reviews, setReviews] = useState([]);
 
-  const backendUrl = process.env.REACT_APP_BACKEND_URL; // e.g., https://hyre-backend.onrender.com/api
+  // backendUrl from env includes "/api", so derive a root URL for static assets.
+  const backendApiUrl = process.env.REACT_APP_BACKEND_URL; // e.g., https://hyre-backend.onrender.com/api
+  // Remove trailing '/api' if present to get the root URL.
+  const backendRootUrl = backendApiUrl.replace(/\/api$/, '');
 
   // Fetch the current business user’s profile
   useEffect(() => {
     if (!isBusiness) return;
     axios
-      .get(`${backendUrl}/business/me`, {
+      .get(`${backendApiUrl}/business/me`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
@@ -60,13 +63,13 @@ export default function BusinessProfile() {
         console.error('Error fetching business profile:', err);
         alert('Failed to load business profile data.');
       });
-  }, [isBusiness, token, backendUrl]);
+  }, [isBusiness, token, backendApiUrl]);
 
   // Fetch reviews from the backend
   useEffect(() => {
     if (!isBusiness) return;
     axios
-      .get(`${backendUrl}/business-reviews`, {
+      .get(`${backendApiUrl}/business-reviews`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
@@ -75,7 +78,7 @@ export default function BusinessProfile() {
       .catch((err) => {
         console.error('Error fetching reviews:', err);
       });
-  }, [backendUrl, token, isBusiness]);
+  }, [backendApiUrl, token, isBusiness]);
 
   // Handle avatar changes
   const handleAvatarChange = (e) => {
@@ -98,7 +101,7 @@ export default function BusinessProfile() {
     }
 
     axios
-      .put(`${backendUrl}/business/me`, formData, {
+      .put(`${backendApiUrl}/business/me`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data',
@@ -159,7 +162,7 @@ export default function BusinessProfile() {
           <div className={styles.avatarWrapper}>
             {user.avatarUrl ? (
               <img
-                src={`${backendUrl}/${user.avatarUrl}`}
+                src={`${backendRootUrl}/${user.avatarUrl}`}
                 alt="Business avatar"
                 className={styles.avatar}
               />
