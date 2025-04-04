@@ -50,6 +50,8 @@ function App() {
         <Route path="/about-hyre" element={<AboutHyre />} />
         <Route path="/contact-support" element={<ContactUs />} />
         <Route path="/legal" element={<LegalPage />} />
+        <Route path="/profile/business" element={<BusinessProfile />} /> // For business users
+
 
         {/* Account and Change Password */}
         <Route path="/account" element={<AccountPage />} />

@@ -43,7 +43,8 @@ export default function SideMenuBusiness({ isOpen, toggleMenu, closeMenu }) {
           <FaTachometerAlt className={styles.icon} />
           <span>Dashboard</span>
         </li>
-        <li className={styles.menuItem} onClick={() => goTo('/profile')}>
+        {/* Updated My Profile link for business users */}
+        <li className={styles.menuItem} onClick={() => goTo('/profile/business')}>
           <FaUser className={styles.icon} />
           <span>My Profile</span>
         </li>

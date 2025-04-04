@@ -4,6 +4,10 @@ const Customer = require('../models/Customer');
 // NEW FUNCTION: Get the current customer's profile
 exports.getCustomerProfile = async (req, res) => {
   try {
+    // Defensive check: if req.customer is undefined, return an error
+    if (!req.customer) {
+      return res.status(403).json({ msg: 'Forbidden: Not a customer user' });
+    }
     const customerId = req.customer.id;
     const customer = await Customer.findById(customerId).select('-password');
     if (!customer) {
@@ -20,13 +24,17 @@ exports.getCustomerProfile = async (req, res) => {
       avatarUrl: customer.avatarUrl || ''
     });
   } catch (error) {
-    console.error('Error fetching customer profile:', error);
+    console.error('Error fetching customer profile:', error.stack);
     res.status(500).json({ msg: 'Server error fetching customer profile' });
   }
 };
 
 exports.updateCustomerProfile = async (req, res) => {
   try {
+    // Defensive check: ensure req.customer exists
+    if (!req.customer) {
+      return res.status(403).json({ msg: 'Forbidden: Not a customer user' });
+    }
     const customerId = req.customer.id;
     // Collect fields from req.body including email
     const updateData = {
@@ -53,7 +61,7 @@ exports.updateCustomerProfile = async (req, res) => {
 
     res.json(updatedCustomer);
   } catch (error) {
-    console.error('Error updating profile:', error);
+    console.error('Error updating profile:', error.stack);
     res.status(500).json({ msg: 'Server error updating profile' });
   }
 };
