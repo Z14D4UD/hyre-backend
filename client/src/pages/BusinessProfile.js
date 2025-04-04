@@ -11,7 +11,7 @@ export default function BusinessProfile() {
   const accountType = localStorage.getItem('accountType') || '';
   const isBusiness = token && accountType.toLowerCase() === 'business';
 
-  // If not logged in as business, redirect away
+  // Redirect if not logged in as business
   useEffect(() => {
     if (!isBusiness) {
       alert('Please log in as a business to view your profile.');
@@ -62,7 +62,7 @@ export default function BusinessProfile() {
       });
   }, [isBusiness, token, backendUrl]);
 
-  // Fetch reviews from the backend (assuming endpoint exists)
+  // Fetch reviews from the backend
   useEffect(() => {
     if (!isBusiness) return;
     axios
@@ -74,7 +74,6 @@ export default function BusinessProfile() {
       })
       .catch((err) => {
         console.error('Error fetching reviews:', err);
-        // You may choose to alert the user or simply leave reviews empty.
       });
   }, [backendUrl, token, isBusiness]);
 
@@ -134,7 +133,7 @@ export default function BusinessProfile() {
     return <div className={styles.loading}>Loading profile...</div>;
   }
 
-  // Determine joined date from either user.joinedDate or user.createdAt
+  // Determine joined date using createdAt timestamp
   const joinedDate = user.joinedDate || (user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A');
 
   return (

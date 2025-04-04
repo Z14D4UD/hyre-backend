@@ -58,7 +58,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/affiliates', affiliateRoutes);
 app.use('/api/account', accountRoutes);
 app.use('/api/support', supportRoutes);
-app.use('/api/review', reviewRoutes);
+app.use('/api', reviewRoutes);
 
 
 const io = new Server(server, {
