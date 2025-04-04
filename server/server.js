@@ -20,6 +20,7 @@ const paymentRoutes = require('./routes/paymentRoutes');
 const affiliateRoutes = require('./routes/affiliateRoutes');
 const accountRoutes = require('./routes/accountRoutes');
 const supportRoutes = require('./routes/supportRoutes');
+const reviewRoutes = require ('./routes/reviewRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -57,6 +58,8 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/affiliates', affiliateRoutes);
 app.use('/api/account', accountRoutes);
 app.use('/api/support', supportRoutes);
+app.use('/api/review', reviewRoutes);
+
 
 const io = new Server(server, {
   cors: {

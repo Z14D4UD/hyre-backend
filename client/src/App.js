@@ -21,6 +21,7 @@ import MessagesPage from './pages/MessagesPage';
 import AboutHyre from './pages/AboutHyre';
 import ContactUs from './pages/ContactUs';
 import LegalPage from './pages/LegalPage';
+import BusinessProfile from './pages/BusinessProfile';
 
 function App() {
   return (

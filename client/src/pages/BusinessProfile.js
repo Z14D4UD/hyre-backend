@@ -35,7 +35,10 @@ export default function BusinessProfile() {
   const [editEmail, setEditEmail] = useState('');
   const [avatarFile, setAvatarFile] = useState(null);
 
-  const backendUrl = process.env.REACT_APP_BACKEND_URL;
+  // Reviews state
+  const [reviews, setReviews] = useState([]);
+
+  const backendUrl = process.env.REACT_APP_BACKEND_URL; // e.g., https://hyre-backend.onrender.com/api
 
   // Fetch the current business user’s profile
   useEffect(() => {
@@ -58,6 +61,22 @@ export default function BusinessProfile() {
         alert('Failed to load business profile data.');
       });
   }, [isBusiness, token, backendUrl]);
+
+  // Fetch reviews from the backend (assuming endpoint exists)
+  useEffect(() => {
+    if (!isBusiness) return;
+    axios
+      .get(`${backendUrl}/business-reviews`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => {
+        setReviews(res.data);
+      })
+      .catch((err) => {
+        console.error('Error fetching reviews:', err);
+        // You may choose to alert the user or simply leave reviews empty.
+      });
+  }, [backendUrl, token, isBusiness]);
 
   // Handle avatar changes
   const handleAvatarChange = (e) => {
@@ -115,6 +134,9 @@ export default function BusinessProfile() {
     return <div className={styles.loading}>Loading profile...</div>;
   }
 
+  // Determine joined date from either user.joinedDate or user.createdAt
+  const joinedDate = user.joinedDate || (user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A');
+
   return (
     <div className={styles.profileContainer}>
       {/* Header */}
@@ -154,9 +176,7 @@ export default function BusinessProfile() {
             {!isEditing ? (
               <>
                 <h2 className={styles.profileName}>{user.name}</h2>
-                <p className={styles.joinedDate}>
-                  Joined {user.joinedDate || 'N/A'}
-                </p>
+                <p className={styles.joinedDate}>Joined {joinedDate}</p>
                 <p className={styles.location}>{user.location}</p>
               </>
             ) : (
@@ -176,38 +196,25 @@ export default function BusinessProfile() {
                   onChange={(e) => setEditLocation(e.target.value)}
                 />
                 <label>Change Avatar</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAvatarChange}
-                />
+                <input type="file" accept="image/*" onChange={handleAvatarChange} />
               </div>
             )}
           </div>
         </div>
 
-        {/* Right Column: Edit Profile, About, Contact Info */}
+        {/* Right Column: Edit Profile, About, Contact Info, Reviews */}
         <div className={styles.rightColumn}>
           <div className={styles.editProfileRow}>
             {!isEditing ? (
-              <button
-                className={styles.editProfileBtn}
-                onClick={() => setIsEditing(true)}
-              >
+              <button className={styles.editProfileBtn} onClick={() => setIsEditing(true)}>
                 Edit profile
               </button>
             ) : (
               <>
-                <button
-                  className={styles.saveProfileBtn}
-                  onClick={handleSaveProfile}
-                >
+                <button className={styles.saveProfileBtn} onClick={handleSaveProfile}>
                   Save profile
                 </button>
-                <button
-                  className={styles.cancelProfileBtn}
-                  onClick={handleCancelEdit}
-                >
+                <button className={styles.cancelProfileBtn} onClick={handleCancelEdit}>
                   Cancel
                 </button>
               </>
@@ -266,9 +273,20 @@ export default function BusinessProfile() {
             </ul>
           </div>
 
+          {/* Reviews Section */}
           <div className={styles.reviewsSection}>
             <h4>Reviews From Clients</h4>
-            <p>No reviews yet.</p>
+            {reviews.length === 0 ? (
+              <p>No reviews yet.</p>
+            ) : (
+              reviews.map((review, idx) => (
+                <div key={idx} className={styles.reviewItem}>
+                  <strong>Rating:</strong> {review.rating} <br />
+                  <p>{review.comment}</p>
+                  <small>{new Date(review.createdAt).toLocaleDateString()}</small>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>
