@@ -11,6 +11,10 @@ const {
 } = require('../controllers/businessController');
 const Business = require('../models/Business');
 
+// Import profile controller functions
+const { getBusinessProfile, updateBusinessProfile } = require('../controllers/businessProfileController');
+
+// Route to get featured businesses
 router.get('/featured', async (req, res) => {
   try {
     const featured = await Business.find({ isFeatured: true });
@@ -21,12 +25,16 @@ router.get('/featured', async (req, res) => {
   }
 });
 
+// Route to verify business ID
 router.post('/verify-id', authMiddleware, upload.single('idDocument'), verifyID);
 
 // Dashboard endpoints
 router.get('/stats', authMiddleware, getStats);
 router.get('/earnings', authMiddleware, getEarnings);
 router.get('/bookingsOverview', authMiddleware, getBookingsOverview);
-router.get('/stats', getStats);
+
+// Business Profile endpoints (for "My Profile" page)
+router.get('/me', authMiddleware, getBusinessProfile);
+router.put('/me', authMiddleware, upload.single('avatar'), updateBusinessProfile);
 
 module.exports = router;

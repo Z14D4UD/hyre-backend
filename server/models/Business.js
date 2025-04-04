@@ -10,7 +10,12 @@ const BusinessSchema = new mongoose.Schema({
   balance: { type: Number, default: 0 },
   isFeatured: { type: Boolean, default: false },
   image: { type: String },
-  description: { type: String }
+  description: { type: String },
+  // New fields for profile editing
+  location: { type: String },
+  phoneNumber: { type: String },
+  aboutMe: { type: String },
+  avatarUrl: { type: String }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Business', BusinessSchema);
