@@ -44,13 +44,13 @@ export default function AddListing() {
   const [appleCarPlay, setAppleCarPlay] = useState(false);
   const [androidAuto, setAndroidAuto] = useState(false);
 
-  // Address autocomplete using react-places-autocomplete
+  // Address autocomplete
   const [address, setAddress] = useState('');
 
-  // Images state (multiple files)
+  // Images (multiple)
   const [images, setImages] = useState([]);
 
-  const backendUrl = process.env.REACT_APP_BACKEND_URL; // e.g., https://hyre-backend.onrender.com/api
+  const backendUrl = process.env.REACT_APP_BACKEND_URL; // e.g. https://hyre-backend.onrender.com/api
 
   const handleImagesChange = (e) => {
     if (e.target.files) {
@@ -58,20 +58,20 @@ export default function AddListing() {
     }
   };
 
-  // Handle address selection from autocomplete
+  // Handle address selection
   const handleSelectAddress = async (value) => {
     setAddress(value);
     try {
       const results = await geocodeByAddress(value);
       const latLng = await getLatLng(results[0]);
-      console.log('Selected address coordinates:', latLng);
-      // You can optionally store latLng if needed.
+      console.log('Selected address lat/lng:', latLng);
+      // Optionally store latLng for further usage
     } catch (error) {
-      console.error('Error fetching address details', error);
+      console.error('Error fetching address details:', error);
     }
   };
 
-  // Handle form submission
+  // Submit form
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -90,7 +90,6 @@ export default function AddListing() {
     formData.append('address', address);
     formData.append('terms', terms);
 
-    // Append features
     formData.append('gps', gps);
     formData.append('bluetooth', bluetooth);
     formData.append('heatedSeats', heatedSeats);
@@ -99,7 +98,6 @@ export default function AddListing() {
     formData.append('appleCarPlay', appleCarPlay);
     formData.append('androidAuto', androidAuto);
 
-    // Append images (multiple)
     images.forEach((image) => {
       formData.append('images', image);
     });
@@ -113,7 +111,7 @@ export default function AddListing() {
       })
       .then((res) => {
         alert('Listing created successfully!');
-        navigate('/my-listings'); // Navigate to My Listings page (to be implemented)
+        navigate('/my-listings');
       })
       .catch((err) => {
         console.error('Error creating listing:', err);
@@ -140,7 +138,7 @@ export default function AddListing() {
         <h2 className={styles.pageTitle}>Add New Listing</h2>
 
         <form className={styles.listingForm} onSubmit={handleSubmit}>
-          {/* Vehicle Photos */}
+          {/* Upload Images */}
           <div className={styles.formGroup}>
             <label className={styles.label}>Upload Images</label>
             <input
@@ -158,31 +156,31 @@ export default function AddListing() {
             <input
               type="text"
               className={styles.inputField}
+              placeholder="Enter listing title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Enter listing title"
             />
           </div>
           <div className={styles.formGroup}>
             <label className={styles.label}>Description</label>
             <textarea
               className={styles.textArea}
+              placeholder="Enter listing description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Enter listing description"
             />
           </div>
 
-          {/* Make, Model, Year, Mileage */}
+          {/* Make, Model */}
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
               <label className={styles.label}>Make</label>
               <input
                 type="text"
                 className={styles.inputField}
+                placeholder="e.g., Toyota"
                 value={make}
                 onChange={(e) => setMake(e.target.value)}
-                placeholder="e.g., Toyota"
               />
             </div>
             <div className={styles.formGroup}>
@@ -190,21 +188,23 @@ export default function AddListing() {
               <input
                 type="text"
                 className={styles.inputField}
+                placeholder="e.g., Corolla"
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
-                placeholder="e.g., Corolla"
               />
             </div>
           </div>
+
+          {/* Year, Mileage */}
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
               <label className={styles.label}>Year</label>
               <input
                 type="number"
                 className={styles.inputField}
+                placeholder="e.g., 2023"
                 value={year}
                 onChange={(e) => setYear(e.target.value)}
-                placeholder="e.g., 2023"
               />
             </div>
             <div className={styles.formGroup}>
@@ -212,14 +212,14 @@ export default function AddListing() {
               <input
                 type="number"
                 className={styles.inputField}
+                placeholder="e.g., 5000"
                 value={mileage}
                 onChange={(e) => setMileage(e.target.value)}
-                placeholder="e.g., 5000"
               />
             </div>
           </div>
 
-          {/* Fuel & Engine */}
+          {/* Fuel, Engine */}
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
               <label className={styles.label}>Fuel Type</label>
@@ -239,9 +239,9 @@ export default function AddListing() {
               <input
                 type="text"
                 className={styles.inputField}
+                placeholder="e.g., 1.5L"
                 value={engineSize}
                 onChange={(e) => setEngineSize(e.target.value)}
-                placeholder="e.g., 1.5L"
               />
             </div>
           </div>
@@ -269,33 +269,57 @@ export default function AddListing() {
                 GPS
               </label>
               <label>
-                <input type="checkbox" checked={bluetooth} onChange={() => setBluetooth(!bluetooth)} />
+                <input
+                  type="checkbox"
+                  checked={bluetooth}
+                  onChange={() => setBluetooth(!bluetooth)}
+                />
                 Bluetooth
               </label>
               <label>
-                <input type="checkbox" checked={heatedSeats} onChange={() => setHeatedSeats(!heatedSeats)} />
+                <input
+                  type="checkbox"
+                  checked={heatedSeats}
+                  onChange={() => setHeatedSeats(!heatedSeats)}
+                />
                 Heated Seats
               </label>
               <label>
-                <input type="checkbox" checked={parkingSensors} onChange={() => setParkingSensors(!parkingSensors)} />
+                <input
+                  type="checkbox"
+                  checked={parkingSensors}
+                  onChange={() => setParkingSensors(!parkingSensors)}
+                />
                 Parking Sensors
               </label>
               <label>
-                <input type="checkbox" checked={backupCamera} onChange={() => setBackupCamera(!backupCamera)} />
+                <input
+                  type="checkbox"
+                  checked={backupCamera}
+                  onChange={() => setBackupCamera(!backupCamera)}
+                />
                 Backup Camera
               </label>
               <label>
-                <input type="checkbox" checked={appleCarPlay} onChange={() => setAppleCarPlay(!appleCarPlay)} />
+                <input
+                  type="checkbox"
+                  checked={appleCarPlay}
+                  onChange={() => setAppleCarPlay(!appleCarPlay)}
+                />
                 Apple CarPlay
               </label>
               <label>
-                <input type="checkbox" checked={androidAuto} onChange={() => setAndroidAuto(!androidAuto)} />
+                <input
+                  type="checkbox"
+                  checked={androidAuto}
+                  onChange={() => setAndroidAuto(!androidAuto)}
+                />
                 Android Auto
               </label>
             </div>
           </div>
 
-          {/* Address with Autocomplete */}
+          {/* Address Autocomplete */}
           <div className={styles.formGroup}>
             <label className={styles.label}>Address</label>
             <PlacesAutocomplete
@@ -314,12 +338,12 @@ export default function AddListing() {
                   <div className={styles.suggestionsContainer}>
                     {loading && <div>Loading...</div>}
                     {suggestions.map((suggestion) => {
-                      const suggestionStyle = suggestion.active
-                        ? { backgroundColor: '#cce4ff', cursor: 'pointer', padding: '0.5rem' }
-                        : { backgroundColor: '#fff', cursor: 'pointer', padding: '0.5rem' };
+                      const style = suggestion.active
+                        ? { backgroundColor: '#cce4ff', cursor: 'pointer' }
+                        : { backgroundColor: '#fff', cursor: 'pointer' };
                       return (
                         <div
-                          {...getSuggestionItemProps(suggestion, { style: suggestionStyle })}
+                          {...getSuggestionItemProps(suggestion, { style })}
                           key={suggestion.placeId}
                         >
                           {suggestion.description}
@@ -339,9 +363,9 @@ export default function AddListing() {
               <input
                 type="text"
                 className={styles.inputField}
+                placeholder="e.g., 2023-04-01 to 2023-04-10"
                 value={availability}
                 onChange={(e) => setAvailability(e.target.value)}
-                placeholder="e.g., 2023-04-01 to 2023-04-10"
               />
             </div>
             <div className={styles.formGroup}>
@@ -349,9 +373,9 @@ export default function AddListing() {
               <input
                 type="number"
                 className={styles.inputField}
+                placeholder="0"
                 value={pricePerDay}
                 onChange={(e) => setPricePerDay(e.target.value)}
-                placeholder="0"
               />
             </div>
           </div>
@@ -361,9 +385,9 @@ export default function AddListing() {
             <label className={styles.label}>Terms & Conditions</label>
             <textarea
               className={styles.textArea}
+              placeholder="Enter any specific terms or conditions"
               value={terms}
               onChange={(e) => setTerms(e.target.value)}
-              placeholder="Enter any specific terms or conditions"
             />
           </div>
 
