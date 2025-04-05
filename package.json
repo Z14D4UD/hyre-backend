@@ -16,6 +16,7 @@
         "nodemailer": "^6.10.0",
         "pdfkit": "^0.16.0",
         "react": "^18.3.1",
+        "react-datepicker": "^8.2.1",
         "react-dom": "^18.3.1",
         "react-icons": "^5.5.0",
         "react-places-autocomplete": "^7.3.0"

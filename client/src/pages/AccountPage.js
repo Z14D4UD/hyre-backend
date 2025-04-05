@@ -1,118 +1,133 @@
-// client/src/pages/AccountPage.js
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import SideMenuCustomer from '../components/SideMenuCustomer';
-import styles from '../styles/AccountPage.module.css';
+import SideMenuBusiness from '../components/SideMenuBusiness';
+import PlacesAutocomplete, { geocodeByAddress, getLatLng } from 'react-places-autocomplete';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import styles from '../styles/AddListing.module.css';
 
-export default function AccountPage() {
+export default function AddListing() {
   const navigate = useNavigate();
-  const token = localStorage.getItem('token');
-  const accountType = localStorage.getItem('accountType');
-  const isCustomer = token && accountType === 'customer';
+  const token = localStorage.getItem('token') || '';
+  const accountType = localStorage.getItem('accountType') || '';
+  const isBusiness = token && accountType.toLowerCase() === 'business';
 
-  // Side menu toggling
-  const [menuOpen, setMenuOpen] = useState(false);
-  const toggleMenu = () => setMenuOpen(prev => !prev);
-  const closeMenu = () => setMenuOpen(false);
-
-  // Local user data and transmission
-  const [user, setUser] = useState(null);
-  const [transmission, setTransmission] = useState('');
-
-  // Use your backend URL from environment
-  const backendUrl = process.env.REACT_APP_BACKEND_URL || 'https://hyre-backend.onrender.com/api';
-
-  // Fetch account data
-  useEffect(() => {
-    if (!isCustomer) {
-      alert('Please log in as a customer to view your account.');
-      navigate('/');
-      return;
-    }
-    axios
-      .get(`${backendUrl}/account`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => {
-        setUser(res.data);
-        setTransmission(res.data.transmission || '');
-      })
-      .catch((err) => {
-        console.error('Error fetching account:', err);
-        alert('Failed to load account data.');
-      });
-  }, [isCustomer, navigate, backendUrl, token]);
-
-  // Save transmission: if user selects an option, save and update UI
-  const handleSaveTransmission = () => {
-    axios
-      .put(
-        `${backendUrl}/account`,
-        { transmission },
-        { headers: { Authorization: `Bearer ${token}` } }
-      )
-      .then((res) => {
-        console.log('PUT response data:', res.data);
-        setUser(res.data);
-        setTransmission(res.data.transmission || '');
-        alert('Transmission preference saved.');
-      })
-      .catch((err) => {
-        console.error('Error updating transmission:', err);
-        alert('Failed to update transmission.');
-      });
-  };
-
-  // Download account data as PDF
-  const handleDownloadData = () => {
-    axios
-      .get(`${backendUrl}/account/download`, {
-        headers: { Authorization: `Bearer ${token}` },
-        responseType: 'blob', // ensures binary data is returned
-      })
-      .then((res) => {
-        const pdfBlob = new Blob([res.data], { type: 'application/pdf' });
-        const url = window.URL.createObjectURL(pdfBlob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = 'MyHyreData.pdf';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-      })
-      .catch((err) => {
-        console.error('Error downloading PDF:', err);
-        alert('Failed to download data.');
-      });
-  };
-
-  // Close account
-  const handleCloseAccount = () => {
-    if (!window.confirm('Are you sure you want to close your account?')) return;
-    axios
-      .delete(`${backendUrl}/account`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then(() => {
-        alert('Account closed.');
-        localStorage.removeItem('token');
-        localStorage.removeItem('accountType');
-        navigate('/');
-      })
-      .catch((err) => {
-        console.error('Error closing account:', err);
-        alert('Failed to close account.');
-      });
-  };
-
-  if (!user) {
-    return <div className={styles.container}>Loading account...</div>;
+  if (!isBusiness) {
+    alert('Please log in as a business to add a listing.');
+    navigate('/');
   }
 
+  // Side menu state
+  const [menuOpen, setMenuOpen] = useState(false);
+  const toggleMenu = () => setMenuOpen(!menuOpen);
+  const closeMenu = () => setMenuOpen(false);
+
+  // Form fields
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [make, setMake] = useState('');
+  const [model, setModel] = useState('');
+  const [year, setYear] = useState('');
+  const [mileage, setMileage] = useState('');
+  const [fuelType, setFuelType] = useState('Petrol');
+  const [engineSize, setEngineSize] = useState('');
+  const [transmission, setTransmission] = useState('');
+  const [pricePerDay, setPricePerDay] = useState('');
+  const [terms, setTerms] = useState('');
+
+  // Availability Dates (using react-datepicker)
+  const [availableFrom, setAvailableFrom] = useState(null);
+  const [availableTo, setAvailableTo] = useState(null);
+
+  // Features state (example features)
+  const [features, setFeatures] = useState({
+    gps: false,
+    bluetooth: false,
+    heatedSeats: false,
+    parkingSensors: false,
+    backupCamera: false,
+    appleCarPlay: false,
+    androidAuto: false,
+    keylessEntry: false,
+    childSeat: false,
+  });
+
+  // Address using autocomplete
+  const [address, setAddress] = useState('');
+
+  // Images (multiple)
+  const [images, setImages] = useState([]);
+
+  const backendUrl = process.env.REACT_APP_BACKEND_URL; // e.g., https://hyre-backend.onrender.com/api
+
+  // Handlers
+  const handleImagesChange = (e) => {
+    if (e.target.files) {
+      setImages([...e.target.files]);
+    }
+  };
+
+  const toggleFeature = (feat) => {
+    setFeatures({ ...features, [feat]: !features[feat] });
+  };
+
+  const handleSelectAddress = async (value) => {
+    setAddress(value);
+    try {
+      const results = await geocodeByAddress(value);
+      const latLng = await getLatLng(results[0]);
+      console.log('Selected address coordinates:', latLng);
+    } catch (error) {
+      console.error('Error fetching address details:', error);
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('description', description);
+    formData.append('make', make);
+    formData.append('model', model);
+    formData.append('year', year);
+    formData.append('mileage', mileage);
+    formData.append('fuelType', fuelType);
+    formData.append('engineSize', engineSize);
+    formData.append('transmission', transmission);
+    formData.append('pricePerDay', pricePerDay);
+    formData.append('address', address);
+    formData.append('terms', terms);
+    formData.append('availableFrom', availableFrom ? availableFrom.toISOString() : '');
+    formData.append('availableTo', availableTo ? availableTo.toISOString() : '');
+
+    Object.keys(features).forEach((feat) => {
+      formData.append(feat, features[feat]);
+    });
+
+    images.forEach((file) => {
+      formData.append('images', file);
+    });
+
+    axios
+      .post(`${backendUrl}/business/listings`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      })
+      .then((res) => {
+        alert('Listing created successfully!');
+        navigate('/my-listings');
+      })
+      .catch((err) => {
+        console.error('Error creating listing:', err);
+        alert('Failed to create listing.');
+      });
+  };
+
   return (
-    <div className={styles.container}>
+    <div className={styles.addListingContainer}>
       {/* Header */}
       <header className={styles.header}>
         <div className={styles.logo} onClick={() => navigate('/')}>Hyre</div>
@@ -120,91 +135,212 @@ export default function AccountPage() {
       </header>
 
       {/* Side Menu */}
-      {isCustomer && (
-        <SideMenuCustomer
-          isOpen={menuOpen}
-          toggleMenu={toggleMenu}
-          closeMenu={closeMenu}
-        />
-      )}
+      <SideMenuBusiness isOpen={menuOpen} toggleMenu={toggleMenu} closeMenu={closeMenu} />
 
-      {/* Main content area */}
-      <div className={styles.content}>
-        <h1>Account</h1>
+      <div className={styles.mainContent}>
+        <h1 className={styles.pageTitle}>List Your Car</h1>
+        <form onSubmit={handleSubmit} className={styles.formContainer}>
+          {/* Section 1: Vehicle Photos */}
+          <details className={styles.section} open>
+            <summary className={styles.sectionHeading}>Vehicle Photos</summary>
+            <div className={styles.subSection}>
+              <label className={styles.label}>Upload Images</label>
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handleImagesChange}
+                className={styles.inputField}
+              />
+            </div>
+          </details>
 
-        {/* Contact Information */}
-        <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>Contact Information</h2>
-          <p>
-            Email: <strong>{user.email}</strong> <span style={{ color: 'green' }}>(Verified)</span>
-          </p>
-          <button
-            className={`${styles.button} ${styles.buttonPrimary}`}
-            onClick={() => navigate('/change-password')}
-          >
-            Change Password
-          </button>
-        </div>
+          {/* Section 2: Basic Details */}
+          <details className={styles.section} open>
+            <summary className={styles.sectionHeading}>Basic Details</summary>
+            <div className={styles.subSection}>
+              <label className={styles.label}>Title</label>
+              <input
+                type="text"
+                className={styles.inputField}
+                placeholder="Enter listing title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+            </div>
+            <div className={styles.subSection}>
+              <label className={styles.label}>Description</label>
+              <textarea
+                className={styles.textArea}
+                placeholder="Describe your car..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
+          </details>
 
-        {/* Transmission Section */}
-        <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>Transmission</h2>
-          <p>
-            Some cars on Hyre do not have automatic transmissions. Can you drive a manual car?
-          </p>
-          {user.transmission && user.transmission !== '' ? (
-            <p><strong>Your transmission setting:</strong> {user.transmission}</p>
-          ) : (
-            <>
+          {/* Section 3: Availability Dates */}
+          <details className={styles.section} open>
+            <summary className={styles.sectionHeading}>Availability Dates</summary>
+            <div className={styles.subSection}>
+              <label className={styles.label}>Available From</label>
+              <DatePicker
+                selected={availableFrom}
+                onChange={(date) => setAvailableFrom(date)}
+                dateFormat="yyyy-MM-dd"
+                className={styles.inputField}
+                placeholderText="Select start date"
+              />
+            </div>
+            <div className={styles.subSection}>
+              <label className={styles.label}>Available To</label>
+              <DatePicker
+                selected={availableTo}
+                onChange={(date) => setAvailableTo(date)}
+                dateFormat="yyyy-MM-dd"
+                className={styles.inputField}
+                placeholderText="Select end date"
+              />
+            </div>
+          </details>
+
+          {/* Section 4: Car Details */}
+          <details className={styles.section} open>
+            <summary className={styles.sectionHeading}>Car Details</summary>
+            <div className={styles.formRow}>
+              <div className={styles.subSection}>
+                <label className={styles.label}>Make</label>
+                <input
+                  type="text"
+                  className={styles.inputField}
+                  placeholder="e.g., Toyota"
+                  value={make}
+                  onChange={(e) => setMake(e.target.value)}
+                />
+              </div>
+              <div className={styles.subSection}>
+                <label className={styles.label}>Model</label>
+                <input
+                  type="text"
+                  className={styles.inputField}
+                  placeholder="e.g., Corolla"
+                  value={model}
+                  onChange={(e) => setModel(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className={styles.formRow}>
+              <div className={styles.subSection}>
+                <label className={styles.label}>Year</label>
+                <input
+                  type="number"
+                  className={styles.inputField}
+                  placeholder="e.g., 2023"
+                  value={year}
+                  onChange={(e) => setYear(e.target.value)}
+                />
+              </div>
+              <div className={styles.subSection}>
+                <label className={styles.label}>Mileage</label>
+                <input
+                  type="number"
+                  className={styles.inputField}
+                  placeholder="e.g., 5000"
+                  value={mileage}
+                  onChange={(e) => setMileage(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className={styles.formRow}>
+              <div className={styles.subSection}>
+                <label className={styles.label}>Fuel Type</label>
+                <select
+                  className={styles.inputField}
+                  value={fuelType}
+                  onChange={(e) => setFuelType(e.target.value)}
+                >
+                  <option value="Petrol">Petrol</option>
+                  <option value="Diesel">Diesel</option>
+                  <option value="Hybrid">Hybrid</option>
+                  <option value="Electric">Electric</option>
+                </select>
+              </div>
+              <div className={styles.subSection}>
+                <label className={styles.label}>Engine Size</label>
+                <input
+                  type="text"
+                  className={styles.inputField}
+                  placeholder="e.g., 1.5L"
+                  value={engineSize}
+                  onChange={(e) => setEngineSize(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className={styles.subSection}>
+              <label className={styles.label}>Transmission</label>
               <select
-                className={styles.selectField}
+                className={styles.inputField}
                 value={transmission}
                 onChange={(e) => setTransmission(e.target.value)}
               >
-                <option value="">Select your option</option>
-                <option value="No, I am not an expert">No, I am not an expert</option>
-                <option value="Yes, I can drive manual">Yes, I can drive manual</option>
+                <option value="">Select transmission</option>
+                <option value="Automatic">Automatic</option>
+                <option value="Manual">Manual</option>
               </select>
-              <div className={styles.buttonRow}>
-                <button className={styles.button} onClick={handleSaveTransmission}>
-                  Save changes
-                </button>
-              </div>
-            </>
-          )}
-        </div>
+            </div>
+          </details>
 
-        {/* Loyalty Points Section */}
-        <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>Loyalty Points</h2>
-          <p>
-            You earn 10 points for each booking. Once you reach 500 points, you can request a reward by emailing us.
-          </p>
-          <p>Your current points: <strong>{user.points || 0}</strong></p>
-          {user.points >= 500 && (
-            <p className={styles.loyaltyNote}>
-              Congratulations! You have enough points to claim a reward. Please email us to redeem.
+          {/* Section 5: Features */}
+          <details className={styles.section} open>
+            <summary className={styles.sectionHeading}>Features</summary>
+            <div className={styles.featuresGrid}>
+              {Object.keys(features).map((feat) => (
+                <label key={feat}>
+                  <input
+                    type="checkbox"
+                    checked={features[feat]}
+                    onChange={() => toggleFeature(feat)}
+                  />
+                  {feat.charAt(0).toUpperCase() + feat.slice(1)}
+                </label>
+              ))}
+            </div>
+          </details>
+
+          {/* Section 6: Car Photos */}
+          <details className={styles.section} open>
+            <summary className={styles.sectionHeading}>Car Photos</summary>
+            <div className={styles.subSection}>
+              <label className={styles.label}>Upload Images</label>
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handleImagesChange}
+                className={styles.inputField}
+              />
+            </div>
+            <p className={styles.tipText}>
+              Tip: Showcase your car from various angles.
             </p>
-          )}
-        </div>
+          </details>
 
-        {/* Download Data Section */}
-        <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>Download account data</h2>
-          <p>Download a PDF copy of all information we have about your account.</p>
-          <button className={styles.button} onClick={handleDownloadData}>
-            Download my data
-          </button>
-        </div>
+          {/* Section 7: Safety & Quality Standards */}
+          <details className={styles.section} open>
+            <summary className={styles.sectionHeading}>Safety & Quality Standards</summary>
+            <p className={styles.infoText}>
+              Please confirm that your car meets all safety and quality requirements.
+            </p>
+            <label className={styles.checkboxRow}>
+              <input type="checkbox" required />
+              I confirm that my vehicle complies with all local regulations.
+            </label>
+          </details>
 
-        {/* Close Account Section */}
-        <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>Close account</h2>
-          <p>Once you close your account, all your data will be deleted permanently.</p>
-          <button className={`${styles.button} ${styles.buttonDanger}`} onClick={handleCloseAccount}>
-            Close my account
+          <button type="submit" className={styles.submitButton}>
+            Agree & List
           </button>
-        </div>
+        </form>
       </div>
     </div>
   );

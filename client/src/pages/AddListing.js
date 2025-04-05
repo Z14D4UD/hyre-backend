@@ -4,6 +4,8 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import SideMenuBusiness from '../components/SideMenuBusiness';
 import PlacesAutocomplete, { geocodeByAddress, getLatLng } from 'react-places-autocomplete';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import styles from '../styles/AddListing.module.css';
 
 export default function AddListing() {
@@ -17,6 +19,7 @@ export default function AddListing() {
     navigate('/');
   }
 
+  // Side menu state
   const [menuOpen, setMenuOpen] = useState(false);
   const toggleMenu = () => setMenuOpen(!menuOpen);
   const closeMenu = () => setMenuOpen(false);
@@ -31,31 +34,70 @@ export default function AddListing() {
   const [fuelType, setFuelType] = useState('Petrol');
   const [engineSize, setEngineSize] = useState('');
   const [transmission, setTransmission] = useState('');
-  const [pricePerDay, setPricePerDay] = useState('');
-  const [availability, setAvailability] = useState('');
+  const [licensePlate, setLicensePlate] = useState('');
+  const [price, setPrice] = useState('');
   const [terms, setTerms] = useState('');
 
-  // Features (checkboxes)
-  const [gps, setGps] = useState(false);
-  const [bluetooth, setBluetooth] = useState(false);
-  const [heatedSeats, setHeatedSeats] = useState(false);
-  const [parkingSensors, setParkingSensors] = useState(false);
-  const [backupCamera, setBackupCamera] = useState(false);
-  const [appleCarPlay, setAppleCarPlay] = useState(false);
-  const [androidAuto, setAndroidAuto] = useState(false);
+  // Date pickers for availability
+  const [availableFrom, setAvailableFrom] = useState(null);
+  const [availableTo, setAvailableTo] = useState(null);
+
+  // Expanded features list
+  const [features, setFeatures] = useState({
+    gps: false,
+    bluetooth: false,
+    heatedSeats: false,
+    parkingSensors: false,
+    backupCamera: false,
+    appleCarPlay: false,
+    androidAuto: false,
+    keylessEntry: false,
+    childSeat: false,
+    leatherSeats: false,
+    tintedWindows: false,
+    convertible: false,
+    roofRack: false,
+    petFriendly: false,
+    smokeFree: false,
+    seatCovers: false,
+    dashCam: false,
+  });
 
   // Address autocomplete
   const [address, setAddress] = useState('');
 
-  // Images (multiple)
+  // Images (multiple) and local preview
   const [images, setImages] = useState([]);
+  const [previewImages, setPreviewImages] = useState([]);
 
-  const backendUrl = process.env.REACT_APP_BACKEND_URL; // e.g. https://hyre-backend.onrender.com/api
+  const backendUrl = process.env.REACT_APP_BACKEND_URL; // e.g. "https://hyre-backend.onrender.com/api"
 
+  // Handle file selection & preview
   const handleImagesChange = (e) => {
     if (e.target.files) {
-      setImages([...e.target.files]);
+      const selectedFiles = Array.from(e.target.files);
+      setImages(selectedFiles);
+
+      // Create local preview URLs
+      const previews = selectedFiles.map(file => URL.createObjectURL(file));
+      setPreviewImages(previews);
     }
+  };
+
+  // Optional: "Upload Photos" button (doesn't send to server yet, just a user step)
+  const handleUploadPhotos = () => {
+    if (!images.length) {
+      alert('No images selected.');
+      return;
+    }
+    alert('Photos ready to be uploaded with the final submission!');
+    // You could do a partial upload here if desired, but for now
+    // we just show a confirmation that images are "set".
+  };
+
+  // Toggle features
+  const toggleFeature = (feat) => {
+    setFeatures({ ...features, [feat]: !features[feat] });
   };
 
   // Handle address selection
@@ -64,14 +106,13 @@ export default function AddListing() {
     try {
       const results = await geocodeByAddress(value);
       const latLng = await getLatLng(results[0]);
-      console.log('Selected address lat/lng:', latLng);
-      // Optionally store latLng for further usage
+      console.log('Selected address coordinates:', latLng);
     } catch (error) {
       console.error('Error fetching address details:', error);
     }
   };
 
-  // Submit form
+  // Final submission
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -85,21 +126,19 @@ export default function AddListing() {
     formData.append('fuelType', fuelType);
     formData.append('engineSize', engineSize);
     formData.append('transmission', transmission);
-    formData.append('pricePerDay', pricePerDay);
-    formData.append('availability', availability);
-    formData.append('address', address);
+    formData.append('licensePlate', licensePlate);
+    formData.append('price', price);
     formData.append('terms', terms);
+    formData.append('address', address);
+    formData.append('availableFrom', availableFrom ? availableFrom.toISOString() : '');
+    formData.append('availableTo', availableTo ? availableTo.toISOString() : '');
 
-    formData.append('gps', gps);
-    formData.append('bluetooth', bluetooth);
-    formData.append('heatedSeats', heatedSeats);
-    formData.append('parkingSensors', parkingSensors);
-    formData.append('backupCamera', backupCamera);
-    formData.append('appleCarPlay', appleCarPlay);
-    formData.append('androidAuto', androidAuto);
+    Object.keys(features).forEach((feat) => {
+      formData.append(feat, features[feat]);
+    });
 
-    images.forEach((image) => {
-      formData.append('images', image);
+    images.forEach((file) => {
+      formData.append('images', file);
     });
 
     axios
@@ -134,265 +173,285 @@ export default function AddListing() {
       {/* Side Menu */}
       <SideMenuBusiness isOpen={menuOpen} toggleMenu={toggleMenu} closeMenu={closeMenu} />
 
+      {/* Main Content */}
       <div className={styles.mainContent}>
-        <h2 className={styles.pageTitle}>Add New Listing</h2>
+        <h1 className={styles.pageTitle}>List Your Car</h1>
+        <form onSubmit={handleSubmit} className={styles.formContainer}>
+          {/* Section 1: Vehicle Photos */}
+          <details className={styles.section} open>
+            <summary className={styles.sectionHeading}>Vehicle Photos</summary>
+            <div className={styles.subSection}>
+              <label className={styles.label}>Upload Images</label>
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handleImagesChange}
+                className={styles.inputField}
+              />
+              {/* "Upload Photos" button (optional separate step) */}
+              <button
+                type="button"
+                onClick={handleUploadPhotos}
+                className={styles.uploadPhotosButton}
+              >
+                Upload Photos
+              </button>
+            </div>
 
-        <form className={styles.listingForm} onSubmit={handleSubmit}>
-          {/* Upload Images */}
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Upload Images</label>
-            <input
-              type="file"
-              multiple
-              accept="image/*"
-              onChange={handleImagesChange}
-              className={styles.inputField}
-            />
-          </div>
+            {/* Image previews */}
+            {previewImages.length > 0 && (
+              <div className={styles.imagePreviewGrid}>
+                {previewImages.map((src, idx) => (
+                  <div key={idx} className={styles.imagePreviewWrapper}>
+                    <img
+                      src={src}
+                      alt={`Preview ${idx}`}
+                      className={styles.imagePreview}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </details>
 
-          {/* Title & Description */}
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Title</label>
-            <input
-              type="text"
-              className={styles.inputField}
-              placeholder="Enter listing title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-          </div>
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Description</label>
-            <textarea
-              className={styles.textArea}
-              placeholder="Enter listing description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
-
-          {/* Make, Model */}
-          <div className={styles.formRow}>
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Make</label>
+          {/* Section 2: Basic Details */}
+          <details className={styles.section} open>
+            <summary className={styles.sectionHeading}>Basic Details</summary>
+            <div className={styles.subSection}>
+              <label className={styles.label}>Title</label>
               <input
                 type="text"
                 className={styles.inputField}
-                placeholder="e.g., Toyota"
-                value={make}
-                onChange={(e) => setMake(e.target.value)}
+                placeholder="Enter listing title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
               />
             </div>
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Model</label>
-              <input
-                type="text"
-                className={styles.inputField}
-                placeholder="e.g., Corolla"
-                value={model}
-                onChange={(e) => setModel(e.target.value)}
+            <div className={styles.subSection}>
+              <label className={styles.label}>Description</label>
+              <textarea
+                className={styles.textArea}
+                placeholder="Describe your car..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
               />
             </div>
-          </div>
+          </details>
 
-          {/* Year, Mileage */}
-          <div className={styles.formRow}>
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Year</label>
-              <input
-                type="number"
+          {/* Section 3: Availability Dates */}
+          <details className={styles.section} open>
+            <summary className={styles.sectionHeading}>Availability Dates</summary>
+            <div className={styles.subSection}>
+              <label className={styles.label}>Available From</label>
+              <DatePicker
+                selected={availableFrom}
+                onChange={(date) => setAvailableFrom(date)}
+                dateFormat="yyyy-MM-dd"
                 className={styles.inputField}
-                placeholder="e.g., 2023"
-                value={year}
-                onChange={(e) => setYear(e.target.value)}
+                placeholderText="Select start date"
               />
             </div>
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Mileage</label>
-              <input
-                type="number"
+            <div className={styles.subSection}>
+              <label className={styles.label}>Available To</label>
+              <DatePicker
+                selected={availableTo}
+                onChange={(date) => setAvailableTo(date)}
+                dateFormat="yyyy-MM-dd"
                 className={styles.inputField}
-                placeholder="e.g., 5000"
-                value={mileage}
-                onChange={(e) => setMileage(e.target.value)}
+                placeholderText="Select end date"
               />
             </div>
-          </div>
+          </details>
 
-          {/* Fuel, Engine */}
-          <div className={styles.formRow}>
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Fuel Type</label>
+          {/* Section 4: Car Details */}
+          <details className={styles.section} open>
+            <summary className={styles.sectionHeading}>Car Details</summary>
+            <div className={styles.formRow}>
+              <div className={styles.subSection}>
+                <label className={styles.label}>Make</label>
+                <input
+                  type="text"
+                  className={styles.inputField}
+                  placeholder="e.g., Toyota"
+                  value={make}
+                  onChange={(e) => setMake(e.target.value)}
+                />
+              </div>
+              <div className={styles.subSection}>
+                <label className={styles.label}>Model</label>
+                <input
+                  type="text"
+                  className={styles.inputField}
+                  placeholder="e.g., Corolla"
+                  value={model}
+                  onChange={(e) => setModel(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className={styles.formRow}>
+              <div className={styles.subSection}>
+                <label className={styles.label}>Year</label>
+                <input
+                  type="number"
+                  className={styles.inputField}
+                  placeholder="e.g., 2023"
+                  value={year}
+                  onChange={(e) => setYear(e.target.value)}
+                />
+              </div>
+              <div className={styles.subSection}>
+                <label className={styles.label}>Mileage</label>
+                <input
+                  type="number"
+                  className={styles.inputField}
+                  placeholder="e.g., 5000"
+                  value={mileage}
+                  onChange={(e) => setMileage(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className={styles.formRow}>
+              <div className={styles.subSection}>
+                <label className={styles.label}>Fuel Type</label>
+                <select
+                  className={styles.inputField}
+                  value={fuelType}
+                  onChange={(e) => setFuelType(e.target.value)}
+                >
+                  <option value="Petrol">Petrol</option>
+                  <option value="Diesel">Diesel</option>
+                  <option value="Hybrid">Hybrid</option>
+                  <option value="Electric">Electric</option>
+                </select>
+              </div>
+              <div className={styles.subSection}>
+                <label className={styles.label}>Engine Size</label>
+                <input
+                  type="text"
+                  className={styles.inputField}
+                  placeholder="e.g., 1.5L"
+                  value={engineSize}
+                  onChange={(e) => setEngineSize(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className={styles.subSection}>
+              <label className={styles.label}>Transmission</label>
               <select
                 className={styles.inputField}
-                value={fuelType}
-                onChange={(e) => setFuelType(e.target.value)}
+                value={transmission}
+                onChange={(e) => setTransmission(e.target.value)}
               >
-                <option value="Petrol">Petrol</option>
-                <option value="Diesel">Diesel</option>
-                <option value="Hybrid">Hybrid</option>
-                <option value="Electric">Electric</option>
+                <option value="">Select transmission</option>
+                <option value="Automatic">Automatic</option>
+                <option value="Manual">Manual</option>
               </select>
             </div>
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Engine Size</label>
+            <div className={styles.subSection}>
+              <label className={styles.label}>License Plate</label>
               <input
                 type="text"
                 className={styles.inputField}
-                placeholder="e.g., 1.5L"
-                value={engineSize}
-                onChange={(e) => setEngineSize(e.target.value)}
+                placeholder="Enter license plate number"
+                value={licensePlate}
+                onChange={(e) => setLicensePlate(e.target.value)}
               />
             </div>
-          </div>
-
-          {/* Transmission */}
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Transmission</label>
-            <select
-              className={styles.inputField}
-              value={transmission}
-              onChange={(e) => setTransmission(e.target.value)}
-            >
-              <option value="">Select transmission</option>
-              <option value="Manual">Manual</option>
-              <option value="Automatic">Automatic</option>
-            </select>
-          </div>
-
-          {/* Features */}
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Features</label>
-            <div className={styles.featuresGrid}>
-              <label>
-                <input type="checkbox" checked={gps} onChange={() => setGps(!gps)} />
-                GPS
-              </label>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={bluetooth}
-                  onChange={() => setBluetooth(!bluetooth)}
-                />
-                Bluetooth
-              </label>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={heatedSeats}
-                  onChange={() => setHeatedSeats(!heatedSeats)}
-                />
-                Heated Seats
-              </label>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={parkingSensors}
-                  onChange={() => setParkingSensors(!parkingSensors)}
-                />
-                Parking Sensors
-              </label>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={backupCamera}
-                  onChange={() => setBackupCamera(!backupCamera)}
-                />
-                Backup Camera
-              </label>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={appleCarPlay}
-                  onChange={() => setAppleCarPlay(!appleCarPlay)}
-                />
-                Apple CarPlay
-              </label>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={androidAuto}
-                  onChange={() => setAndroidAuto(!androidAuto)}
-                />
-                Android Auto
-              </label>
-            </div>
-          </div>
-
-          {/* Address Autocomplete */}
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Address</label>
-            <PlacesAutocomplete
-              value={address}
-              onChange={setAddress}
-              onSelect={handleSelectAddress}
-            >
-              {({ getInputProps, suggestions, getSuggestionItemProps, loading }) => (
-                <div>
-                  <input
-                    {...getInputProps({
-                      placeholder: 'Enter address...',
-                      className: styles.inputField,
-                    })}
-                  />
-                  <div className={styles.suggestionsContainer}>
-                    {loading && <div>Loading...</div>}
-                    {suggestions.map((suggestion) => {
-                      const style = suggestion.active
-                        ? { backgroundColor: '#cce4ff', cursor: 'pointer' }
-                        : { backgroundColor: '#fff', cursor: 'pointer' };
-                      return (
-                        <div
-                          {...getSuggestionItemProps(suggestion, { style })}
-                          key={suggestion.placeId}
-                        >
-                          {suggestion.description}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </PlacesAutocomplete>
-          </div>
-
-          {/* Availability & Price */}
-          <div className={styles.formRow}>
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Availability</label>
-              <input
-                type="text"
-                className={styles.inputField}
-                placeholder="e.g., 2023-04-01 to 2023-04-10"
-                value={availability}
-                onChange={(e) => setAvailability(e.target.value)}
-              />
-            </div>
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Price per day</label>
+            <div className={styles.subSection}>
+              <label className={styles.label}>Listing Price</label>
               <input
                 type="number"
                 className={styles.inputField}
-                placeholder="0"
-                value={pricePerDay}
-                onChange={(e) => setPricePerDay(e.target.value)}
+                placeholder="e.g., 50"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
               />
             </div>
-          </div>
+          </details>
 
-          {/* Terms & Conditions */}
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Terms & Conditions</label>
-            <textarea
-              className={styles.textArea}
-              placeholder="Enter any specific terms or conditions"
-              value={terms}
-              onChange={(e) => setTerms(e.target.value)}
-            />
-          </div>
+          {/* Section 5: Features */}
+          <details className={styles.section} open>
+            <summary className={styles.sectionHeading}>Features</summary>
+            <div className={styles.featuresGrid}>
+              {Object.keys(features).map((feat) => (
+                <label key={feat}>
+                  <input
+                    type="checkbox"
+                    checked={features[feat]}
+                    onChange={() => toggleFeature(feat)}
+                  />
+                  {feat.charAt(0).toUpperCase() + feat.slice(1)}
+                </label>
+              ))}
+            </div>
+          </details>
+
+          {/* Section 6: Address */}
+          <details className={styles.section} open>
+            <summary className={styles.sectionHeading}>Address</summary>
+            <div className={styles.subSection}>
+              <label className={styles.label}>Enter Address</label>
+              <PlacesAutocomplete
+                value={address}
+                onChange={setAddress}
+                onSelect={handleSelectAddress}
+              >
+                {({ getInputProps, suggestions, getSuggestionItemProps, loading }) => (
+                  <div>
+                    <input
+                      {...getInputProps({
+                        placeholder: 'Enter address...',
+                        className: styles.inputField,
+                      })}
+                    />
+                    <div className={styles.suggestionsContainer}>
+                      {loading && <div>Loading...</div>}
+                      {suggestions.map((suggestion) => {
+                        const style = suggestion.active
+                          ? { backgroundColor: '#cce4ff', cursor: 'pointer', padding: '0.5rem' }
+                          : { backgroundColor: '#fff', cursor: 'pointer', padding: '0.5rem' };
+                        return (
+                          <div {...getSuggestionItemProps(suggestion, { style })} key={suggestion.placeId}>
+                            {suggestion.description}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </PlacesAutocomplete>
+            </div>
+          </details>
+
+          {/* Section 7: Safety & Quality Standards */}
+          <details className={styles.section} open>
+            <summary className={styles.sectionHeading}>Safety & Quality Standards</summary>
+            <p className={styles.infoText}>
+              Please confirm that your vehicle meets all local safety and quality regulations.
+            </p>
+            <label className={styles.checkboxRow}>
+              <input type="checkbox" required />
+              I confirm my vehicle complies with all safety standards.
+            </label>
+          </details>
+
+          {/* Section 8: Terms & Conditions */}
+          <details className={styles.section} open>
+            <summary className={styles.sectionHeading}>Terms & Conditions</summary>
+            <div className={styles.subSection}>
+              <label className={styles.label}>Enter Terms & Conditions</label>
+              <textarea
+                className={styles.textArea}
+                placeholder="Enter any specific terms or conditions..."
+                value={terms}
+                onChange={(e) => setTerms(e.target.value)}
+              />
+            </div>
+          </details>
 
           <button type="submit" className={styles.submitButton}>
-            Create Listing
+            Agree & List
           </button>
         </form>
       </div>
