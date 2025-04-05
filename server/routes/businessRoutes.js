@@ -16,8 +16,7 @@ const { getBusinessProfile, updateBusinessProfile } = require('../controllers/bu
 // Import listing controller function
 const { createListing } = require('../controllers/businessListingController');
 
-// Import listing creation endpoint
-const { createListing } = require('../controllers/businessListingController');
+
 
 // Existing routes...
 router.get('/featured', async (req, res) => {
