@@ -13,6 +13,8 @@ const Business = require('../models/Business');
 
 // Import profile controller functions
 const { getBusinessProfile, updateBusinessProfile } = require('../controllers/businessProfileController');
+// Import listing controller function
+const { createListing } = require('../controllers/businessListingController');
 
 // Route to get featured businesses
 router.get('/featured', async (req, res) => {
@@ -36,5 +38,8 @@ router.get('/bookingsOverview', authMiddleware, getBookingsOverview);
 // Business Profile endpoints (for "My Profile" page)
 router.get('/me', authMiddleware, getBusinessProfile);
 router.put('/me', authMiddleware, upload.single('avatar'), updateBusinessProfile);
+
+// NEW: Listing creation endpoint for business users
+router.post('/listings', authMiddleware, upload.array('images', 10), createListing);
 
 module.exports = router;

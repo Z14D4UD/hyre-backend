@@ -22,6 +22,8 @@ import AboutHyre from './pages/AboutHyre';
 import ContactUs from './pages/ContactUs';
 import LegalPage from './pages/LegalPage';
 import BusinessProfile from './pages/BusinessProfile';
+import AddListing from './pages/AddListing'; // Make sure this import matches your file path
+
 
 function App() {
   return (
@@ -52,6 +54,8 @@ function App() {
         <Route path="/contact-support" element={<ContactUs />} />
         <Route path="/legal" element={<LegalPage />} />
         <Route path="/profile/business" element={<BusinessProfile />} /> // For business users
+        <Route path="/add-listing" element={<AddListing />} />
+
 
 
         {/* Account and Change Password */}
