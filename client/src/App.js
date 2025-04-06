@@ -14,7 +14,7 @@ import Search from './components/Search';
 import CarDetails from './pages/CarDetails';
 import Chat from './components/Chat';
 import Profile from './pages/Profile';
-import CustomerAccountPage from './pages/CustomerAccountPage'; // updated import for customer account
+import CustomerAccountPage from './pages/CustomerAccountPage'; 
 import ChangePassword from './pages/ChangePassword';
 import CustomerBookingsPage from './pages/CustomerBookingsPage';
 import MessagesPage from './pages/MessagesPage';

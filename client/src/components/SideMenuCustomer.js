@@ -44,6 +44,7 @@ export default function SideMenuCustomer({ isOpen, toggleMenu, closeMenu }) {
           <FaUser className={styles.icon} />
           <span>Profile</span>
         </li>
+        {/* Customer Account should route to /account */}
         <li className={styles.menuItem} onClick={() => goTo('/account')}>
           <FaUserCog className={styles.icon} />
           <span>Account</span>
