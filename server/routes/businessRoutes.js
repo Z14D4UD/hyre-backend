@@ -9,16 +9,11 @@ const {
   getEarnings,
   getBookingsOverview
 } = require('../controllers/businessController');
+const { getBusinessProfile, updateBusinessProfile } = require('../controllers/businessProfileController');
+const { getBusinessListings } = require('../controllers/listingController'); // Import the new function
 const Business = require('../models/Business');
 
-// Import profile endpoints if any...
-const { getBusinessProfile, updateBusinessProfile } = require('../controllers/businessProfileController');
-// Import listing controller function
-const { createListing } = require('../controllers/businessListingController');
-
-
-
-// Existing routes...
+// Route to get featured businesses
 router.get('/featured', async (req, res) => {
   try {
     const featured = await Business.find({ isFeatured: true });
@@ -28,19 +23,20 @@ router.get('/featured', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+// Route to verify business ID
 router.post('/verify-id', authMiddleware, upload.single('idDocument'), verifyID);
+
+// Dashboard endpoints
 router.get('/stats', authMiddleware, getStats);
 router.get('/earnings', authMiddleware, getEarnings);
 router.get('/bookingsOverview', authMiddleware, getBookingsOverview);
-router.get('/listings', authMiddleware, getBusinessListings);
 
-
-// Business Profile endpoints
+// Business Profile endpoints (for "My Profile" page)
 router.get('/me', authMiddleware, getBusinessProfile);
 router.put('/me', authMiddleware, upload.single('avatar'), updateBusinessProfile);
 
-// NEW: Listing creation endpoint for business users
-// NEW: Add Listing endpoint (for multiple images)
-router.post('/listings', authMiddleware, upload.array('images', 10), createListing);
+// Listings endpoint for "My Listings" page
+router.get('/listings', authMiddleware, getBusinessListings);
 
 module.exports = router;

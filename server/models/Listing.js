@@ -13,9 +13,11 @@ const ListingSchema = new mongoose.Schema({
   engineSize: { type: String },
   transmission: { type: String },
   pricePerDay: { type: Number },
-  availability: { type: String },
+  // Availability dates added for calendar-based availability selection
+  availableFrom: { type: Date },
+  availableTo: { type: Date },
   address: { type: String, required: true },
-  // Feature flags:
+  // Feature flags
   gps: { type: Boolean, default: false },
   bluetooth: { type: Boolean, default: false },
   heatedSeats: { type: Boolean, default: false },
