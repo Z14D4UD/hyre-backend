@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+
+// Chart.js imports
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -15,6 +17,8 @@ import {
   ArcElement
 } from 'chart.js';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
+
+// Side menu & styling imports
 import SideMenuBusiness from './SideMenuBusiness';
 import styles from '../styles/Dashboard.module.css';
 
@@ -43,10 +47,13 @@ export default function Dashboard() {
   const [bookingsOverviewData, setBookingsOverviewData] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  // Retrieve and trim token
   const token = (localStorage.getItem('token') || '').trim();
   const axiosConfig = { headers: { Authorization: `Bearer ${token}` } };
-  const baseUrl = process.env.REACT_APP_BACKEND_URL;
+  const baseUrl = process.env.REACT_APP_BACKEND_URL; // e.g., https://your-backend-domain.com/api
 
+  // Side menu toggle handlers
   const toggleMenu = () => setMenuOpen(!menuOpen);
   const closeMenu = () => setMenuOpen(false);
 
@@ -59,10 +66,13 @@ export default function Dashboard() {
   useEffect(() => {
     async function fetchData() {
       try {
+        // Fetch business statistics
         const statsRes = await axios.get(`${baseUrl}/business/stats`, axiosConfig);
         setStats(statsRes.data);
+        // Fetch monthly earnings data
         const earningsRes = await axios.get(`${baseUrl}/business/earnings`, axiosConfig);
         setEarningsData(earningsRes.data);
+        // Fetch monthly bookings overview
         const bookingsOverviewRes = await axios.get(`${baseUrl}/business/bookingsOverview`, axiosConfig);
         setBookingsOverviewData(bookingsOverviewRes.data);
         setLoading(false);
@@ -102,11 +112,12 @@ export default function Dashboard() {
   const rentStatusData = {
     labels: ['Hired', 'Pending', 'Cancelled'],
     datasets: [{
-      data: [58, 24, 18],
+      data: [58, 24, 18], // Replace with dynamic data if available
       backgroundColor: ['#2ecc71', '#f1c40f', '#e74c3c']
     }]
   };
 
+  // Function to submit a withdrawal request
   const handleWithdrawalSubmit = async () => {
     const amount = parseFloat(withdrawalAmount);
     if (isNaN(amount) || amount <= 0) {
@@ -116,7 +127,7 @@ export default function Dashboard() {
     try {
       const payload = {
         amount,
-        method: withdrawalMethod,
+        method: withdrawalMethod, // either "paypal" or "bank"
         details: withdrawalMethod === 'paypal'
           ? { paypalEmail: withdrawalDetails }
           : { bankAccount: withdrawalDetails },
@@ -124,7 +135,7 @@ export default function Dashboard() {
       const res = await axios.post(`${baseUrl}/withdrawals`, payload, axiosConfig);
       alert('Withdrawal request submitted successfully!');
       setWithdrawalModalOpen(false);
-      // Optionally refresh stats to update balance
+      // Optionally, you can refresh stats here to update the balance
     } catch (error) {
       console.error('Error submitting withdrawal:', error);
       alert('Failed to submit withdrawal request.');
@@ -233,12 +244,20 @@ export default function Dashboard() {
                 <option value="paypal">PayPal</option>
                 <option value="bank">Bank Account</option>
               </select>
-              <label>{withdrawalMethod === 'paypal' ? 'PayPal Email' : 'Bank Account Details'}</label>
+              <label>
+                {withdrawalMethod === 'paypal'
+                  ? 'PayPal Email'
+                  : 'Bank Account Details'}
+              </label>
               <input
                 type="text"
                 value={withdrawalDetails}
                 onChange={(e) => setWithdrawalDetails(e.target.value)}
-                placeholder={withdrawalMethod === 'paypal' ? 'Enter your PayPal email' : 'Enter bank account info'}
+                placeholder={
+                  withdrawalMethod === 'paypal'
+                    ? 'Enter your PayPal email'
+                    : 'Enter bank account info'
+                }
               />
               <div className={styles.modalButtons}>
                 <button className={styles.buttonPrimary} onClick={handleWithdrawalSubmit}>

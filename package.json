@@ -8,6 +8,7 @@
         "dev": "concurrently \"npm run server\" \"npm run client\""
     },
     "dependencies": {
+        "@paypal/payouts-sdk": "^1.1.1",
         "@react-google-maps/api": "^2.20.6",
         "concurrently": "^8.2.2",
         "google-map-react": "^2.2.1",

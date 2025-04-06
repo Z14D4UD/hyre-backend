@@ -1,55 +1,54 @@
 // server/controllers/withdrawalController.js
-const Withdrawal = require('../models/Withdrawal');
-const payoutService = require('../services/payoutService');
+
 const Business = require('../models/Business');
+const { createPayPalPayout, createStripeTransfer } = require('../services/payoutService');
 
 exports.requestWithdrawal = async (req, res) => {
   try {
-    if (!req.business) {
-      return res.status(403).json({ msg: 'Forbidden: Not a business user' });
-    }
     const businessId = req.business.id;
     const { amount, method, details } = req.body;
-
-    if (!amount || isNaN(amount) || amount <= 0) {
+    
+    // Validate the withdrawal amount
+    const withdrawalAmount = parseFloat(amount);
+    if (isNaN(withdrawalAmount) || withdrawalAmount <= 0) {
       return res.status(400).json({ msg: 'Invalid withdrawal amount' });
     }
+    
+    // Validate method (must be either "paypal" or "bank")
     if (!['paypal', 'bank'].includes(method)) {
       return res.status(400).json({ msg: 'Invalid withdrawal method' });
     }
-    if (!details || typeof details !== 'object') {
-      return res.status(400).json({ msg: 'Invalid withdrawal details' });
-    }
-
+    
+    // Fetch business details (assume a "balance" field exists on Business)
     const business = await Business.findById(businessId);
     if (!business) {
       return res.status(404).json({ msg: 'Business not found' });
     }
-    if (business.balance < amount) {
+    if (business.balance < withdrawalAmount) {
       return res.status(400).json({ msg: 'Insufficient balance' });
     }
 
-    const payoutResult = await payoutService.initiatePayout(business, amount, method, details);
-    if (!payoutResult.success) {
-      return res.status(500).json({ msg: 'Payout failed', error: payoutResult.error });
+    let payoutResult;
+    if (method === 'paypal') {
+      if (!details || !details.paypalEmail) {
+        return res.status(400).json({ msg: 'PayPal email is required for withdrawal' });
+      }
+      payoutResult = await createPayPalPayout(withdrawalAmount, "USD", details.paypalEmail);
+    } else if (method === 'bank') {
+      if (!details || !details.bankAccount) {
+        return res.status(400).json({ msg: 'Bank account details are required for withdrawal' });
+      }
+      // In production, you may need to verify the bank account details or use a payment provider.
+      payoutResult = await createStripeTransfer(withdrawalAmount, "USD", details.bankAccount);
     }
 
-    // Deduct the amount from the business balance
-    business.balance -= amount;
+    // Deduct the withdrawn amount from the business balance and save
+    business.balance -= withdrawalAmount;
     await business.save();
 
-    const newWithdrawal = new Withdrawal({
-      business: businessId,
-      amount,
-      method,
-      details,
-      status: 'completed', // or 'pending' if asynchronous
-    });
-    await newWithdrawal.save();
-
-    res.json({ msg: 'Withdrawal request submitted successfully', withdrawal: newWithdrawal, payoutResult });
+    res.json({ msg: 'Withdrawal request submitted successfully', payoutResult });
   } catch (error) {
-    console.error('Error in requestWithdrawal:', error);
+    console.error('Error processing withdrawal:', error);
     res.status(500).json({ msg: 'Server error processing withdrawal' });
   }
 };
