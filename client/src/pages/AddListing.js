@@ -36,13 +36,14 @@ export default function AddListing() {
   const [transmission, setTransmission] = useState('');
   const [licensePlate, setLicensePlate] = useState('');
   const [price, setPrice] = useState('');
+  const [carType, setCarType] = useState(''); // new state for car type
   const [terms, setTerms] = useState('');
 
   // Date pickers for availability
   const [availableFrom, setAvailableFrom] = useState(null);
   const [availableTo, setAvailableTo] = useState(null);
 
-  // Expanded features list (more features added)
+  // Features
   const [features, setFeatures] = useState({
     gps: false,
     bluetooth: false,
@@ -63,7 +64,7 @@ export default function AddListing() {
     dashCam: false,
   });
 
-  // Address autocomplete
+  // Address
   const [address, setAddress] = useState('');
 
   // Images (multiple) and local preview
@@ -111,13 +112,10 @@ export default function AddListing() {
   // Frontend validation and form submission
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    // Validation: ensure required fields are filled
     if (!title.trim() || !address.trim()) {
       alert('Please fill in all required fields: Title and Address.');
       return;
     }
-    
     const formData = new FormData();
     formData.append('title', title);
     formData.append('description', description);
@@ -129,7 +127,8 @@ export default function AddListing() {
     formData.append('engineSize', engineSize);
     formData.append('transmission', transmission);
     formData.append('licensePlate', licensePlate);
-    formData.append('price', price);
+    formData.append('pricePerDay', price);
+    formData.append('carType', carType); // new field for car type
     formData.append('terms', terms);
     formData.append('address', address);
     formData.append('availableFrom', availableFrom ? availableFrom.toISOString() : '');
@@ -164,8 +163,12 @@ export default function AddListing() {
     <div className={styles.addListingContainer}>
       {/* Header */}
       <header className={styles.header}>
-        <div className={styles.logo} onClick={() => navigate('/')}>Hyre</div>
-        <button className={styles.menuIcon} onClick={toggleMenu}>☰</button>
+        <div className={styles.logo} onClick={() => navigate('/')}>
+          Hyre
+        </div>
+        <button className={styles.menuIcon} onClick={toggleMenu}>
+          ☰
+        </button>
       </header>
 
       {/* Side Menu */}
@@ -327,6 +330,7 @@ export default function AddListing() {
                 />
               </div>
             </div>
+
             <div className={styles.subSection}>
               <label className={styles.label}>Transmission</label>
               <select
@@ -339,6 +343,27 @@ export default function AddListing() {
                 <option value="Manual">Manual</option>
               </select>
             </div>
+
+            <div className={styles.subSection}>
+              <label className={styles.label}>Car Type</label>
+              <select
+                className={styles.inputField}
+                value={carType}
+                onChange={(e) => setCarType(e.target.value)}
+              >
+                <option value="">Select car type</option>
+                <option value="SUV">SUV</option>
+                <option value="Sedan">Sedan</option>
+                <option value="Hatchback">Hatchback</option>
+                <option value="Coupe">Coupe</option>
+                <option value="Convertible">Convertible</option>
+                <option value="Pickup">Pickup</option>
+                <option value="Van">Van</option>
+                <option value="Wagon">Wagon</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
             <div className={styles.subSection}>
               <label className={styles.label}>License Plate</label>
               <input
@@ -350,7 +375,7 @@ export default function AddListing() {
               />
             </div>
             <div className={styles.subSection}>
-              <label className={styles.label}>Listing Price</label>
+              <label className={styles.label}>Listing Price (per day)</label>
               <input
                 type="number"
                 className={styles.inputField}
@@ -382,7 +407,7 @@ export default function AddListing() {
           <details className={styles.section} open>
             <summary className={styles.sectionHeading}>Address</summary>
             <div className={styles.subSection}>
-              <label className={styles.label}>Enter Address</label>
+              <label className={styles.label}>Enter Address*</label>
               <PlacesAutocomplete
                 value={address}
                 onChange={setAddress}

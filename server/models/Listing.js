@@ -7,6 +7,7 @@ const ListingSchema = new mongoose.Schema({
   description: { type: String },
   make: { type: String },
   model: { type: String },
+  carType: { type: String },
   year: { type: Number },
   mileage: { type: Number },
   fuelType: { type: String },

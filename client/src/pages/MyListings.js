@@ -108,16 +108,24 @@ export default function MyListings() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-          <select
-            className={styles.filterDropdown}
-            value={carTypeFilter}
-            onChange={(e) => setCarTypeFilter(e.target.value)}
-          >
-            <option value="">Car Type</option>
-            <option value="SUV">SUV</option>
-            <option value="Sedan">Sedan</option>
-            <option value="Hatchback">Hatchback</option>
-          </select>
+         <select
+  className={styles.filterDropdown}
+  value={carTypeFilter}
+  onChange={(e) => setCarTypeFilter(e.target.value)}
+>
+  <option value="">Car Type</option>
+  <option value="SUV">SUV</option>
+  <option value="Sedan">Sedan</option>
+  <option value="Hatchback">Hatchback</option>
+  <option value="Truck">Truck</option>
+  <option value="Coupe">Coupe</option>
+  <option value="Convertible">Convertible</option>
+  <option value="Van">Van</option>
+  <option value="Wagon">Wagon</option>
+  <option value="Sports Car">Sports Car</option>
+  <option value="Luxury">Luxury</option>
+</select>
+
           <select
             className={styles.filterDropdown}
             value={statusFilter}
