@@ -14,21 +14,18 @@ import Search from './components/Search';
 import CarDetails from './pages/CarDetails';
 import Chat from './components/Chat';
 import Profile from './pages/Profile';
-import AccountPage from './pages/AccountPage';
+import AccountPage from './pages/AccountPage'; // This is your customer account page
 import ChangePassword from './pages/ChangePassword';
-import BookingsPage from './pages/BookingsPage';
+import CustomerBookingsPage from './pages/CustomerBookingsPage';
 import MessagesPage from './pages/MessagesPage';
 import AboutHyre from './pages/AboutHyre';
 import ContactUs from './pages/ContactUs';
 import LegalPage from './pages/LegalPage';
 import BusinessProfile from './pages/BusinessProfile';
-import AddListing from './pages/AddListing'; // Make sure this import matches your file path
+import AddListing from './pages/AddListing';
 import MyListings from './pages/MyListings';
 import EditListing from './pages/EditListing';
 import BusinessBookings from './pages/BusinessBookings';
-
-
-
 
 function App() {
   return (
@@ -53,23 +50,18 @@ function App() {
         <Route path="/chat" element={<Chat />} />
         <Route path="/insurance-legal" element={<div>Insurance & Legal Page</div>} />
         <Route path="/profile" element={<Profile />} />
-        <Route path="/bookings" element={<BookingsPage />} />
+        <Route path="/bookings/customer" element={<CustomerBookingsPage />} />
         <Route path="/messages" element={<MessagesPage />} />
         <Route path="/about-hyre" element={<AboutHyre />} />
         <Route path="/contact-support" element={<ContactUs />} />
         <Route path="/legal" element={<LegalPage />} />
-        <Route path="/profile/business" element={<BusinessProfile />} /> // For business users
+        <Route path="/profile/business" element={<BusinessProfile />} />
         <Route path="/add-listing" element={<AddListing />} />
         <Route path="/my-listings" element={<MyListings />} />
         <Route path="/edit-listing/:id" element={<EditListing />} />
         <Route path="/bookings/business" element={<BusinessBookings />} />
 
-
-        
-
-
-
-        {/* Account and Change Password */}
+        {/* Customer Account and Change Password */}
         <Route path="/account" element={<AccountPage />} />
         <Route path="/change-password" element={<ChangePassword />} />
 

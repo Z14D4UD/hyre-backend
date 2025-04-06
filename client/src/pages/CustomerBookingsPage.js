@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SideMenuCustomer from '../components/SideMenuCustomer';
-import styles from '../styles/BookingsPage.module.css';
+import styles from '../styles/CustomerBookingsPage.module.css';
 
 export default function BookingsPage() {
   const navigate = useNavigate();

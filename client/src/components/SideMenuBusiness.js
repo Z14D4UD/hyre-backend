@@ -1,3 +1,4 @@
+// client/src/components/SideMenuBusiness.js
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -43,7 +44,6 @@ export default function SideMenuBusiness({ isOpen, toggleMenu, closeMenu }) {
           <FaTachometerAlt className={styles.icon} />
           <span>Dashboard</span>
         </li>
-        {/* Updated My Profile link for business users */}
         <li className={styles.menuItem} onClick={() => goTo('/profile/business')}>
           <FaUser className={styles.icon} />
           <span>My Profile</span>
@@ -56,7 +56,8 @@ export default function SideMenuBusiness({ isOpen, toggleMenu, closeMenu }) {
           <FaPlusSquare className={styles.icon} />
           <span>Add New Listing</span>
         </li>
-        <li className={styles.menuItem} onClick={() => goTo('/bookings')}>
+        {/* Updated Bookings route for business users */}
+        <li className={styles.menuItem} onClick={() => goTo('/bookings/business')}>
           <FaClipboardList className={styles.icon} />
           <span>Bookings</span>
         </li>
