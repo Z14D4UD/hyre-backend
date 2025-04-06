@@ -61,10 +61,10 @@ export default function SideMenuBusiness({ isOpen, toggleMenu, closeMenu }) {
           <FaClipboardList className={styles.icon} />
           <span>Bookings</span>
         </li>
-        <li className={styles.menuItem} onClick={() => goTo('/messages')}>
-          <FaEnvelope className={styles.icon} />
-          <span>Messages</span>
-        </li>
+        <li className={styles.menuItem} onClick={() => goTo('/messages/business')}>
+  <FaEnvelope className={styles.icon} />
+  <span>Messages</span>
+</li>
         <li className={styles.menuItem} onClick={handleLogout}>
           <FaSignOutAlt className={styles.icon} />
           <span>Log Out</span>

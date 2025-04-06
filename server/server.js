@@ -21,6 +21,8 @@ const affiliateRoutes = require('./routes/affiliateRoutes');
 const accountRoutes = require('./routes/accountRoutes');
 const supportRoutes = require('./routes/supportRoutes');
 const reviewRoutes = require ('./routes/reviewRoutes');
+const withdrawalRoutes = require('./routes/withdrawalRoutes');
+
 
 const app = express();
 const server = http.createServer(app);
@@ -59,6 +61,7 @@ app.use('/api/affiliates', affiliateRoutes);
 app.use('/api/account', accountRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api', reviewRoutes);
+app.use('/api/withdrawals', withdrawalRoutes);
 
 
 const io = new Server(server, {

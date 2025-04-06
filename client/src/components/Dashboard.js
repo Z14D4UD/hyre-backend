@@ -1,11 +1,7 @@
 // client/src/components/Dashboard.js
-
-// 1. All imports at the very top
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-
-// Chart.js imports
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -19,12 +15,9 @@ import {
   ArcElement
 } from 'chart.js';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
-
-// Side menu & styling imports
 import SideMenuBusiness from './SideMenuBusiness';
 import styles from '../styles/Dashboard.module.css';
 
-// 2. Chart.js registration
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -37,56 +30,45 @@ ChartJS.register(
   Legend
 );
 
-// 3. Define your component
 export default function Dashboard() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [stats, setStats] = useState({
     totalRevenue: 0,
     rentedCars: 0,
     bookings: 0,
-    activeCars: 0
+    activeCars: 0,
+    balance: 0, // assuming balance is provided
   });
   const [earningsData, setEarningsData] = useState([]);
   const [bookingsOverviewData, setBookingsOverviewData] = useState([]);
-  const [carBookings, setCarBookings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-
   const navigate = useNavigate();
-
-  // Retrieve token from localStorage
   const token = (localStorage.getItem('token') || '').trim();
-  console.log("Token from localStorage:", token); // For debugging
-  // Set the Axios header with the token
-  const axiosConfig = {
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  };
+  const axiosConfig = { headers: { Authorization: `Bearer ${token}` } };
+  const baseUrl = process.env.REACT_APP_BACKEND_URL;
 
   const toggleMenu = () => setMenuOpen(!menuOpen);
   const closeMenu = () => setMenuOpen(false);
 
+  // Withdrawal modal state
+  const [withdrawalModalOpen, setWithdrawalModalOpen] = useState(false);
+  const [withdrawalAmount, setWithdrawalAmount] = useState('');
+  const [withdrawalMethod, setWithdrawalMethod] = useState('paypal');
+  const [withdrawalDetails, setWithdrawalDetails] = useState('');
+
   useEffect(() => {
     async function fetchData() {
       try {
-        const baseUrl = process.env.REACT_APP_BACKEND_URL; // e.g., https://hyre-backend.onrender.com/api
-        // Fetch business stats
         const statsRes = await axios.get(`${baseUrl}/business/stats`, axiosConfig);
         setStats(statsRes.data);
-        // Fetch earnings data
         const earningsRes = await axios.get(`${baseUrl}/business/earnings`, axiosConfig);
         setEarningsData(earningsRes.data);
-        // Fetch bookings overview data
         const bookingsOverviewRes = await axios.get(`${baseUrl}/business/bookingsOverview`, axiosConfig);
         setBookingsOverviewData(bookingsOverviewRes.data);
-        // Fetch my bookings for this business
-        const bookingsRes = await axios.get(`${baseUrl}/bookings/mybookings`, axiosConfig);
-        setCarBookings(bookingsRes.data);
+        // Fetch other dashboard data as needed...
         setLoading(false);
       } catch (error) {
         if (error.response && error.response.status === 401) {
-          console.log('Unauthorized – redirecting to login');
           navigate('/login');
         } else {
           console.error('Error fetching dashboard data:', error);
@@ -95,9 +77,9 @@ export default function Dashboard() {
       }
     }
     if (token) fetchData();
-  }, [token, navigate]);
+  }, [token, baseUrl, navigate]);
 
-  // Prepare chart data
+  // Chart data setups (adjust as needed)
   const earningsChartData = {
     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
     datasets: [{
@@ -126,31 +108,37 @@ export default function Dashboard() {
     }]
   };
 
-  // Filter bookings based on search query
-  const filteredBookings = carBookings.filter((booking) =>
-    booking._id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (booking.customerName && booking.customerName.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    (booking.car && booking.car.make && booking.car.make.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
-
-  // Render header with Hyre logo in #38b6ff
-  const renderHeader = () => (
-    <header className={styles.header}>
-      <div
-        className={styles.logo}
-        style={{ color: '#38b6ff' }}
-        onClick={() => navigate('/')}
-      >
-        Hyre
-      </div>
-      <button className={styles.menuIcon} onClick={toggleMenu}>☰</button>
-    </header>
-  );
+  const handleWithdrawalSubmit = async () => {
+    const amount = parseFloat(withdrawalAmount);
+    if (isNaN(amount) || amount <= 0) {
+      alert('Please enter a valid withdrawal amount.');
+      return;
+    }
+    try {
+      const payload = {
+        amount,
+        method: withdrawalMethod,
+        details: withdrawalMethod === 'paypal'
+          ? { paypalEmail: withdrawalDetails }
+          : { bankAccount: withdrawalDetails },
+      };
+      const res = await axios.post(`${baseUrl}/withdrawals`, payload, axiosConfig);
+      alert('Withdrawal request submitted successfully!');
+      setWithdrawalModalOpen(false);
+      // Optionally, refresh stats to update balance
+    } catch (error) {
+      console.error('Error submitting withdrawal:', error);
+      alert('Failed to submit withdrawal request.');
+    }
+  };
 
   if (loading) {
     return (
       <div className={styles.dashboardContainer}>
-        {renderHeader()}
+        <header className={styles.header}>
+          <div className={styles.logo} onClick={() => navigate('/')}>Hyre</div>
+          <button className={styles.menuIcon} onClick={toggleMenu}>☰</button>
+        </header>
         <div className={styles.mainContent}>
           <p>Loading dashboard data...</p>
         </div>
@@ -160,7 +148,12 @@ export default function Dashboard() {
 
   return (
     <div className={styles.dashboardContainer}>
-      {renderHeader()}
+      <header className={styles.header}>
+        <div className={styles.logo} onClick={() => navigate('/')} style={{ color: '#38b6ff' }}>
+          Hyre
+        </div>
+        <button className={styles.menuIcon} onClick={toggleMenu}>☰</button>
+      </header>
       <SideMenuBusiness isOpen={menuOpen} toggleMenu={toggleMenu} closeMenu={closeMenu} />
       <div className={styles.mainContent}>
         <div className={styles.pageTitle}>
@@ -183,6 +176,13 @@ export default function Dashboard() {
           <div className={styles.card}>
             <h3>Active Cars</h3>
             <p>{stats.activeCars}</p>
+          </div>
+          <div className={styles.card}>
+            <h3>Balance</h3>
+            <p>${stats.balance.toFixed(2)}</p>
+            <button className={styles.withdrawButton} onClick={() => setWithdrawalModalOpen(true)}>
+              Withdraw Funds
+            </button>
           </div>
         </div>
         <div className={styles.row}>
@@ -210,65 +210,47 @@ export default function Dashboard() {
               <h2>Reminders</h2>
               <ul>
                 <li>Inspect and service the fleet</li>
-                <li>Update the car rental pricing packages</li>
-                <li>Review customer feedback and take action</li>
+                <li>Update the rental pricing packages</li>
+                <li>Review customer feedback</li>
               </ul>
             </div>
           </div>
         </div>
-        <div className={styles.tableSection}>
-          <div className={styles.tableHeader}>
-            <h2>Car Bookings</h2>
-            <div className={styles.tableSearch}>
+        {/* Withdrawal Modal */}
+        {withdrawalModalOpen && (
+          <div className={styles.modalOverlay}>
+            <div className={styles.modalContent}>
+              <h2>Withdraw Funds</h2>
+              <label>Amount</label>
+              <input
+                type="number"
+                value={withdrawalAmount}
+                onChange={(e) => setWithdrawalAmount(e.target.value)}
+                placeholder="Enter amount"
+              />
+              <label>Withdrawal Method</label>
+              <select value={withdrawalMethod} onChange={(e) => setWithdrawalMethod(e.target.value)}>
+                <option value="paypal">PayPal</option>
+                <option value="bank">Bank Account</option>
+              </select>
+              <label>{withdrawalMethod === 'paypal' ? 'PayPal Email' : 'Bank Account Details'}</label>
               <input
                 type="text"
-                placeholder="Search booking, name, car..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={withdrawalDetails}
+                onChange={(e) => setWithdrawalDetails(e.target.value)}
+                placeholder={withdrawalMethod === 'paypal' ? 'Enter your PayPal email' : 'Enter bank account info'}
               />
+              <div className={styles.modalButtons}>
+                <button className={styles.buttonPrimary} onClick={handleWithdrawalSubmit}>
+                  Submit Withdrawal
+                </button>
+                <button className={styles.buttonDanger} onClick={() => setWithdrawalModalOpen(false)}>
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
-          <table className={styles.bookingsTable}>
-            <thead>
-              <tr>
-                <th>Booking ID</th>
-                <th>Start Date</th>
-                <th>End Date</th>
-                <th>Customer</th>
-                <th>Car</th>
-                <th>Duration</th>
-                <th>Cost</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredBookings.map((booking, idx) => (
-                <tr key={idx}>
-                  <td>{booking._id}</td>
-                  <td>{new Date(booking.startDate).toLocaleDateString()}</td>
-                  <td>{new Date(booking.endDate).toLocaleDateString()}</td>
-                  <td>{booking.customerName}</td>
-                  <td>{booking.car ? `${booking.car.make} ${booking.car.model}` : 'N/A'}</td>
-                  <td>{booking.duration || 'N/A'}</td>
-                  <td>{booking.cost || '$' + booking.totalAmount}</td>
-                  <td>
-                    <span
-                      className={
-                        booking.status === 'Hired'
-                          ? styles.hired
-                          : booking.status === 'Pending'
-                          ? styles.pending
-                          : styles.cancelled
-                      }
-                    >
-                      {booking.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        )}
       </div>
     </div>
   );
