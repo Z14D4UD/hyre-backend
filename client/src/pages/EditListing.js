@@ -41,6 +41,7 @@ export default function EditListing() {
   const [availableFrom, setAvailableFrom] = useState(null);
   const [availableTo, setAvailableTo] = useState(null);
 
+  // Full features object
   const [features, setFeatures] = useState({
     gps: false,
     bluetooth: false,
@@ -49,11 +50,21 @@ export default function EditListing() {
     backupCamera: false,
     appleCarPlay: false,
     androidAuto: false,
+    keylessEntry: false,
+    childSeat: false,
+    leatherSeats: false,
+    tintedWindows: false,
+    convertible: false,
+    roofRack: false,
+    petFriendly: false,
+    smokeFree: false,
+    seatCovers: false,
+    dashCam: false,
   });
 
   const [address, setAddress] = useState('');
   const [images, setImages] = useState([]); // New images to upload (optional)
-  const [existingImages, setExistingImages] = useState([]); // Existing images URLs
+  const [existingImages, setExistingImages] = useState([]); // Existing image URLs
 
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
@@ -81,6 +92,7 @@ export default function EditListing() {
         setAddress(listing.address || '');
         if (listing.availableFrom) setAvailableFrom(new Date(listing.availableFrom));
         if (listing.availableTo) setAvailableTo(new Date(listing.availableTo));
+        // Update full features state from listing (if not provided, they remain false)
         setFeatures({
           gps: !!listing.gps,
           bluetooth: !!listing.bluetooth,
@@ -89,8 +101,18 @@ export default function EditListing() {
           backupCamera: !!listing.backupCamera,
           appleCarPlay: !!listing.appleCarPlay,
           androidAuto: !!listing.androidAuto,
+          keylessEntry: !!listing.keylessEntry,
+          childSeat: !!listing.childSeat,
+          leatherSeats: !!listing.leatherSeats,
+          tintedWindows: !!listing.tintedWindows,
+          convertible: !!listing.convertible,
+          roofRack: !!listing.roofRack,
+          petFriendly: !!listing.petFriendly,
+          smokeFree: !!listing.smokeFree,
+          seatCovers: !!listing.seatCovers,
+          dashCam: !!listing.dashCam,
         });
-        // If listing has images, store them in existingImages
+        // Set existing images if available
         setExistingImages(listing.images || []);
       })
       .catch((err) => {
@@ -125,7 +147,7 @@ export default function EditListing() {
     }
   };
 
-  // Delete listing handler (additional)
+  // Delete listing handler
   const handleDelete = () => {
     if (window.confirm('Are you sure you want to delete this listing?')) {
       axios
@@ -167,6 +189,7 @@ export default function EditListing() {
       address,
       availableFrom: availableFrom ? availableFrom.toISOString() : '',
       availableTo: availableTo ? availableTo.toISOString() : '',
+      // Include all feature fields
       gps: features.gps,
       bluetooth: features.bluetooth,
       heatedSeats: features.heatedSeats,
@@ -174,6 +197,16 @@ export default function EditListing() {
       backupCamera: features.backupCamera,
       appleCarPlay: features.appleCarPlay,
       androidAuto: features.androidAuto,
+      keylessEntry: features.keylessEntry,
+      childSeat: features.childSeat,
+      leatherSeats: features.leatherSeats,
+      tintedWindows: features.tintedWindows,
+      convertible: features.convertible,
+      roofRack: features.roofRack,
+      petFriendly: features.petFriendly,
+      smokeFree: features.smokeFree,
+      seatCovers: features.seatCovers,
+      dashCam: features.dashCam,
     };
 
     axios
@@ -210,8 +243,6 @@ export default function EditListing() {
           {/* Car Details */}
           <details className={styles.section} open>
             <summary className={styles.sectionHeading}>Car Details</summary>
-
-            {/* Car Type */}
             <div className={styles.subSection}>
               <label className={styles.label}>Car Type</label>
               <select
@@ -233,8 +264,6 @@ export default function EditListing() {
                 <option value="Other">Other</option>
               </select>
             </div>
-
-            {/* Make / Model */}
             <div className={styles.formRow}>
               <div className={styles.subSection}>
                 <label className={styles.label}>Make</label>
@@ -257,8 +286,6 @@ export default function EditListing() {
                 />
               </div>
             </div>
-
-            {/* Year / Mileage */}
             <div className={styles.formRow}>
               <div className={styles.subSection}>
                 <label className={styles.label}>Year</label>
@@ -281,8 +308,6 @@ export default function EditListing() {
                 />
               </div>
             </div>
-
-            {/* Fuel / Engine */}
             <div className={styles.formRow}>
               <div className={styles.subSection}>
                 <label className={styles.label}>Fuel Type</label>
@@ -308,8 +333,6 @@ export default function EditListing() {
                 />
               </div>
             </div>
-
-            {/* Transmission / License Plate */}
             <div className={styles.subSection}>
               <label className={styles.label}>Transmission</label>
               <select
@@ -449,6 +472,18 @@ export default function EditListing() {
             Delete Listing
           </button>
         </form>
+
+        {/* Display existing images */}
+        {existingImages.length > 0 && (
+          <div className={styles.imagePreviewGrid}>
+            {existingImages.map((imgSrc, idx) => (
+              <div key={idx} className={styles.imagePreviewWrapper}>
+                <img src={`${backendUrl}/${imgSrc}`} alt={`Listing ${idx}`} className={styles.imagePreview} />
+              </div>
+            ))}
+          </div>
+        )}
+
       </div>
     </div>
   );

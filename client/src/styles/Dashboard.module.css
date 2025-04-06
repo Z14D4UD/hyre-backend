@@ -44,17 +44,19 @@
     z-index: 1000;
   }
   .logo {
-    font-size: 1.25rem;
+    font-size: 5.85rem;
     font-weight: 700;
     cursor: pointer;
     color: #38b6ff;
   }
   .menuIcon {
-    font-size: 1.25rem;
+    font-size: 1.85rem;
     background: none;
     border: none;
     cursor: pointer;
     color: var(--color-text-main);
+    margin-right: 1rem; /* Moves the icon left by adding space on the right */
+
   }
   
   /*--------------------------------------------

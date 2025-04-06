@@ -15,6 +15,7 @@ const ListingSchema = new mongoose.Schema({
   engineSize: { type: String },
   transmission: { type: String },
   pricePerDay: { type: Number },
+  licensePlate: { type: String }, // Added licensePlate field
   // Availability dates added for calendar-based availability selection
   availableFrom: { type: Date },
   availableTo: { type: Date },
@@ -27,6 +28,16 @@ const ListingSchema = new mongoose.Schema({
   backupCamera: { type: Boolean, default: false },
   appleCarPlay: { type: Boolean, default: false },
   androidAuto: { type: Boolean, default: false },
+  keylessEntry: { type: Boolean, default: false },
+  childSeat: { type: Boolean, default: false },
+  leatherSeats: { type: Boolean, default: false },
+  tintedWindows: { type: Boolean, default: false },
+  convertible: { type: Boolean, default: false },
+  roofRack: { type: Boolean, default: false },
+  petFriendly: { type: Boolean, default: false },
+  smokeFree: { type: Boolean, default: false },
+  seatCovers: { type: Boolean, default: false },
+  dashCam: { type: Boolean, default: false },
   // Images: an array of image file paths
   images: [{ type: String }],
   terms: { type: String },

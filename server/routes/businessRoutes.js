@@ -16,7 +16,7 @@ const {
   getListingById,
   updateListing,
   deleteListing,
-} = require('../controllers/listingController'); // Ensure these are defined
+} = require('../controllers/listingController');
 const Business = require('../models/Business');
 
 // Route to get featured businesses

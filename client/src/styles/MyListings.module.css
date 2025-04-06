@@ -33,7 +33,7 @@
   }
   
   .logo {
-    font-size: 1.25rem;
+    font-size: 1.85rem;
     font-weight: bold;
     cursor: pointer;
     color: var(--color-primary);
@@ -42,8 +42,10 @@
   .menuIcon {
     background: none;
     border: none;
-    font-size: 1.25rem;
+    font-size: 1.4rem;
     cursor: pointer;
+    margin-right: 1rem; /* Moves the icon left by adding space on the right */
+
   }
   
   .mainContent {

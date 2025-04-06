@@ -21,13 +21,13 @@ exports.createListing = async (req, res) => {
       fuelType: req.body.fuelType,
       engineSize: req.body.engineSize,
       transmission: req.body.transmission,
-      licensePlate: req.body.licensePlate,
+      licensePlate: req.body.licensePlate, // now stored in model
       pricePerDay: req.body.pricePerDay,
       terms: req.body.terms,
       address: req.body.address,
       availableFrom: req.body.availableFrom ? new Date(req.body.availableFrom) : null,
       availableTo: req.body.availableTo ? new Date(req.body.availableTo) : null,
-      // Feature flags - convert string "true"/"false" if needed
+      // Feature flags – convert string "true" to boolean if needed
       gps: req.body.gps === 'true' || req.body.gps === true,
       bluetooth: req.body.bluetooth === 'true' || req.body.bluetooth === true,
       heatedSeats: req.body.heatedSeats === 'true' || req.body.heatedSeats === true,
@@ -35,7 +35,16 @@ exports.createListing = async (req, res) => {
       backupCamera: req.body.backupCamera === 'true' || req.body.backupCamera === true,
       appleCarPlay: req.body.appleCarPlay === 'true' || req.body.appleCarPlay === true,
       androidAuto: req.body.androidAuto === 'true' || req.body.androidAuto === true,
-      // Add other feature flags if necessary...
+      keylessEntry: req.body.keylessEntry === 'true' || req.body.keylessEntry === true,
+      childSeat: req.body.childSeat === 'true' || req.body.childSeat === true,
+      leatherSeats: req.body.leatherSeats === 'true' || req.body.leatherSeats === true,
+      tintedWindows: req.body.tintedWindows === 'true' || req.body.tintedWindows === true,
+      convertible: req.body.convertible === 'true' || req.body.convertible === true,
+      roofRack: req.body.roofRack === 'true' || req.body.roofRack === true,
+      petFriendly: req.body.petFriendly === 'true' || req.body.petFriendly === true,
+      smokeFree: req.body.smokeFree === 'true' || req.body.smokeFree === true,
+      seatCovers: req.body.seatCovers === 'true' || req.body.seatCovers === true,
+      dashCam: req.body.dashCam === 'true' || req.body.dashCam === true,
       images: imagePaths,
     });
 
@@ -102,6 +111,16 @@ exports.updateListing = async (req, res) => {
       backupCamera: req.body.backupCamera === 'true' || req.body.backupCamera === true,
       appleCarPlay: req.body.appleCarPlay === 'true' || req.body.appleCarPlay === true,
       androidAuto: req.body.androidAuto === 'true' || req.body.androidAuto === true,
+      keylessEntry: req.body.keylessEntry === 'true' || req.body.keylessEntry === true,
+      childSeat: req.body.childSeat === 'true' || req.body.childSeat === true,
+      leatherSeats: req.body.leatherSeats === 'true' || req.body.leatherSeats === true,
+      tintedWindows: req.body.tintedWindows === 'true' || req.body.tintedWindows === true,
+      convertible: req.body.convertible === 'true' || req.body.convertible === true,
+      roofRack: req.body.roofRack === 'true' || req.body.roofRack === true,
+      petFriendly: req.body.petFriendly === 'true' || req.body.petFriendly === true,
+      smokeFree: req.body.smokeFree === 'true' || req.body.smokeFree === true,
+      seatCovers: req.body.seatCovers === 'true' || req.body.seatCovers === true,
+      dashCam: req.body.dashCam === 'true' || req.body.dashCam === true,
     };
 
     // If new images are uploaded, replace the images array
