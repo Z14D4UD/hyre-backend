@@ -42,7 +42,7 @@ export default function AddListing() {
   const [availableFrom, setAvailableFrom] = useState(null);
   const [availableTo, setAvailableTo] = useState(null);
 
-  // Expanded features list
+  // Expanded features list (more features added)
   const [features, setFeatures] = useState({
     gps: false,
     bluetooth: false,
@@ -70,37 +70,33 @@ export default function AddListing() {
   const [images, setImages] = useState([]);
   const [previewImages, setPreviewImages] = useState([]);
 
-  const backendUrl = process.env.REACT_APP_BACKEND_URL; // e.g. "https://hyre-backend.onrender.com/api"
+  const backendUrl = process.env.REACT_APP_BACKEND_URL; // e.g., "https://hyre-backend.onrender.com/api"
 
   // Handle file selection & preview
   const handleImagesChange = (e) => {
     if (e.target.files) {
       const selectedFiles = Array.from(e.target.files);
       setImages(selectedFiles);
-
-      // Create local preview URLs
-      const previews = selectedFiles.map(file => URL.createObjectURL(file));
+      const previews = selectedFiles.map((file) => URL.createObjectURL(file));
       setPreviewImages(previews);
     }
   };
 
-  // Optional: "Upload Photos" button (doesn't send to server yet, just a user step)
+  // "Upload Photos" button handler (for UI confirmation)
   const handleUploadPhotos = () => {
     if (!images.length) {
       alert('No images selected.');
       return;
     }
-    alert('Photos ready to be uploaded with the final submission!');
-    // You could do a partial upload here if desired, but for now
-    // we just show a confirmation that images are "set".
+    alert('Photos are selected and previewed below.');
   };
 
-  // Toggle features
+  // Toggle feature checkboxes
   const toggleFeature = (feat) => {
     setFeatures({ ...features, [feat]: !features[feat] });
   };
 
-  // Handle address selection
+  // Handle address selection from autocomplete
   const handleSelectAddress = async (value) => {
     setAddress(value);
     try {
@@ -112,10 +108,16 @@ export default function AddListing() {
     }
   };
 
-  // Final submission
+  // Frontend validation and form submission
   const handleSubmit = (e) => {
     e.preventDefault();
-
+    
+    // Validation: ensure required fields are filled
+    if (!title.trim() || !address.trim()) {
+      alert('Please fill in all required fields: Title and Address.');
+      return;
+    }
+    
     const formData = new FormData();
     formData.append('title', title);
     formData.append('description', description);
@@ -162,12 +164,8 @@ export default function AddListing() {
     <div className={styles.addListingContainer}>
       {/* Header */}
       <header className={styles.header}>
-        <div className={styles.logo} onClick={() => navigate('/')}>
-          Hyre
-        </div>
-        <button className={styles.menuIcon} onClick={toggleMenu}>
-          ☰
-        </button>
+        <div className={styles.logo} onClick={() => navigate('/')}>Hyre</div>
+        <button className={styles.menuIcon} onClick={toggleMenu}>☰</button>
       </header>
 
       {/* Side Menu */}
@@ -189,7 +187,6 @@ export default function AddListing() {
                 onChange={handleImagesChange}
                 className={styles.inputField}
               />
-              {/* "Upload Photos" button (optional separate step) */}
               <button
                 type="button"
                 onClick={handleUploadPhotos}
@@ -198,17 +195,11 @@ export default function AddListing() {
                 Upload Photos
               </button>
             </div>
-
-            {/* Image previews */}
             {previewImages.length > 0 && (
               <div className={styles.imagePreviewGrid}>
                 {previewImages.map((src, idx) => (
                   <div key={idx} className={styles.imagePreviewWrapper}>
-                    <img
-                      src={src}
-                      alt={`Preview ${idx}`}
-                      className={styles.imagePreview}
-                    />
+                    <img src={src} alt={`Preview ${idx}`} className={styles.imagePreview} />
                   </div>
                 ))}
               </div>
@@ -219,7 +210,7 @@ export default function AddListing() {
           <details className={styles.section} open>
             <summary className={styles.sectionHeading}>Basic Details</summary>
             <div className={styles.subSection}>
-              <label className={styles.label}>Title</label>
+              <label className={styles.label}>Title*</label>
               <input
                 type="text"
                 className={styles.inputField}

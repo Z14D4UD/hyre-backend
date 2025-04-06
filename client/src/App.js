@@ -23,6 +23,8 @@ import ContactUs from './pages/ContactUs';
 import LegalPage from './pages/LegalPage';
 import BusinessProfile from './pages/BusinessProfile';
 import AddListing from './pages/AddListing'; // Make sure this import matches your file path
+import MyListings from './pages/MyListings';
+
 
 
 function App() {
@@ -55,6 +57,7 @@ function App() {
         <Route path="/legal" element={<LegalPage />} />
         <Route path="/profile/business" element={<BusinessProfile />} /> // For business users
         <Route path="/add-listing" element={<AddListing />} />
+        <Route path="/my-listings" element={<MyListings />} />
 
 
 
