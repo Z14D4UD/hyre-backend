@@ -41,23 +41,23 @@ export default function Dashboard() {
     rentedCars: 0,
     bookings: 0,
     activeCars: 0,
-    balance: 0,
+    balance: 0, // make sure we default it to 0
   });
   const [earningsData, setEarningsData] = useState([]);
   const [bookingsOverviewData, setBookingsOverviewData] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Retrieve and trim token
+  // Retrieve token
   const token = (localStorage.getItem('token') || '').trim();
   const axiosConfig = { headers: { Authorization: `Bearer ${token}` } };
-  const baseUrl = process.env.REACT_APP_BACKEND_URL; // e.g., https://your-backend-domain.com/api
+  const baseUrl = process.env.REACT_APP_BACKEND_URL;
 
-  // Side menu toggle handlers
+  // Side menu
   const toggleMenu = () => setMenuOpen(!menuOpen);
   const closeMenu = () => setMenuOpen(false);
 
-  // Withdrawal modal state
+  // Withdrawal modal
   const [withdrawalModalOpen, setWithdrawalModalOpen] = useState(false);
   const [withdrawalAmount, setWithdrawalAmount] = useState('');
   const [withdrawalMethod, setWithdrawalMethod] = useState('paypal');
@@ -66,15 +66,22 @@ export default function Dashboard() {
   useEffect(() => {
     async function fetchData() {
       try {
-        // Fetch business statistics
+        // 1) stats
         const statsRes = await axios.get(`${baseUrl}/business/stats`, axiosConfig);
-        setStats(statsRes.data);
-        // Fetch monthly earnings data
+        // ensure we got the data shape we expect:
+        const newStats = statsRes.data || {};
+        // fallback to 0 if balance is missing:
+        newStats.balance = typeof newStats.balance === 'number' ? newStats.balance : 0;
+        setStats(newStats);
+
+        // 2) earnings
         const earningsRes = await axios.get(`${baseUrl}/business/earnings`, axiosConfig);
-        setEarningsData(earningsRes.data);
-        // Fetch monthly bookings overview
+        setEarningsData(earningsRes.data || []);
+
+        // 3) bookings overview
         const bookingsOverviewRes = await axios.get(`${baseUrl}/business/bookingsOverview`, axiosConfig);
-        setBookingsOverviewData(bookingsOverviewRes.data);
+        setBookingsOverviewData(bookingsOverviewRes.data || []);
+
         setLoading(false);
       } catch (error) {
         if (error.response && error.response.status === 401) {
@@ -85,39 +92,40 @@ export default function Dashboard() {
         setLoading(false);
       }
     }
+
     if (token) fetchData();
   }, [token, baseUrl, navigate]);
 
-  // Chart data setups
+  // Prepare chart data
   const earningsChartData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
     datasets: [{
       label: 'Earnings ($)',
       data: earningsData,
       fill: false,
       borderColor: '#4f3cc9',
-      tension: 0.1
-    }]
+      tension: 0.1,
+    }],
   };
 
   const bookingsOverviewChartData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
     datasets: [{
       label: 'Bookings',
       data: bookingsOverviewData,
-      backgroundColor: '#4f3cc9'
-    }]
+      backgroundColor: '#4f3cc9',
+    }],
   };
 
   const rentStatusData = {
     labels: ['Hired', 'Pending', 'Cancelled'],
     datasets: [{
-      data: [58, 24, 18], // Replace with dynamic data if available
-      backgroundColor: ['#2ecc71', '#f1c40f', '#e74c3c']
-    }]
+      data: [58, 24, 18],
+      backgroundColor: ['#2ecc71', '#f1c40f', '#e74c3c'],
+    }],
   };
 
-  // Function to submit a withdrawal request
+  // Withdrawal handler
   const handleWithdrawalSubmit = async () => {
     const amount = parseFloat(withdrawalAmount);
     if (isNaN(amount) || amount <= 0) {
@@ -127,15 +135,15 @@ export default function Dashboard() {
     try {
       const payload = {
         amount,
-        method: withdrawalMethod, // either "paypal" or "bank"
+        method: withdrawalMethod,
         details: withdrawalMethod === 'paypal'
           ? { paypalEmail: withdrawalDetails }
           : { bankAccount: withdrawalDetails },
       };
-      const res = await axios.post(`${baseUrl}/withdrawals`, payload, axiosConfig);
+      await axios.post(`${baseUrl}/withdrawals`, payload, axiosConfig);
       alert('Withdrawal request submitted successfully!');
       setWithdrawalModalOpen(false);
-      // Optionally, you can refresh stats here to update the balance
+      // optionally re-fetch stats to update the new balance
     } catch (error) {
       console.error('Error submitting withdrawal:', error);
       alert('Failed to submit withdrawal request.');
@@ -156,45 +164,61 @@ export default function Dashboard() {
     );
   }
 
+  // Safely handle stats.balance
+  const balanceDisplay = (typeof stats.balance === 'number')
+    ? stats.balance.toFixed(2)
+    : '0.00';
+
   return (
     <div className={styles.dashboardContainer}>
       <header className={styles.header}>
-        <div className={styles.logo} onClick={() => navigate('/')} style={{ color: '#38b6ff' }}>
+        <div
+          className={styles.logo}
+          onClick={() => navigate('/')}
+          style={{ color: '#38b6ff' }}
+        >
           Hyre
         </div>
         <button className={styles.menuIcon} onClick={toggleMenu}>☰</button>
       </header>
+
       <SideMenuBusiness isOpen={menuOpen} toggleMenu={toggleMenu} closeMenu={closeMenu} />
+
       <div className={styles.mainContent}>
         <div className={styles.pageTitle}>
           <h1>Dashboard</h1>
           <span>Welcome back, here’s your business overview</span>
         </div>
+
         <div className={styles.statsCards}>
           <div className={styles.card}>
             <h3>Total Revenue</h3>
-            <p>${stats.totalRevenue.toLocaleString()}</p>
+            <p>${(stats.totalRevenue || 0).toLocaleString()}</p>
           </div>
           <div className={styles.card}>
             <h3>Bookings</h3>
-            <p>{stats.bookings}</p>
+            <p>{stats.bookings || 0}</p>
           </div>
           <div className={styles.card}>
             <h3>Rented Cars</h3>
-            <p>{stats.rentedCars}</p>
+            <p>{stats.rentedCars || 0}</p>
           </div>
           <div className={styles.card}>
             <h3>Active Cars</h3>
-            <p>{stats.activeCars}</p>
+            <p>{stats.activeCars || 0}</p>
           </div>
           <div className={styles.card}>
             <h3>Balance</h3>
-            <p>${stats.balance.toFixed(2)}</p>
-            <button className={styles.withdrawButton} onClick={() => setWithdrawalModalOpen(true)}>
+            <p>${balanceDisplay}</p>
+            <button
+              className={styles.withdrawButton}
+              onClick={() => setWithdrawalModalOpen(true)}
+            >
               Withdraw Funds
             </button>
           </div>
         </div>
+
         <div className={styles.row}>
           <div className={styles.leftColumn}>
             <div className={styles.chartCard}>
@@ -227,7 +251,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Withdrawal Modal */}
         {withdrawalModalOpen && (
           <div className={styles.modalOverlay}>
             <div className={styles.modalContent}>
@@ -240,7 +263,10 @@ export default function Dashboard() {
                 placeholder="Enter amount"
               />
               <label>Withdrawal Method</label>
-              <select value={withdrawalMethod} onChange={(e) => setWithdrawalMethod(e.target.value)}>
+              <select
+                value={withdrawalMethod}
+                onChange={(e) => setWithdrawalMethod(e.target.value)}
+              >
                 <option value="paypal">PayPal</option>
                 <option value="bank">Bank Account</option>
               </select>
@@ -263,14 +289,16 @@ export default function Dashboard() {
                 <button className={styles.buttonPrimary} onClick={handleWithdrawalSubmit}>
                   Submit Withdrawal
                 </button>
-                <button className={styles.buttonDanger} onClick={() => setWithdrawalModalOpen(false)}>
+                <button
+                  className={styles.buttonDanger}
+                  onClick={() => setWithdrawalModalOpen(false)}
+                >
                   Cancel
                 </button>
               </div>
             </div>
           </div>
         )}
-
       </div>
     </div>
   );

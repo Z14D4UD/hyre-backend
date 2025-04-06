@@ -7,8 +7,9 @@ const Car = require('../models/Car');
 exports.verifyID = async (req, res) => {
   const businessId = req.business?.id;
   const idDocumentPath = req.file ? req.file.path : '';
-  if (!idDocumentPath)
+  if (!idDocumentPath) {
     return res.status(400).json({ msg: 'No ID document uploaded' });
+  }
   try {
     const business = await Business.findByIdAndUpdate(
       businessId,
@@ -28,32 +29,45 @@ exports.getStats = async (req, res) => {
     return res.status(403).json({ msg: 'Forbidden: not a business user' });
   }
   const businessId = req.business.id;
+
   try {
-    // Calculate total revenue by summing totalAmount from bookings for this business
+    // 1) Calculate total revenue from bookings
     const totalRevenueResult = await Booking.aggregate([
       { $match: { business: new mongoose.Types.ObjectId(businessId) } },
       { $group: { _id: null, total: { $sum: "$totalAmount" } } }
     ]);
-    const totalRevenue = totalRevenueResult[0] ? totalRevenueResult[0].total : 0;
+    const totalRevenue = totalRevenueResult[0]?.total || 0;
 
-    // Count total bookings for this business
+    // 2) Count total bookings
     const bookings = await Booking.countDocuments({ business: businessId });
 
-    // Count total cars for this business using the Car model
+    // 3) Count total cars
     const totalCars = await Car.countDocuments({ business: businessId });
-    
-    // Count rented cars by grouping unique car IDs that have bookings
+
+    // 4) Count rented cars
     const rentedCarsResult = await Booking.aggregate([
       { $match: { business: new mongoose.Types.ObjectId(businessId) } },
       { $group: { _id: "$car" } },
       { $count: "count" }
     ]);
-    const rentedCars = rentedCarsResult[0] ? rentedCarsResult[0].count : 0;
+    const rentedCars = rentedCarsResult[0]?.count || 0;
 
-    // For active cars, assuming all cars are active (adjust if you add an "active" flag)
+    // 5) Active cars (for now, assume all are active)
     const activeCars = totalCars;
 
-    const stats = { totalRevenue, rentedCars, bookings, activeCars };
+    // 6) Pull the business record to get the current balance
+    const businessDoc = await Business.findById(businessId);
+    // If for some reason no doc found, fallback to 0
+    const balance = businessDoc?.balance ?? 0;
+
+    // Return all stats in one object
+    const stats = {
+      totalRevenue,
+      rentedCars,
+      bookings,
+      activeCars,
+      balance,
+    };
     res.json(stats);
   } catch (error) {
     console.error('Error in getStats:', error.stack);
@@ -67,8 +81,8 @@ exports.getEarnings = async (req, res) => {
     return res.status(403).json({ msg: 'Forbidden: not a business user' });
   }
   const businessId = req.business.id;
+
   try {
-    // Group bookings by month (based on startDate) and sum totalAmount as earnings
     const earnings = await Booking.aggregate([
       { $match: { business: new mongoose.Types.ObjectId(businessId) } },
       {
@@ -79,7 +93,7 @@ exports.getEarnings = async (req, res) => {
       },
       { $sort: { "_id": 1 } }
     ]);
-    // Prepare an array for 12 months (January = index 0)
+
     const monthlyEarnings = Array(12).fill(0);
     earnings.forEach(item => {
       monthlyEarnings[item._id - 1] = item.totalEarnings;
@@ -97,8 +111,8 @@ exports.getBookingsOverview = async (req, res) => {
     return res.status(403).json({ msg: 'Forbidden: not a business user' });
   }
   const businessId = req.business.id;
+
   try {
-    // Group bookings by month (using startDate) and count them
     const bookingsOverview = await Booking.aggregate([
       { $match: { business: new mongoose.Types.ObjectId(businessId) } },
       {
@@ -109,7 +123,7 @@ exports.getBookingsOverview = async (req, res) => {
       },
       { $sort: { "_id": 1 } }
     ]);
-    // Prepare an array for 12 months
+
     const monthlyBookings = Array(12).fill(0);
     bookingsOverview.forEach(item => {
       monthlyBookings[item._id - 1] = item.count;
