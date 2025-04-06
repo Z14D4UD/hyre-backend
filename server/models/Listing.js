@@ -15,8 +15,7 @@ const ListingSchema = new mongoose.Schema({
   engineSize: { type: String },
   transmission: { type: String },
   pricePerDay: { type: Number },
-  licensePlate: { type: String }, // Added licensePlate field
-  // Availability dates added for calendar-based availability selection
+  licensePlate: { type: String },
   availableFrom: { type: Date },
   availableTo: { type: Date },
   address: { type: String, required: true },

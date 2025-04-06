@@ -4,11 +4,14 @@ const Listing = require('../models/Listing');
 // Create a new listing
 exports.createListing = async (req, res) => {
   try {
+    if (!req.business) {
+      return res.status(403).json({ msg: 'Forbidden: not a business user' });
+    }
     const businessId = req.business.id;
-    // Create an array of image paths (assuming multer saves them to "uploads/")
+    // Get image paths from uploaded files (if any)
     const imagePaths = req.files ? req.files.map(file => file.path) : [];
 
-    // Build the listing data from the request body and files
+    // Build new listing using fields from req.body
     const newListing = new Listing({
       business: businessId,
       title: req.body.title,
@@ -21,13 +24,12 @@ exports.createListing = async (req, res) => {
       fuelType: req.body.fuelType,
       engineSize: req.body.engineSize,
       transmission: req.body.transmission,
-      licensePlate: req.body.licensePlate, // now stored in model
+      licensePlate: req.body.licensePlate,
       pricePerDay: req.body.pricePerDay,
       terms: req.body.terms,
       address: req.body.address,
       availableFrom: req.body.availableFrom ? new Date(req.body.availableFrom) : null,
       availableTo: req.body.availableTo ? new Date(req.body.availableTo) : null,
-      // Feature flags – convert string "true" to boolean if needed
       gps: req.body.gps === 'true' || req.body.gps === true,
       bluetooth: req.body.bluetooth === 'true' || req.body.bluetooth === true,
       heatedSeats: req.body.heatedSeats === 'true' || req.body.heatedSeats === true,
@@ -49,7 +51,7 @@ exports.createListing = async (req, res) => {
     });
 
     const savedListing = await newListing.save();
-    res.json(savedListing);
+    res.status(201).json(savedListing);
   } catch (error) {
     console.error('Error creating listing:', error);
     res.status(500).json({ msg: 'Server error creating listing' });
@@ -59,6 +61,9 @@ exports.createListing = async (req, res) => {
 // Get all listings for the logged-in business
 exports.getBusinessListings = async (req, res) => {
   try {
+    if (!req.business) {
+      return res.status(403).json({ msg: 'Forbidden: not a business user' });
+    }
     const businessId = req.business.id;
     const listings = await Listing.find({ business: businessId });
     res.json(listings);
@@ -86,7 +91,7 @@ exports.getListingById = async (req, res) => {
 exports.updateListing = async (req, res) => {
   try {
     const listingId = req.params.id;
-    // Build an update object with fields from req.body
+    // Build update object from req.body
     const updateData = {
       title: req.body.title,
       description: req.body.description,

@@ -25,6 +25,7 @@ import BusinessProfile from './pages/BusinessProfile';
 import AddListing from './pages/AddListing'; // Make sure this import matches your file path
 import MyListings from './pages/MyListings';
 import EditListing from './pages/EditListing';
+import BusinessBookings from './pages/BusinessBookings';
 
 
 
@@ -61,6 +62,8 @@ function App() {
         <Route path="/add-listing" element={<AddListing />} />
         <Route path="/my-listings" element={<MyListings />} />
         <Route path="/edit-listing/:id" element={<EditListing />} />
+        <Route path="/bookings/business" element={<BusinessBookings />} />
+
 
         
 

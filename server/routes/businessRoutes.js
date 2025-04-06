@@ -3,13 +3,16 @@ const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middlewares/authMiddleware');
 const upload = require('../middlewares/uploadMiddleware');
+
 const {
   verifyID,
   getStats,
   getEarnings,
-  getBookingsOverview
+  getBookingsOverview,
 } = require('../controllers/businessController');
+
 const { getBusinessProfile, updateBusinessProfile } = require('../controllers/businessProfileController');
+
 const {
   createListing,
   getBusinessListings,
@@ -17,6 +20,7 @@ const {
   updateListing,
   deleteListing,
 } = require('../controllers/listingController');
+
 const Business = require('../models/Business');
 
 // Route to get featured businesses

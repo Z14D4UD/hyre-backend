@@ -25,9 +25,12 @@ export default function MyListings() {
   const [carTypeFilter, setCarTypeFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
-  // Listings
+  // Listings state
   const [listings, setListings] = useState([]);
-  const backendUrl = process.env.REACT_APP_BACKEND_URL; // e.g. "https://hyre-backend.onrender.com/api"
+  
+  // We'll derive the base URL for images by removing '/api' if present.
+  const backendUrl = process.env.REACT_APP_BACKEND_URL; // e.g., "https://hyre-backend.onrender.com/api"
+  const baseUrl = backendUrl.replace('/api', ''); // now "https://hyre-backend.onrender.com"
 
   useEffect(() => {
     axios
@@ -43,7 +46,7 @@ export default function MyListings() {
       });
   }, [backendUrl, token]);
 
-  // Filtered listings
+  // Filter listings based on search and filters
   const filteredListings = listings.filter((item) => {
     const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCarType = carTypeFilter ? item.carType === carTypeFilter : true;
@@ -51,7 +54,12 @@ export default function MyListings() {
     return matchesSearch && matchesCarType && matchesStatus;
   });
 
-  // Handlers
+  // Pagination (only show if necessary)
+  const pageSize = 10;
+  const totalPages = Math.ceil(filteredListings.length / pageSize);
+  const [currentPage, setCurrentPage] = useState(1);
+  const displayedListings = filteredListings.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
   const handleSelect = (listingId) => {
     alert(`Selected listing ID: ${listingId}`);
   };
@@ -84,8 +92,12 @@ export default function MyListings() {
     <div className={styles.myListingsContainer}>
       {/* Header */}
       <header className={styles.header}>
-        <div className={styles.logo} onClick={() => navigate('/')}>Hyre</div>
-        <button className={styles.menuIcon} onClick={toggleMenu}>☰</button>
+        <div className={styles.logo} onClick={() => navigate('/')}>
+          Hyre
+        </div>
+        <button className={styles.menuIcon} onClick={toggleMenu}>
+          ☰
+        </button>
       </header>
 
       {/* Side Menu */}
@@ -137,14 +149,14 @@ export default function MyListings() {
 
         {/* Listings Table */}
         <div className={styles.listingsTable}>
-          {filteredListings.length === 0 ? (
+          {displayedListings.length === 0 ? (
             <p>No listings found.</p>
           ) : (
-            filteredListings.map((listing) => {
-              // Show the first image if available, else fallback
+            displayedListings.map((listing) => {
+              // Use the baseUrl to build the correct image URL.
               const firstImage = listing.images && listing.images.length > 0
-                ? `${backendUrl}/${listing.images[0]}`
-                : '/default-car.jpg'; // Or a default placeholder image
+                ? `${baseUrl}/${listing.images[0]}`
+                : '/default-car.jpg'; // Use a default image if none provided
 
               return (
                 <div className={styles.listingRow} key={listing._id}>
@@ -186,22 +198,35 @@ export default function MyListings() {
           )}
         </div>
 
-        {/* Pagination (dummy) */}
-        <div className={styles.pagination}>
-          <p>Results per page</p>
-          <select className={styles.pageSizeSelect}>
-            <option>10</option>
-            <option>20</option>
-            <option>30</option>
-          </select>
-          <div className={styles.pageButtons}>
-            <button className={styles.pageBtn}>1</button>
-            <button className={styles.pageBtn}>2</button>
-            <button className={styles.pageBtn}>3</button>
-            <span>...</span>
-            <button className={styles.pageBtn}>Next</button>
+        {/* Pagination: Only render if more than one page */}
+        {totalPages > 1 && (
+          <div className={styles.pagination}>
+            <p>Results per page</p>
+            <select
+              className={styles.pageSizeSelect}
+              onChange={(e) => {
+                // Adjust page size if needed and reset current page
+                // For now, we keep it simple:
+                setCurrentPage(1);
+              }}
+            >
+              <option>10</option>
+              <option>20</option>
+              <option>30</option>
+            </select>
+            <div className={styles.pageButtons}>
+              {Array.from({ length: totalPages }, (_, index) => (
+                <button
+                  key={index}
+                  className={`${styles.pageBtn} ${currentPage === index + 1 ? styles.activePage : ''}`}
+                  onClick={() => setCurrentPage(index + 1)}
+                >
+                  {index + 1}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
