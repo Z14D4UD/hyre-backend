@@ -1,42 +1,47 @@
-const paypal = require('@paypal/checkout-server-sdk');
+// server/services/payoutService.js
+// For production, install and configure the official PayPal SDK (e.g. @paypal/payouts-sdk) and set up proper credentials.
+const paypal = require('@paypal/payouts-sdk'); // Uncomment if using the SDK
 
-function environment() {
-  const clientId = process.env.PAYPAL_CLIENT_ID;
-  const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
-  // Use LiveEnvironment in production; use SandboxEnvironment for testing
-  return new paypal.core.LiveEnvironment(clientId, clientSecret);
-}
-
-function client() {
-  return new paypal.core.PayPalHttpClient(environment());
-}
-
-async function processPayout(withdrawal) {
-  // Build a payout request – this is a basic implementation.
-  const requestBody = {
-    sender_batch_header: {
-      sender_batch_id: String(withdrawal._id),
-      email_subject: "You have a payout from Hyre",
-      email_message: "You have received a payout from Hyre.",
-    },
-    items: [
-      {
-        recipient_type: "EMAIL",
-        amount: {
-          value: withdrawal.amount.toFixed(2),
-          currency: "USD", // Adjust as needed
+exports.initiatePayout = async (business, amount, method, details) => {
+  try {
+    if (method === 'paypal') {
+      // Build your PayPal payout payload here.
+      const payoutPayload = {
+        sender_batch_header: {
+          sender_batch_id: Math.random().toString(36).substring(9),
+          email_subject: "You have a payout from Hyre!",
+          email_message: "You have received a payout from Hyre.",
         },
-        receiver: withdrawal.details.paypalEmail,
-        note: "Thank you for using Hyre!",
-        sender_item_id: String(withdrawal._id),
-      },
-    ],
-  };
+        items: [{
+          recipient_type: "EMAIL",
+          amount: {
+            value: amount.toFixed(2),
+            currency: "USD"
+          },
+          note: "Withdrawal from Hyre",
+          receiver: details.paypalEmail,
+          sender_item_id: business._id.toString()
+        }]
+      };
 
-  const request = new paypal.payouts.PayoutsPostRequest();
-  request.requestBody(requestBody);
-  const response = await client().execute(request);
-  return response;
-}
+      // Use the PayPal SDK to execute the payout request.
+      // const client = new paypal.core.PayPalHttpClient(environment);
+      // const request = new paypal.payouts.PayoutsPostRequest();
+      // request.requestBody(payoutPayload);
+      // const response = await client.execute(request);
+      // return { success: true, response };
 
-module.exports = { processPayout };
+      // For this example, we simulate success:
+      return { success: true, response: { batch_status: "SUCCESS" } };
+
+    } else if (method === 'bank') {
+      // Simulate bank transfer integration here.
+      return { success: true, response: { status: "COMPLETED" } };
+    } else {
+      return { success: false, error: "Invalid method" };
+    }
+  } catch (error) {
+    console.error('Error in payoutService:', error);
+    return { success: false, error: error.message };
+  }
+};

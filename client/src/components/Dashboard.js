@@ -37,7 +37,7 @@ export default function Dashboard() {
     rentedCars: 0,
     bookings: 0,
     activeCars: 0,
-    balance: 0, // assuming balance is provided
+    balance: 0,
   });
   const [earningsData, setEarningsData] = useState([]);
   const [bookingsOverviewData, setBookingsOverviewData] = useState([]);
@@ -65,7 +65,6 @@ export default function Dashboard() {
         setEarningsData(earningsRes.data);
         const bookingsOverviewRes = await axios.get(`${baseUrl}/business/bookingsOverview`, axiosConfig);
         setBookingsOverviewData(bookingsOverviewRes.data);
-        // Fetch other dashboard data as needed...
         setLoading(false);
       } catch (error) {
         if (error.response && error.response.status === 401) {
@@ -79,7 +78,7 @@ export default function Dashboard() {
     if (token) fetchData();
   }, [token, baseUrl, navigate]);
 
-  // Chart data setups (adjust as needed)
+  // Chart data setups
   const earningsChartData = {
     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
     datasets: [{
@@ -125,7 +124,7 @@ export default function Dashboard() {
       const res = await axios.post(`${baseUrl}/withdrawals`, payload, axiosConfig);
       alert('Withdrawal request submitted successfully!');
       setWithdrawalModalOpen(false);
-      // Optionally, refresh stats to update balance
+      // Optionally refresh stats to update balance
     } catch (error) {
       console.error('Error submitting withdrawal:', error);
       alert('Failed to submit withdrawal request.');
@@ -216,6 +215,7 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+
         {/* Withdrawal Modal */}
         {withdrawalModalOpen && (
           <div className={styles.modalOverlay}>
@@ -251,6 +251,7 @@ export default function Dashboard() {
             </div>
           </div>
         )}
+
       </div>
     </div>
   );

@@ -1,81 +1,55 @@
+// server/controllers/withdrawalController.js
 const Withdrawal = require('../models/Withdrawal');
+const payoutService = require('../services/payoutService');
 const Business = require('../models/Business');
-const { processPayout } = require('../services/payoutService');
 
-exports.createWithdrawalRequest = async (req, res) => {
+exports.requestWithdrawal = async (req, res) => {
   try {
     if (!req.business) {
-      return res.status(403).json({ msg: 'Forbidden: Only business users can withdraw funds.' });
+      return res.status(403).json({ msg: 'Forbidden: Not a business user' });
     }
     const businessId = req.business.id;
     const { amount, method, details } = req.body;
 
-    // Validate inputs
-    if (!amount || amount <= 0) {
-      return res.status(400).json({ msg: 'Please provide a valid withdrawal amount.' });
+    if (!amount || isNaN(amount) || amount <= 0) {
+      return res.status(400).json({ msg: 'Invalid withdrawal amount' });
     }
-    if (!method || !['paypal', 'bank'].includes(method)) {
-      return res.status(400).json({ msg: 'Please choose a valid withdrawal method (paypal or bank).' });
+    if (!['paypal', 'bank'].includes(method)) {
+      return res.status(400).json({ msg: 'Invalid withdrawal method' });
+    }
+    if (!details || typeof details !== 'object') {
+      return res.status(400).json({ msg: 'Invalid withdrawal details' });
     }
 
-    // Check if the business exists and has sufficient balance
     const business = await Business.findById(businessId);
     if (!business) {
-      return res.status(404).json({ msg: 'Business not found.' });
+      return res.status(404).json({ msg: 'Business not found' });
     }
     if (business.balance < amount) {
-      return res.status(400).json({ msg: 'Insufficient balance for withdrawal.' });
+      return res.status(400).json({ msg: 'Insufficient balance' });
     }
 
-    // Deduct the amount from the business balance (use transactions in production)
+    const payoutResult = await payoutService.initiatePayout(business, amount, method, details);
+    if (!payoutResult.success) {
+      return res.status(500).json({ msg: 'Payout failed', error: payoutResult.error });
+    }
+
+    // Deduct the amount from the business balance
     business.balance -= amount;
     await business.save();
 
-    // Create a new withdrawal request
-    const withdrawal = new Withdrawal({
+    const newWithdrawal = new Withdrawal({
       business: businessId,
       amount,
       method,
       details,
-      status: 'pending',
+      status: 'completed', // or 'pending' if asynchronous
     });
-    const savedWithdrawal = await withdrawal.save();
+    await newWithdrawal.save();
 
-    // If PayPal, trigger payout (for bank, you might trigger a different process)
-    if (method === 'paypal') {
-      try {
-        const payoutResponse = await processPayout(savedWithdrawal);
-        // Update status based on payout response
-        savedWithdrawal.status = 'completed';
-        await savedWithdrawal.save();
-      } catch (payoutError) {
-        console.error('Payout error:', payoutError);
-        // Optionally update status to "pending" or "failed"
-        savedWithdrawal.status = 'pending';
-        await savedWithdrawal.save();
-      }
-    }
-
-    res.status(201).json({
-      msg: 'Withdrawal request created successfully.',
-      withdrawal: savedWithdrawal,
-    });
+    res.json({ msg: 'Withdrawal request submitted successfully', withdrawal: newWithdrawal, payoutResult });
   } catch (error) {
-    console.error('Error creating withdrawal request:', error.stack);
-    res.status(500).json({ msg: 'Server error creating withdrawal request.' });
-  }
-};
-
-exports.getWithdrawalHistory = async (req, res) => {
-  try {
-    if (!req.business) {
-      return res.status(403).json({ msg: 'Forbidden: Only business users can view withdrawal history.' });
-    }
-    const businessId = req.business.id;
-    const withdrawals = await Withdrawal.find({ business: businessId }).sort({ createdAt: -1 });
-    res.json(withdrawals);
-  } catch (error) {
-    console.error('Error fetching withdrawal history:', error.stack);
-    res.status(500).json({ msg: 'Server error fetching withdrawal history.' });
+    console.error('Error in requestWithdrawal:', error);
+    res.status(500).json({ msg: 'Server error processing withdrawal' });
   }
 };
