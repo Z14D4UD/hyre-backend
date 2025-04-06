@@ -14,7 +14,7 @@ import Search from './components/Search';
 import CarDetails from './pages/CarDetails';
 import Chat from './components/Chat';
 import Profile from './pages/Profile';
-import AccountPage from './pages/AccountPage'; // This is your customer account page
+import CustomerAccountPage from './pages/CustomerAccountPage'; // updated import for customer account
 import ChangePassword from './pages/ChangePassword';
 import CustomerBookingsPage from './pages/CustomerBookingsPage';
 import MessagesPage from './pages/MessagesPage';
@@ -62,7 +62,7 @@ function App() {
         <Route path="/bookings/business" element={<BusinessBookings />} />
 
         {/* Customer Account and Change Password */}
-        <Route path="/account" element={<AccountPage />} />
+        <Route path="/account" element={<CustomerAccountPage />} />
         <Route path="/change-password" element={<ChangePassword />} />
 
         {/* Catch-all */}

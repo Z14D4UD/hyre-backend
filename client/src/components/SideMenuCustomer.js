@@ -9,7 +9,7 @@ import {
   FaQuestionCircle,
   FaPhone,
   FaBalanceScale,
-  FaSignOutAlt
+  FaSignOutAlt,
 } from 'react-icons/fa';
 import styles from '../styles/SideMenuCustomer.module.css';
 
