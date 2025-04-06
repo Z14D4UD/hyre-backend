@@ -1,30 +1,30 @@
-// client/src/pages/AddListing.js
-import React, { useState } from 'react';
+// client/src/pages/EditListing.js
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import SideMenuBusiness from '../components/SideMenuBusiness';
 import PlacesAutocomplete, { geocodeByAddress, getLatLng } from 'react-places-autocomplete';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import styles from '../styles/AddListing.module.css';
 
-export default function AddListing() {
+export default function EditListing() {
+  const { id } = useParams();
   const navigate = useNavigate();
   const token = localStorage.getItem('token') || '';
   const accountType = localStorage.getItem('accountType') || '';
   const isBusiness = token && accountType.toLowerCase() === 'business';
 
   if (!isBusiness) {
-    alert('Please log in as a business to add a listing.');
+    alert('Please log in as a business to edit a listing.');
     navigate('/');
   }
 
-  // Side menu state
   const [menuOpen, setMenuOpen] = useState(false);
   const toggleMenu = () => setMenuOpen(!menuOpen);
   const closeMenu = () => setMenuOpen(false);
 
-  // Listing fields
+  // Listing fields state
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [carType, setCarType] = useState('');
@@ -38,12 +38,9 @@ export default function AddListing() {
   const [licensePlate, setLicensePlate] = useState('');
   const [price, setPrice] = useState('');
   const [terms, setTerms] = useState('');
-
-  // Date pickers for availability
   const [availableFrom, setAvailableFrom] = useState(null);
   const [availableTo, setAvailableTo] = useState(null);
 
-  // Expanded features list
   const [features, setFeatures] = useState({
     gps: false,
     bluetooth: false,
@@ -52,110 +49,144 @@ export default function AddListing() {
     backupCamera: false,
     appleCarPlay: false,
     androidAuto: false,
-    keylessEntry: false,
-    childSeat: false,
-    leatherSeats: false,
-    tintedWindows: false,
-    convertible: false,
-    roofRack: false,
-    petFriendly: false,
-    smokeFree: false,
-    seatCovers: false,
-    dashCam: false,
   });
 
-  // Address autocomplete
   const [address, setAddress] = useState('');
+  const [images, setImages] = useState([]); // New images to upload (optional)
+  const [existingImages, setExistingImages] = useState([]); // Existing images URLs
 
-  // Images (multiple) and local preview
-  const [images, setImages] = useState([]);
-  const [previewImages, setPreviewImages] = useState([]);
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
-  const backendUrl = process.env.REACT_APP_BACKEND_URL; // e.g., "https://hyre-backend.onrender.com/api"
-
-  // Handle file selection & preview
-  const handleImagesChange = (e) => {
-    if (e.target.files) {
-      const selectedFiles = Array.from(e.target.files);
-      setImages(selectedFiles);
-      const previews = selectedFiles.map((file) => URL.createObjectURL(file));
-      setPreviewImages(previews);
-    }
-  };
-
-  // "Upload Photos" button handler (for UI confirmation)
-  const handleUploadPhotos = () => {
-    if (!images.length) {
-      alert('No images selected.');
-      return;
-    }
-    alert('Photos are selected and previewed below.');
-  };
+  // Fetch existing listing details
+  useEffect(() => {
+    axios
+      .get(`${backendUrl}/business/listings/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => {
+        const listing = res.data;
+        setTitle(listing.title || '');
+        setDescription(listing.description || '');
+        setCarType(listing.carType || '');
+        setMake(listing.make || '');
+        setModel(listing.model || '');
+        setYear(listing.year || '');
+        setMileage(listing.mileage || '');
+        setFuelType(listing.fuelType || 'Petrol');
+        setEngineSize(listing.engineSize || '');
+        setTransmission(listing.transmission || '');
+        setLicensePlate(listing.licensePlate || '');
+        setPrice(listing.pricePerDay || '');
+        setTerms(listing.terms || '');
+        setAddress(listing.address || '');
+        if (listing.availableFrom) setAvailableFrom(new Date(listing.availableFrom));
+        if (listing.availableTo) setAvailableTo(new Date(listing.availableTo));
+        setFeatures({
+          gps: !!listing.gps,
+          bluetooth: !!listing.bluetooth,
+          heatedSeats: !!listing.heatedSeats,
+          parkingSensors: !!listing.parkingSensors,
+          backupCamera: !!listing.backupCamera,
+          appleCarPlay: !!listing.appleCarPlay,
+          androidAuto: !!listing.androidAuto,
+        });
+        // If listing has images, store them in existingImages
+        setExistingImages(listing.images || []);
+      })
+      .catch((err) => {
+        console.error('Error fetching listing:', err);
+        alert('Failed to load listing data.');
+        navigate('/my-listings');
+      });
+  }, [id, token, backendUrl, navigate]);
 
   // Toggle feature checkboxes
   const toggleFeature = (feat) => {
     setFeatures({ ...features, [feat]: !features[feat] });
   };
 
-  // Handle address selection from autocomplete
+  // Handle address selection
   const handleSelectAddress = async (value) => {
     setAddress(value);
     try {
       const results = await geocodeByAddress(value);
       const latLng = await getLatLng(results[0]);
-      console.log('Selected address coordinates:', latLng);
+      console.log('Selected address coords:', latLng);
     } catch (error) {
       console.error('Error fetching address details:', error);
     }
   };
 
-  // Frontend validation and form submission
+  // Handle image selection for update (optional)
+  const handleImagesChange = (e) => {
+    if (e.target.files) {
+      const selectedFiles = Array.from(e.target.files);
+      setImages(selectedFiles);
+    }
+  };
+
+  // Delete listing handler (additional)
+  const handleDelete = () => {
+    if (window.confirm('Are you sure you want to delete this listing?')) {
+      axios
+        .delete(`${backendUrl}/business/listings/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then(() => {
+          alert('Listing deleted successfully.');
+          navigate('/my-listings');
+        })
+        .catch((err) => {
+          console.error('Error deleting listing:', err);
+          alert('Failed to delete listing.');
+        });
+    }
+  };
+
+  // Submit the updated listing
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!title.trim() || !address.trim()) {
-      alert('Please fill in all required fields: Title and Address.');
+      alert('Please fill in required fields: Title and Address.');
       return;
     }
-    const formData = new FormData();
-    formData.append('title', title);
-    formData.append('description', description);
-    formData.append('carType', carType);
-    formData.append('make', make);
-    formData.append('model', model);
-    formData.append('year', year);
-    formData.append('mileage', mileage);
-    formData.append('fuelType', fuelType);
-    formData.append('engineSize', engineSize);
-    formData.append('transmission', transmission);
-    formData.append('licensePlate', licensePlate);
-    formData.append('pricePerDay', price);
-    formData.append('terms', terms);
-    formData.append('address', address);
-    formData.append('availableFrom', availableFrom ? availableFrom.toISOString() : '');
-    formData.append('availableTo', availableTo ? availableTo.toISOString() : '');
-
-    Object.keys(features).forEach((feat) => {
-      formData.append(feat, features[feat]);
-    });
-
-    images.forEach((file) => {
-      formData.append('images', file);
-    });
+    const updatedData = {
+      title,
+      description,
+      carType,
+      make,
+      model,
+      year,
+      mileage,
+      fuelType,
+      engineSize,
+      transmission,
+      licensePlate,
+      pricePerDay: price,
+      terms,
+      address,
+      availableFrom: availableFrom ? availableFrom.toISOString() : '',
+      availableTo: availableTo ? availableTo.toISOString() : '',
+      gps: features.gps,
+      bluetooth: features.bluetooth,
+      heatedSeats: features.heatedSeats,
+      parkingSensors: features.parkingSensors,
+      backupCamera: features.backupCamera,
+      appleCarPlay: features.appleCarPlay,
+      androidAuto: features.androidAuto,
+    };
 
     axios
-      .post(`${backendUrl}/business/listings`, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
-        },
+      .put(`${backendUrl}/business/listings/${id}`, updatedData, {
+        headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
-        alert('Listing created successfully!');
+        alert('Listing updated successfully!');
         navigate('/my-listings');
       })
       .catch((err) => {
-        console.error('Error creating listing:', err);
-        alert('Failed to create listing.');
+        console.error('Error updating listing:', err);
+        alert('Failed to update listing.');
       });
   };
 
@@ -163,123 +194,47 @@ export default function AddListing() {
     <div className={styles.addListingContainer}>
       {/* Header */}
       <header className={styles.header}>
-        <div className={styles.logo} onClick={() => navigate('/')}>Hyre</div>
-        <button className={styles.menuIcon} onClick={toggleMenu}>☰</button>
+        <div className={styles.logo} onClick={() => navigate('/')}>
+          Hyre
+        </div>
+        <button className={styles.menuIcon} onClick={toggleMenu}>
+          ☰
+        </button>
       </header>
 
-      {/* Side Menu */}
       <SideMenuBusiness isOpen={menuOpen} toggleMenu={toggleMenu} closeMenu={closeMenu} />
 
-      {/* Main Content */}
       <div className={styles.mainContent}>
-        <h1 className={styles.pageTitle}>List Your Car</h1>
+        <h1 className={styles.pageTitle}>Edit Listing</h1>
         <form onSubmit={handleSubmit} className={styles.formContainer}>
-          {/* Section 1: Vehicle Photos */}
-          <details className={styles.section} open>
-            <summary className={styles.sectionHeading}>Vehicle Photos</summary>
-            <div className={styles.subSection}>
-              <label className={styles.label}>Upload Images</label>
-              <input
-                type="file"
-                multiple
-                accept="image/*"
-                onChange={handleImagesChange}
-                className={styles.inputField}
-              />
-              <button
-                type="button"
-                onClick={handleUploadPhotos}
-                className={styles.uploadPhotosButton}
-              >
-                Upload Photos
-              </button>
-            </div>
-            {previewImages.length > 0 && (
-              <div className={styles.imagePreviewGrid}>
-                {previewImages.map((src, idx) => (
-                  <div key={idx} className={styles.imagePreviewWrapper}>
-                    <img src={src} alt={`Preview ${idx}`} className={styles.imagePreview} />
-                  </div>
-                ))}
-              </div>
-            )}
-          </details>
-
-          {/* Section 2: Basic Details */}
-          <details className={styles.section} open>
-            <summary className={styles.sectionHeading}>Basic Details</summary>
-            <div className={styles.subSection}>
-              <label className={styles.label}>Title*</label>
-              <input
-                type="text"
-                className={styles.inputField}
-                placeholder="Enter listing title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
-            </div>
-            <div className={styles.subSection}>
-              <label className={styles.label}>Description</label>
-              <textarea
-                className={styles.textArea}
-                placeholder="Describe your car..."
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
-            </div>
-          </details>
-
-          {/* Section 3: Availability Dates */}
-          <details className={styles.section} open>
-            <summary className={styles.sectionHeading}>Availability Dates</summary>
-            <div className={styles.subSection}>
-              <label className={styles.label}>Available From</label>
-              <DatePicker
-                selected={availableFrom}
-                onChange={(date) => setAvailableFrom(date)}
-                dateFormat="yyyy-MM-dd"
-                className={styles.inputField}
-                placeholderText="Select start date"
-              />
-            </div>
-            <div className={styles.subSection}>
-              <label className={styles.label}>Available To</label>
-              <DatePicker
-                selected={availableTo}
-                onChange={(date) => setAvailableTo(date)}
-                dateFormat="yyyy-MM-dd"
-                className={styles.inputField}
-                placeholderText="Select end date"
-              />
-            </div>
-          </details>
-
-          {/* Section 4: Car Details */}
+          {/* Car Details */}
           <details className={styles.section} open>
             <summary className={styles.sectionHeading}>Car Details</summary>
-            <div className={styles.formRow}>
-              <div className={styles.subSection}>
-                <label className={styles.label}>Car Type</label>
-                <select
-                  className={styles.inputField}
-                  value={carType}
-                  onChange={(e) => setCarType(e.target.value)}
-                >
-                  <option value="">Select car type</option>
-                  <option value="SUV">SUV</option>
-                  <option value="Sedan">Sedan</option>
-                  <option value="Hatchback">Hatchback</option>
-                  <option value="Coupe">Coupe</option>
-                  <option value="Convertible">Convertible</option>
-                  <option value="Pickup">Pickup</option>
-                  <option value="Van">Van</option>
-                  <option value="Wagon">Wagon</option>
-                  <option value="Sports Car">Sports Car</option>
-                  <option value="Luxury">Luxury</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
+
+            {/* Car Type */}
+            <div className={styles.subSection}>
+              <label className={styles.label}>Car Type</label>
+              <select
+                className={styles.inputField}
+                value={carType}
+                onChange={(e) => setCarType(e.target.value)}
+              >
+                <option value="">Select car type</option>
+                <option value="SUV">SUV</option>
+                <option value="Sedan">Sedan</option>
+                <option value="Hatchback">Hatchback</option>
+                <option value="Coupe">Coupe</option>
+                <option value="Convertible">Convertible</option>
+                <option value="Pickup">Pickup</option>
+                <option value="Van">Van</option>
+                <option value="Wagon">Wagon</option>
+                <option value="Sports Car">Sports Car</option>
+                <option value="Luxury">Luxury</option>
+                <option value="Other">Other</option>
+              </select>
             </div>
+
+            {/* Make / Model */}
             <div className={styles.formRow}>
               <div className={styles.subSection}>
                 <label className={styles.label}>Make</label>
@@ -302,6 +257,8 @@ export default function AddListing() {
                 />
               </div>
             </div>
+
+            {/* Year / Mileage */}
             <div className={styles.formRow}>
               <div className={styles.subSection}>
                 <label className={styles.label}>Year</label>
@@ -324,6 +281,8 @@ export default function AddListing() {
                 />
               </div>
             </div>
+
+            {/* Fuel / Engine */}
             <div className={styles.formRow}>
               <div className={styles.subSection}>
                 <label className={styles.label}>Fuel Type</label>
@@ -349,6 +308,8 @@ export default function AddListing() {
                 />
               </div>
             </div>
+
+            {/* Transmission / License Plate */}
             <div className={styles.subSection}>
               <label className={styles.label}>Transmission</label>
               <select
@@ -383,7 +344,32 @@ export default function AddListing() {
             </div>
           </details>
 
-          {/* Section 5: Features */}
+          {/* Availability Dates */}
+          <details className={styles.section} open>
+            <summary className={styles.sectionHeading}>Availability Dates</summary>
+            <div className={styles.subSection}>
+              <label className={styles.label}>Available From</label>
+              <DatePicker
+                selected={availableFrom}
+                onChange={(date) => setAvailableFrom(date)}
+                dateFormat="yyyy-MM-dd"
+                className={styles.inputField}
+                placeholderText="Select start date"
+              />
+            </div>
+            <div className={styles.subSection}>
+              <label className={styles.label}>Available To</label>
+              <DatePicker
+                selected={availableTo}
+                onChange={(date) => setAvailableTo(date)}
+                dateFormat="yyyy-MM-dd"
+                className={styles.inputField}
+                placeholderText="Select end date"
+              />
+            </div>
+          </details>
+
+          {/* Features */}
           <details className={styles.section} open>
             <summary className={styles.sectionHeading}>Features</summary>
             <div className={styles.featuresGrid}>
@@ -400,7 +386,7 @@ export default function AddListing() {
             </div>
           </details>
 
-          {/* Section 6: Address */}
+          {/* Address */}
           <details className={styles.section} open>
             <summary className={styles.sectionHeading}>Address</summary>
             <div className={styles.subSection}>
@@ -437,19 +423,7 @@ export default function AddListing() {
             </div>
           </details>
 
-          {/* Section 7: Safety & Quality Standards */}
-          <details className={styles.section} open>
-            <summary className={styles.sectionHeading}>Safety & Quality Standards</summary>
-            <p className={styles.infoText}>
-              Please confirm that your vehicle meets all local safety and quality regulations.
-            </p>
-            <label className={styles.checkboxRow}>
-              <input type="checkbox" required />
-              I confirm my vehicle complies with all safety standards.
-            </label>
-          </details>
-
-          {/* Section 8: Terms & Conditions */}
+          {/* Terms & Conditions */}
           <details className={styles.section} open>
             <summary className={styles.sectionHeading}>Terms & Conditions</summary>
             <div className={styles.subSection}>
@@ -464,7 +438,15 @@ export default function AddListing() {
           </details>
 
           <button type="submit" className={styles.submitButton}>
-            Agree & List
+            Save Changes
+          </button>
+          <button
+            type="button"
+            className={styles.deleteBtn}
+            onClick={handleDelete}
+            style={{ marginLeft: '1rem' }}
+          >
+            Delete Listing
           </button>
         </form>
       </div>

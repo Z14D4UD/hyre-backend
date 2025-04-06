@@ -11,6 +11,7 @@ const ListingSchema = new mongoose.Schema({
   year: { type: Number },
   mileage: { type: Number },
   fuelType: { type: String },
+  status: { type: String, default: 'Available' },
   engineSize: { type: String },
   transmission: { type: String },
   pricePerDay: { type: Number },

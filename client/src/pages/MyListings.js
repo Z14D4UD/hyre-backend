@@ -25,12 +25,10 @@ export default function MyListings() {
   const [carTypeFilter, setCarTypeFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
-  // Listings state fetched from the backend
+  // Listings
   const [listings, setListings] = useState([]);
+  const backendUrl = process.env.REACT_APP_BACKEND_URL; // e.g. "https://hyre-backend.onrender.com/api"
 
-  const backendUrl = process.env.REACT_APP_BACKEND_URL; // e.g., "https://hyre-backend.onrender.com/api"
-
-  // Fetch listings data for the logged-in business
   useEffect(() => {
     axios
       .get(`${backendUrl}/business/listings`, {
@@ -45,7 +43,7 @@ export default function MyListings() {
       });
   }, [backendUrl, token]);
 
-  // Filter listings based on search and filters
+  // Filtered listings
   const filteredListings = listings.filter((item) => {
     const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCarType = carTypeFilter ? item.carType === carTypeFilter : true;
@@ -53,14 +51,12 @@ export default function MyListings() {
     return matchesSearch && matchesCarType && matchesStatus;
   });
 
-  // Handlers for listing actions
+  // Handlers
   const handleSelect = (listingId) => {
-    // Example: Navigate to a detailed view of the listing
-    navigate(`/listing/${listingId}`);
+    alert(`Selected listing ID: ${listingId}`);
   };
 
   const handleEdit = (listingId) => {
-    // Navigate to an edit page for the listing
     navigate(`/edit-listing/${listingId}`);
   };
 
@@ -72,7 +68,6 @@ export default function MyListings() {
       })
       .then(() => {
         alert('Listing deleted successfully.');
-        // Remove deleted listing from state
         setListings(listings.filter((item) => item._id !== listingId));
       })
       .catch((err) => {
@@ -99,7 +94,7 @@ export default function MyListings() {
       <div className={styles.mainContent}>
         <h1 className={styles.pageTitle}>My Listings</h1>
 
-        {/* Top Bar: Search, Filters, Add Unit */}
+        {/* Top Bar */}
         <div className={styles.topBar}>
           <input
             type="text"
@@ -108,24 +103,23 @@ export default function MyListings() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-         <select
-  className={styles.filterDropdown}
-  value={carTypeFilter}
-  onChange={(e) => setCarTypeFilter(e.target.value)}
->
-  <option value="">Car Type</option>
-  <option value="SUV">SUV</option>
-  <option value="Sedan">Sedan</option>
-  <option value="Hatchback">Hatchback</option>
-  <option value="Truck">Truck</option>
-  <option value="Coupe">Coupe</option>
-  <option value="Convertible">Convertible</option>
-  <option value="Van">Van</option>
-  <option value="Wagon">Wagon</option>
-  <option value="Sports Car">Sports Car</option>
-  <option value="Luxury">Luxury</option>
-</select>
-
+          <select
+            className={styles.filterDropdown}
+            value={carTypeFilter}
+            onChange={(e) => setCarTypeFilter(e.target.value)}
+          >
+            <option value="">Car Type</option>
+            <option value="SUV">SUV</option>
+            <option value="Sedan">Sedan</option>
+            <option value="Hatchback">Hatchback</option>
+            <option value="Truck">Truck</option>
+            <option value="Coupe">Coupe</option>
+            <option value="Convertible">Convertible</option>
+            <option value="Van">Van</option>
+            <option value="Wagon">Wagon</option>
+            <option value="Sports Car">Sports Car</option>
+            <option value="Luxury">Luxury</option>
+          </select>
           <select
             className={styles.filterDropdown}
             value={statusFilter}
@@ -146,46 +140,53 @@ export default function MyListings() {
           {filteredListings.length === 0 ? (
             <p>No listings found.</p>
           ) : (
-            filteredListings.map((listing) => (
-              <div className={styles.listingRow} key={listing._id}>
-                {/* Car Image */}
-                <div className={styles.listingImage}>
-                  <img src={listing.image} alt={listing.title} />
-                </div>
+            filteredListings.map((listing) => {
+              // Show the first image if available, else fallback
+              const firstImage = listing.images && listing.images.length > 0
+                ? `${backendUrl}/${listing.images[0]}`
+                : '/default-car.jpg'; // Or a default placeholder image
 
-                {/* Listing Details */}
-                <div className={styles.listingDetails}>
-                  <h3 className={styles.listingName}>{listing.title}</h3>
-                  <div className={styles.listingBadges}>
-                    {listing.carType && <span className={styles.badge}>{listing.carType}</span>}
-                    {listing.transmission && <span className={styles.badge}>{listing.transmission}</span>}
-                    {listing.status && <span className={styles.badge}>{listing.status}</span>}
+              return (
+                <div className={styles.listingRow} key={listing._id}>
+                  {/* Car Image */}
+                  <div className={styles.listingImage}>
+                    <img src={firstImage} alt={listing.title} />
+                  </div>
+
+                  {/* Listing Details */}
+                  <div className={styles.listingDetails}>
+                    <h3 className={styles.listingName}>{listing.title}</h3>
+                    <div className={styles.listingBadges}>
+                      {listing.carType && <span className={styles.badge}>{listing.carType}</span>}
+                      {listing.transmission && <span className={styles.badge}>{listing.transmission}</span>}
+                      {listing.status && <span className={styles.badge}>{listing.status}</span>}
+                    </div>
+                  </div>
+
+                  {/* Price */}
+                  <div className={styles.listingPrice}>
+                    <p>${listing.pricePerDay}/day</p>
+                  </div>
+
+                  {/* Actions */}
+                  <div className={styles.listingActions}>
+                    <button className={styles.selectBtn} onClick={() => handleSelect(listing._id)}>
+                      Select
+                    </button>
+                    <button className={styles.editBtn} onClick={() => handleEdit(listing._id)}>
+                      Edit
+                    </button>
+                    <button className={styles.deleteBtn} onClick={() => handleDelete(listing._id)}>
+                      Delete
+                    </button>
                   </div>
                 </div>
-
-                {/* Price */}
-                <div className={styles.listingPrice}>
-                  <p>${listing.price}/day</p>
-                </div>
-
-                {/* Actions */}
-                <div className={styles.listingActions}>
-                  <button className={styles.selectBtn} onClick={() => handleSelect(listing._id)}>
-                    Select
-                  </button>
-                  <button className={styles.editBtn} onClick={() => handleEdit(listing._id)}>
-                    Edit
-                  </button>
-                  <button className={styles.deleteBtn} onClick={() => handleDelete(listing._id)}>
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 
-        {/* Pagination (dummy for now) */}
+        {/* Pagination (dummy) */}
         <div className={styles.pagination}>
           <p>Results per page</p>
           <select className={styles.pageSizeSelect}>

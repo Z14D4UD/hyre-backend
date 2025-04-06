@@ -10,7 +10,13 @@ const {
   getBookingsOverview
 } = require('../controllers/businessController');
 const { getBusinessProfile, updateBusinessProfile } = require('../controllers/businessProfileController');
-const { getBusinessListings } = require('../controllers/listingController'); // Import the new function
+const {
+  createListing,
+  getBusinessListings,
+  getListingById,
+  updateListing,
+  deleteListing,
+} = require('../controllers/listingController'); // Ensure these are defined
 const Business = require('../models/Business');
 
 // Route to get featured businesses
@@ -36,7 +42,11 @@ router.get('/bookingsOverview', authMiddleware, getBookingsOverview);
 router.get('/me', authMiddleware, getBusinessProfile);
 router.put('/me', authMiddleware, upload.single('avatar'), updateBusinessProfile);
 
-// Listings endpoint for "My Listings" page
+// Listings endpoints for "My Listings" page
+router.post('/listings', authMiddleware, upload.array('images', 10), createListing);
 router.get('/listings', authMiddleware, getBusinessListings);
+router.get('/listings/:id', authMiddleware, getListingById);
+router.put('/listings/:id', authMiddleware, upload.array('images', 10), updateListing);
+router.delete('/listings/:id', authMiddleware, deleteListing);
 
 module.exports = router;
