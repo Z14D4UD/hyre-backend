@@ -39,7 +39,7 @@ exports.createOnboardingLink = async (req, res) => {
       // Create a new Stripe account
       const account = await stripe.accounts.create({
         type: 'express',
-        country: 'US', // Adjust if necessary to match your business's country
+        country: 'GB', // Adjust if necessary to match your business's country
         email: business.email,
         business_type: 'company',
         capabilities: {
