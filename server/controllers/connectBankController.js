@@ -5,61 +5,63 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 /**
  * POST /api/connect-bank
  * Create a Stripe Connect onboarding link for a business user.
- * If the business already has a connected account, generate a new onboarding link.
+ * If the business already has a connected account, return an onboarding link
+ * that leads them to complete or update their details.
  */
 exports.createOnboardingLink = async (req, res) => {
   try {
+    if (!req.business) {
+      return res.status(403).json({ msg: 'Forbidden: Not a business user' });
+    }
+
     const businessId = req.business.id;
     const business = await Business.findById(businessId);
     if (!business) {
       return res.status(404).json({ msg: 'Business not found' });
     }
 
-    // If already connected, generate a new onboarding link for that account
-    if (business.stripeAccountId) {
-      const accountLink = await stripe.accountLinks.create({
-        account: business.stripeAccountId,
-        refresh_url: `${process.env.FRONTEND_URL}/connect-bank?refresh=true`,
-        return_url: `${process.env.FRONTEND_URL}/connect-bank?success=true`,
-        type: 'account_onboarding',
+    if (!process.env.STRIPE_SECRET_KEY || !process.env.FRONTEND_URL) {
+      return res.status(500).json({
+        msg: 'Stripe environment variables or FRONTEND_URL not configured properly.',
       });
-      return res.json({ url: accountLink.url });
     }
 
-    // Otherwise, create a new Stripe account
-    const account = await stripe.accounts.create({
-      type: 'express',
-      country: 'US', // Adjust as needed for your business
-      email: business.email,
-      business_type: 'company',
-      capabilities: {
-        transfers: { requested: true },
-      },
-    });
+    // If the user already has a stripeAccountId, we can either:
+    // (a) Return an onboarding link to update their existing account, or
+    // (b) If everything is complete, we can return some success message
+    let stripeAccountId = business.stripeAccountId;
 
-    // Save the Stripe connected account ID in the Business model
-    business.stripeAccountId = account.id;
-    await business.save();
+    if (!stripeAccountId) {
+      // Create a new Stripe account
+      const account = await stripe.accounts.create({
+        type: 'express',
+        country: 'US', // or your business's country
+        email: business.email,
+        business_type: 'company',
+        capabilities: {
+          transfers: { requested: true },
+        },
+      });
 
-    // Create an onboarding link for the new account
+      stripeAccountId = account.id;
+      business.stripeAccountId = account.id;
+      await business.save();
+    }
+
+    // Generate an onboarding link (accountLink) so the user can add bank info
     const accountLink = await stripe.accountLinks.create({
-      account: account.id,
+      account: stripeAccountId,
       refresh_url: `${process.env.FRONTEND_URL}/connect-bank?refresh=true`,
       return_url: `${process.env.FRONTEND_URL}/connect-bank?success=true`,
       type: 'account_onboarding',
     });
 
-    res.json({ url: accountLink.url });
+    return res.json({
+      msg: 'Stripe Connect onboarding link created successfully',
+      url: accountLink.url,
+    });
   } catch (error) {
-    console.error("Error creating Stripe Connect onboarding link", error);
-    res.status(500).json({ msg: 'Server error creating onboarding link' });
+    console.error('Error creating Stripe Connect onboarding link', error);
+    return res.status(500).json({ msg: 'Server error creating onboarding link' });
   }
-};
-
-/**
- * Optional: Handle Stripe webhook events to update connected account info.
- */
-exports.updateConnectedAccount = async (req, res) => {
-  // TODO: Implement webhook handling logic as needed.
-  res.sendStatus(200);
 };

@@ -2,12 +2,12 @@
 const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middlewares/authMiddleware');
-const { createOnboardingLink, updateConnectedAccount } = require('../controllers/connectBankController');
+const { createOnboardingLink } = require('../controllers/connectBankController');
 
-// POST /api/connect-bank - Create a Stripe Connect onboarding link
+// POST /api/connect-bank
 router.post('/', authMiddleware, createOnboardingLink);
 
-// (Optional) Stripe webhook endpoint for account updates
-router.post('/webhook', express.raw({ type: 'application/json' }), updateConnectedAccount);
+// (Optional) If you plan to handle Stripe webhooks or updates, do so here
+// router.post('/webhook', express.raw({ type: 'application/json' }), updateConnectedAccount);
 
 module.exports = router;

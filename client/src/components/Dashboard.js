@@ -1,5 +1,4 @@
 // client/src/components/Dashboard.js
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -51,7 +50,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const token = (localStorage.getItem('token') || '').trim();
   const axiosConfig = { headers: { Authorization: `Bearer ${token}` } };
-  const baseUrl = process.env.REACT_APP_BACKEND_URL;
+  const baseUrl = process.env.REACT_APP_BACKEND_URL; // e.g., https://your-backend-domain.com/api
 
   const toggleMenu = () => setMenuOpen(!menuOpen);
   const closeMenu = () => setMenuOpen(false);
@@ -60,7 +59,7 @@ export default function Dashboard() {
   const [withdrawalModalOpen, setWithdrawalModalOpen] = useState(false);
   const [withdrawalAmount, setWithdrawalAmount] = useState('');
   const [withdrawalMethod, setWithdrawalMethod] = useState('paypal');
-  const [paypalEmail, setPaypalEmail] = useState(''); // For PayPal only
+  const [paypalEmail, setPaypalEmail] = useState(''); // Only for PayPal
 
   useEffect(() => {
     async function fetchData() {
@@ -80,7 +79,6 @@ export default function Dashboard() {
         setLoading(false);
       } catch (error) {
         if (error.response && error.response.status === 401) {
-          // Unauthorized, redirect to login
           navigate('/login');
         } else {
           console.error('Error fetching dashboard data:', error);
@@ -93,7 +91,7 @@ export default function Dashboard() {
     }
   }, [token, baseUrl, navigate]);
 
-  // Chart data for Earnings
+  // Chart data setups
   const earningsChartData = {
     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
     datasets: [{
@@ -105,7 +103,6 @@ export default function Dashboard() {
     }]
   };
 
-  // Chart data for Bookings Overview
   const bookingsOverviewChartData = {
     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
     datasets: [{
@@ -115,7 +112,6 @@ export default function Dashboard() {
     }]
   };
 
-  // Example Rent Status chart (static or replace with dynamic data)
   const rentStatusData = {
     labels: ['Hired', 'Pending', 'Cancelled'],
     datasets: [{
@@ -132,18 +128,15 @@ export default function Dashboard() {
       return;
     }
 
-    // If the user selected bank account, we'll skip the usual POST to /withdrawals
-    // and redirect them to connect bank. Alternatively, you could do a partial check
-    // if they have a stripeAccountId, etc.
     if (withdrawalMethod === 'bank') {
-      // Here, you might want to store the intended withdrawal amount in session/localStorage
-      // or pass it as a query param to /connect-bank
+      // If "Bank Account" is selected, redirect to the Stripe Connect onboarding flow.
+      // Save the pending withdrawal amount in localStorage (or state) to be used after onboarding.
       localStorage.setItem('pendingWithdrawalAmount', withdrawalAmount);
       navigate('/connect-bank');
       return;
     }
 
-    // If PayPal was selected, we call /withdrawals
+    // If PayPal is selected, process the withdrawal
     try {
       const payload = {
         amount,
@@ -155,7 +148,6 @@ export default function Dashboard() {
       await axios.post(`${baseUrl}/withdrawals`, payload, axiosConfig);
       alert('Withdrawal request submitted successfully!');
       setWithdrawalModalOpen(false);
-      // Optionally refresh stats or do something else
     } catch (error) {
       console.error('Error submitting withdrawal:', error);
       alert('Failed to submit withdrawal request.');
@@ -166,12 +158,8 @@ export default function Dashboard() {
     return (
       <div className={styles.dashboardContainer}>
         <header className={styles.header}>
-          <div className={styles.logo} onClick={() => navigate('/')}>
-            Hyre
-          </div>
-          <button className={styles.menuIcon} onClick={toggleMenu}>
-            ☰
-          </button>
+          <div className={styles.logo} onClick={() => navigate('/')}>Hyre</div>
+          <button className={styles.menuIcon} onClick={toggleMenu}>☰</button>
         </header>
         <div className={styles.mainContent}>
           <p>Loading dashboard data...</p>
@@ -184,16 +172,10 @@ export default function Dashboard() {
     <div className={styles.dashboardContainer}>
       {/* Header */}
       <header className={styles.header}>
-        <div
-          className={styles.logo}
-          onClick={() => navigate('/')}
-          style={{ color: '#38b6ff' }}
-        >
+        <div className={styles.logo} onClick={() => navigate('/')} style={{ color: '#38b6ff' }}>
           Hyre
         </div>
-        <button className={styles.menuIcon} onClick={toggleMenu}>
-          ☰
-        </button>
+        <button className={styles.menuIcon} onClick={toggleMenu}>☰</button>
       </header>
 
       {/* Side Menu */}
@@ -226,12 +208,12 @@ export default function Dashboard() {
           <div className={styles.card}>
             <h3>Balance</h3>
             <p>${stats.balance.toFixed(2)}</p>
-            {/* A nicely styled "round" button for withdrawals */}
+            {/* Round, visually appealing button */}
             <button
-              className={styles.withdrawButton}
+              className={`${styles.withdrawButton} ${styles.roundButton}`}
               onClick={() => setWithdrawalModalOpen(true)}
             >
-              Withdraw Funds
+              Withdraw
             </button>
           </div>
         </div>
@@ -247,7 +229,6 @@ export default function Dashboard() {
               <Bar data={bookingsOverviewChartData} />
             </div>
           </div>
-
           <div className={styles.rightColumn}>
             <div className={styles.chartCard}>
               <h2>Rent Status</h2>
@@ -264,7 +245,6 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
-
             <div className={styles.remindersCard}>
               <h2>Reminders</h2>
               <ul>
@@ -272,7 +252,7 @@ export default function Dashboard() {
                 <li>Update the rental pricing packages</li>
                 <li>Review customer feedback</li>
               </ul>
-              {/* Add an Edit button to manage reminders, if needed */}
+              {/* Optionally, add an Edit button to modify reminders */}
             </div>
           </div>
         </div>
@@ -282,7 +262,6 @@ export default function Dashboard() {
           <div className={styles.modalOverlay}>
             <div className={styles.modalContent}>
               <h2>Withdraw Funds</h2>
-
               <label>Amount</label>
               <input
                 type="number"
@@ -294,9 +273,7 @@ export default function Dashboard() {
               <label>Withdrawal Method</label>
               <select
                 value={withdrawalMethod}
-                onChange={(e) => {
-                  setWithdrawalMethod(e.target.value);
-                }}
+                onChange={(e) => setWithdrawalMethod(e.target.value)}
               >
                 <option value="paypal">PayPal</option>
                 <option value="bank">Bank Account</option>
@@ -313,10 +290,9 @@ export default function Dashboard() {
                   />
                 </>
               )}
-              {/* 
-                If user selects bank, we do NOT show any bank details field,
-                since we will redirect them to /connect-bank upon submit.
-              */}
+
+              {/* When bank account is selected, no extra field is shown.
+                  Instead, the submit action will redirect to the connect bank account page. */}
 
               <div className={styles.modalButtons}>
                 <button
@@ -335,6 +311,7 @@ export default function Dashboard() {
             </div>
           </div>
         )}
+
       </div>
     </div>
   );
