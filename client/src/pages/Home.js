@@ -51,7 +51,6 @@ export default function Home() {
     }
   };
 
-  console.log('Home.js -> token:', token, 'accountType:', accountType, 'menuOpen:', menuOpen);
 
   return (
     <div className={styles.container}>

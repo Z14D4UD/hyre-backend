@@ -10,6 +10,7 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
  */
 exports.createOnboardingLink = async (req, res) => {
   try {
+    // Ensure that the user is authenticated as a business
     if (!req.business) {
       return res.status(403).json({ msg: 'Forbidden: Not a business user' });
     }
@@ -20,35 +21,37 @@ exports.createOnboardingLink = async (req, res) => {
       return res.status(404).json({ msg: 'Business not found' });
     }
 
+    // Check if the business has an email required by Stripe
+    if (!business.email) {
+      return res.status(400).json({ msg: 'Business email is required for Stripe onboarding' });
+    }
+
+    // Verify that environment variables are configured
     if (!process.env.STRIPE_SECRET_KEY || !process.env.FRONTEND_URL) {
       return res.status(500).json({
         msg: 'Stripe environment variables or FRONTEND_URL not configured properly.',
       });
     }
 
-    // If the user already has a stripeAccountId, we can either:
-    // (a) Return an onboarding link to update their existing account, or
-    // (b) If everything is complete, we can return some success message
     let stripeAccountId = business.stripeAccountId;
 
     if (!stripeAccountId) {
       // Create a new Stripe account
       const account = await stripe.accounts.create({
         type: 'express',
-        country: 'US', // or your business's country
+        country: 'US', // Adjust if necessary to match your business's country
         email: business.email,
         business_type: 'company',
         capabilities: {
           transfers: { requested: true },
         },
       });
-
       stripeAccountId = account.id;
       business.stripeAccountId = account.id;
       await business.save();
     }
 
-    // Generate an onboarding link (accountLink) so the user can add bank info
+    // Generate an onboarding link for the connected Stripe account
     const accountLink = await stripe.accountLinks.create({
       account: stripeAccountId,
       refresh_url: `${process.env.FRONTEND_URL}/connect-bank?refresh=true`,
@@ -61,7 +64,11 @@ exports.createOnboardingLink = async (req, res) => {
       url: accountLink.url,
     });
   } catch (error) {
-    console.error('Error creating Stripe Connect onboarding link', error);
-    return res.status(500).json({ msg: 'Server error creating onboarding link' });
+    // Log detailed error for debugging purposes
+    console.error('Error creating Stripe Connect onboarding link:', error);
+    return res.status(500).json({ 
+      msg: 'Server error creating onboarding link', 
+      error: error.message 
+    });
   }
 };
