@@ -27,6 +27,7 @@ import MyListings from './pages/MyListings';
 import EditListing from './pages/EditListing';
 import BusinessBookings from './pages/BusinessBookings';
 import BusinessMessagesPage from './pages/BusinessMessagesPage';
+import ConnectBank from './pages/ConnectBank';
 
 function App() {
   return (
@@ -62,6 +63,9 @@ function App() {
         <Route path="/edit-listing/:id" element={<EditListing />} />
         <Route path="/bookings/business" element={<BusinessBookings />} />
         <Route path="/messages/business" element={<BusinessMessagesPage />} />
+        <Route path="/connect-bank" element={<ConnectBank />} />
+
+
 
 
         {/* Customer Account and Change Password */}

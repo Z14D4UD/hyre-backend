@@ -1,4 +1,5 @@
 // client/src/components/Dashboard.js
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -18,7 +19,6 @@ import {
 } from 'chart.js';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
 
-// Side menu & styling imports
 import SideMenuBusiness from './SideMenuBusiness';
 import styles from '../styles/Dashboard.module.css';
 
@@ -47,12 +47,11 @@ export default function Dashboard() {
   const [earningsData, setEarningsData] = useState([]);
   const [bookingsOverviewData, setBookingsOverviewData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
-  // Retrieve token and backend URL from env
+  const navigate = useNavigate();
   const token = (localStorage.getItem('token') || '').trim();
   const axiosConfig = { headers: { Authorization: `Bearer ${token}` } };
-  const baseUrl = process.env.REACT_APP_BACKEND_URL; // e.g. https://your-backend-domain.com/api
+  const baseUrl = process.env.REACT_APP_BACKEND_URL;
 
   const toggleMenu = () => setMenuOpen(!menuOpen);
   const closeMenu = () => setMenuOpen(false);
@@ -60,27 +59,28 @@ export default function Dashboard() {
   // Withdrawal modal states
   const [withdrawalModalOpen, setWithdrawalModalOpen] = useState(false);
   const [withdrawalAmount, setWithdrawalAmount] = useState('');
-  const [withdrawalMethod, setWithdrawalMethod] = useState('paypal'); // or 'bank'
-  const [withdrawalDetails, setWithdrawalDetails] = useState('');
+  const [withdrawalMethod, setWithdrawalMethod] = useState('paypal');
+  const [paypalEmail, setPaypalEmail] = useState(''); // For PayPal only
 
   useEffect(() => {
     async function fetchData() {
       try {
-        // Fetch business statistics
+        // Fetch stats
         const statsRes = await axios.get(`${baseUrl}/business/stats`, axiosConfig);
         setStats(statsRes.data);
 
-        // Fetch monthly earnings data
+        // Fetch earnings data
         const earningsRes = await axios.get(`${baseUrl}/business/earnings`, axiosConfig);
         setEarningsData(earningsRes.data);
 
-        // Fetch monthly bookings overview
+        // Fetch bookings overview
         const bookingsOverviewRes = await axios.get(`${baseUrl}/business/bookingsOverview`, axiosConfig);
         setBookingsOverviewData(bookingsOverviewRes.data);
 
         setLoading(false);
       } catch (error) {
         if (error.response && error.response.status === 401) {
+          // Unauthorized, redirect to login
           navigate('/login');
         } else {
           console.error('Error fetching dashboard data:', error);
@@ -93,7 +93,7 @@ export default function Dashboard() {
     }
   }, [token, baseUrl, navigate]);
 
-  // Chart data setups
+  // Chart data for Earnings
   const earningsChartData = {
     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
     datasets: [{
@@ -105,6 +105,7 @@ export default function Dashboard() {
     }]
   };
 
+  // Chart data for Bookings Overview
   const bookingsOverviewChartData = {
     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
     datasets: [{
@@ -114,10 +115,11 @@ export default function Dashboard() {
     }]
   };
 
+  // Example Rent Status chart (static or replace with dynamic data)
   const rentStatusData = {
     labels: ['Hired', 'Pending', 'Cancelled'],
     datasets: [{
-      data: [58, 24, 18], // Replace with dynamic data if available
+      data: [58, 24, 18],
       backgroundColor: ['#2ecc71', '#f1c40f', '#e74c3c']
     }]
   };
@@ -129,32 +131,31 @@ export default function Dashboard() {
       alert('Please enter a valid withdrawal amount.');
       return;
     }
-    try {
-      // If bank method is selected but the business has no connected account,
-      // redirect to Stripe Connect onboarding.
-      if (withdrawalMethod === 'bank') {
-        // Assume that the business stripeAccountId is stored in localStorage
-        // (or you can fetch it from your dashboard API)
-        const stripeAccountId = localStorage.getItem('stripeAccountId');
-        if (!stripeAccountId) {
-          alert('You must first connect your bank account.');
-          // Redirect to a Stripe Connect onboarding page (implement separately)
-          navigate('/connect-bank');
-          return;
-        }
-      }
 
+    // If the user selected bank account, we'll skip the usual POST to /withdrawals
+    // and redirect them to connect bank. Alternatively, you could do a partial check
+    // if they have a stripeAccountId, etc.
+    if (withdrawalMethod === 'bank') {
+      // Here, you might want to store the intended withdrawal amount in session/localStorage
+      // or pass it as a query param to /connect-bank
+      localStorage.setItem('pendingWithdrawalAmount', withdrawalAmount);
+      navigate('/connect-bank');
+      return;
+    }
+
+    // If PayPal was selected, we call /withdrawals
+    try {
       const payload = {
         amount,
-        method: withdrawalMethod,
-        details: withdrawalMethod === 'paypal'
-          ? { paypalEmail: withdrawalDetails }
-          : { bankAccount: withdrawalDetails } // For bank transfers, details might be optional if using Stripe Connect
+        method: 'paypal',
+        details: {
+          paypalEmail,
+        },
       };
       await axios.post(`${baseUrl}/withdrawals`, payload, axiosConfig);
       alert('Withdrawal request submitted successfully!');
       setWithdrawalModalOpen(false);
-      // Optionally refresh stats here to update the balance
+      // Optionally refresh stats or do something else
     } catch (error) {
       console.error('Error submitting withdrawal:', error);
       alert('Failed to submit withdrawal request.');
@@ -168,7 +169,9 @@ export default function Dashboard() {
           <div className={styles.logo} onClick={() => navigate('/')}>
             Hyre
           </div>
-          <button className={styles.menuIcon} onClick={toggleMenu}>☰</button>
+          <button className={styles.menuIcon} onClick={toggleMenu}>
+            ☰
+          </button>
         </header>
         <div className={styles.mainContent}>
           <p>Loading dashboard data...</p>
@@ -179,6 +182,7 @@ export default function Dashboard() {
 
   return (
     <div className={styles.dashboardContainer}>
+      {/* Header */}
       <header className={styles.header}>
         <div
           className={styles.logo}
@@ -192,8 +196,10 @@ export default function Dashboard() {
         </button>
       </header>
 
+      {/* Side Menu */}
       <SideMenuBusiness isOpen={menuOpen} toggleMenu={toggleMenu} closeMenu={closeMenu} />
 
+      {/* Main Content */}
       <div className={styles.mainContent}>
         <div className={styles.pageTitle}>
           <h1>Dashboard</h1>
@@ -220,7 +226,7 @@ export default function Dashboard() {
           <div className={styles.card}>
             <h3>Balance</h3>
             <p>${stats.balance.toFixed(2)}</p>
-            {/* Updated round button for withdrawals */}
+            {/* A nicely styled "round" button for withdrawals */}
             <button
               className={styles.withdrawButton}
               onClick={() => setWithdrawalModalOpen(true)}
@@ -266,13 +272,7 @@ export default function Dashboard() {
                 <li>Update the rental pricing packages</li>
                 <li>Review customer feedback</li>
               </ul>
-              {/* Optionally, add an edit button for reminders */}
-              <button
-                className={styles.editButton}
-                onClick={() => navigate('/edit-reminders')}
-              >
-                Edit Reminders
-              </button>
+              {/* Add an Edit button to manage reminders, if needed */}
             </div>
           </div>
         </div>
@@ -282,6 +282,7 @@ export default function Dashboard() {
           <div className={styles.modalOverlay}>
             <div className={styles.modalContent}>
               <h2>Withdraw Funds</h2>
+
               <label>Amount</label>
               <input
                 type="number"
@@ -293,27 +294,29 @@ export default function Dashboard() {
               <label>Withdrawal Method</label>
               <select
                 value={withdrawalMethod}
-                onChange={(e) => setWithdrawalMethod(e.target.value)}
+                onChange={(e) => {
+                  setWithdrawalMethod(e.target.value);
+                }}
               >
                 <option value="paypal">PayPal</option>
                 <option value="bank">Bank Account</option>
               </select>
 
-              <label>
-                {withdrawalMethod === 'paypal'
-                  ? 'PayPal Email'
-                  : 'Bank Account Details'}
-              </label>
-              <input
-                type="text"
-                value={withdrawalDetails}
-                onChange={(e) => setWithdrawalDetails(e.target.value)}
-                placeholder={
-                  withdrawalMethod === 'paypal'
-                    ? 'Enter your PayPal email'
-                    : 'Enter bank account info'
-                }
-              />
+              {withdrawalMethod === 'paypal' && (
+                <>
+                  <label>PayPal Email</label>
+                  <input
+                    type="email"
+                    value={paypalEmail}
+                    onChange={(e) => setPaypalEmail(e.target.value)}
+                    placeholder="Enter your PayPal email"
+                  />
+                </>
+              )}
+              {/* 
+                If user selects bank, we do NOT show any bank details field,
+                since we will redirect them to /connect-bank upon submit.
+              */}
 
               <div className={styles.modalButtons}>
                 <button
@@ -332,7 +335,6 @@ export default function Dashboard() {
             </div>
           </div>
         )}
-
       </div>
     </div>
   );
