@@ -14,6 +14,14 @@ const BusinessSchema = new mongoose.Schema({
   location: { type: String },
   phoneNumber: { type: String },
   aboutMe: { type: String },
+  reminders: [
+    {
+      title: String,      // e.g. "Inspect and service the fleet"
+      description: String,
+      dueDate: Date,
+      // any other fields you want
+    }
+  ],
   avatarUrl: { type: String },
   stripeAccountId: { type: String }, // NEW field for storing Stripe Connect account ID
 }, { timestamps: true });

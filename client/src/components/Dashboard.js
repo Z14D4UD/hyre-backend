@@ -47,6 +47,14 @@ export default function Dashboard() {
   const [bookingsOverviewData, setBookingsOverviewData] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Reminders state
+  const [reminders, setReminders] = useState([]);
+  const [newReminderTitle, setNewReminderTitle] = useState('');
+  const [newReminderDescription, setNewReminderDescription] = useState('');
+  const [editingReminderId, setEditingReminderId] = useState(null);
+  const [editingTitle, setEditingTitle] = useState('');
+  const [editingDescription, setEditingDescription] = useState('');
+
   const navigate = useNavigate();
   const token = (localStorage.getItem('token') || '').trim();
   const axiosConfig = { headers: { Authorization: `Bearer ${token}` } };
@@ -75,6 +83,10 @@ export default function Dashboard() {
         // Fetch bookings overview
         const bookingsOverviewRes = await axios.get(`${baseUrl}/business/bookingsOverview`, axiosConfig);
         setBookingsOverviewData(bookingsOverviewRes.data);
+
+        // Fetch reminders
+        const remindersRes = await axios.get(`${baseUrl}/reminders`, axiosConfig);
+        setReminders(remindersRes.data);
 
         setLoading(false);
       } catch (error) {
@@ -129,14 +141,13 @@ export default function Dashboard() {
     }
 
     if (withdrawalMethod === 'bank') {
-      // If "Bank Account" is selected, redirect to the Stripe Connect onboarding flow.
-      // Save the pending withdrawal amount in localStorage (or state) to be used after onboarding.
+      // Redirect to Stripe Connect onboarding flow.
       localStorage.setItem('pendingWithdrawalAmount', withdrawalAmount);
       navigate('/connect-bank');
       return;
     }
 
-    // If PayPal is selected, process the withdrawal
+    // Process PayPal withdrawal
     try {
       const payload = {
         amount,
@@ -151,6 +162,59 @@ export default function Dashboard() {
     } catch (error) {
       console.error('Error submitting withdrawal:', error);
       alert('Failed to submit withdrawal request.');
+    }
+  };
+
+  // Reminders handlers
+  const handleAddReminder = async (e) => {
+    e.preventDefault();
+    if (!newReminderTitle) {
+      alert('Please enter a title for the reminder.');
+      return;
+    }
+    try {
+      const payload = {
+        title: newReminderTitle,
+        description: newReminderDescription,
+      };
+      const res = await axios.post(`${baseUrl}/reminders`, payload, axiosConfig);
+      setReminders(res.data.reminders);
+      setNewReminderTitle('');
+      setNewReminderDescription('');
+    } catch (error) {
+      console.error('Error adding reminder:', error);
+      alert('Failed to add reminder.');
+    }
+  };
+
+  const handleEditReminder = (reminder) => {
+    setEditingReminderId(reminder._id);
+    setEditingTitle(reminder.title);
+    setEditingDescription(reminder.description);
+  };
+
+  const handleUpdateReminder = async (reminderId) => {
+    try {
+      const payload = {
+        title: editingTitle,
+        description: editingDescription,
+      };
+      const res = await axios.put(`${baseUrl}/reminders/${reminderId}`, payload, axiosConfig);
+      setReminders(res.data.reminders);
+      setEditingReminderId(null);
+    } catch (error) {
+      console.error('Error updating reminder:', error);
+      alert('Failed to update reminder.');
+    }
+  };
+
+  const handleDeleteReminder = async (reminderId) => {
+    try {
+      const res = await axios.delete(`${baseUrl}/reminders/${reminderId}`, axiosConfig);
+      setReminders(res.data.reminders);
+    } catch (error) {
+      console.error('Error deleting reminder:', error);
+      alert('Failed to delete reminder.');
     }
   };
 
@@ -208,7 +272,6 @@ export default function Dashboard() {
           <div className={styles.card}>
             <h3>Balance</h3>
             <p>${stats.balance.toFixed(2)}</p>
-            {/* Round, visually appealing button */}
             <button
               className={`${styles.withdrawButton} ${styles.roundButton}`}
               onClick={() => setWithdrawalModalOpen(true)}
@@ -245,14 +308,57 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
+
+            {/* Reminders Section */}
             <div className={styles.remindersCard}>
               <h2>Reminders</h2>
-              <ul>
-                <li>Inspect and service the fleet</li>
-                <li>Update the rental pricing packages</li>
-                <li>Review customer feedback</li>
+
+              {/* Add New Reminder Form */}
+              <form onSubmit={handleAddReminder} className={styles.reminderForm}>
+                <input
+                  type="text"
+                  placeholder="Title"
+                  value={newReminderTitle}
+                  onChange={(e) => setNewReminderTitle(e.target.value)}
+                />
+                <input
+                  type="text"
+                  placeholder="Description"
+                  value={newReminderDescription}
+                  onChange={(e) => setNewReminderDescription(e.target.value)}
+                />
+                <button type="submit">Add Reminder</button>
+              </form>
+
+              {/* Display Existing Reminders */}
+              <ul className={styles.reminderList}>
+                {reminders.map((reminder) => (
+                  <li key={reminder._id}>
+                    {editingReminderId === reminder._id ? (
+                      <>
+                        <input
+                          type="text"
+                          value={editingTitle}
+                          onChange={(e) => setEditingTitle(e.target.value)}
+                        />
+                        <input
+                          type="text"
+                          value={editingDescription}
+                          onChange={(e) => setEditingDescription(e.target.value)}
+                        />
+                        <button onClick={() => handleUpdateReminder(reminder._id)}>Save</button>
+                        <button onClick={() => setEditingReminderId(null)}>Cancel</button>
+                      </>
+                    ) : (
+                      <>
+                        <strong>{reminder.title}</strong> - {reminder.description}
+                        <button onClick={() => handleEditReminder(reminder)}>Edit</button>
+                        <button onClick={() => handleDeleteReminder(reminder._id)}>Delete</button>
+                      </>
+                    )}
+                  </li>
+                ))}
               </ul>
-              {/* Optionally, add an Edit button to modify reminders */}
             </div>
           </div>
         </div>
@@ -290,9 +396,6 @@ export default function Dashboard() {
                   />
                 </>
               )}
-
-              {/* When bank account is selected, no extra field is shown.
-                  Instead, the submit action will redirect to the connect bank account page. */}
 
               <div className={styles.modalButtons}>
                 <button
