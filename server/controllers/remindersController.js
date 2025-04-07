@@ -99,8 +99,8 @@ exports.deleteReminder = async (req, res) => {
 
     console.log('Found reminder:', reminder);
 
-    // Remove the subdocument and mark the field as modified
-    reminder.remove();
+    // Remove the subdocument using pull() instead of remove()
+    business.reminders.pull(reminderId);
     business.markModified('reminders');
     await business.save();
 
