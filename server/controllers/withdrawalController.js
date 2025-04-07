@@ -7,19 +7,19 @@ exports.requestWithdrawal = async (req, res) => {
   try {
     const businessId = req.business.id;
     const { amount, method, details } = req.body;
-    
+
     // Validate the withdrawal amount
     const withdrawalAmount = parseFloat(amount);
     if (isNaN(withdrawalAmount) || withdrawalAmount <= 0) {
       return res.status(400).json({ msg: 'Invalid withdrawal amount' });
     }
-    
+
     // Validate method (must be either "paypal" or "bank")
     if (!['paypal', 'bank'].includes(method)) {
       return res.status(400).json({ msg: 'Invalid withdrawal method' });
     }
-    
-    // Fetch business details (assume a "balance" field exists on Business)
+
+    // Fetch business details (ensure a "balance" field exists on Business)
     const business = await Business.findById(businessId);
     if (!business) {
       return res.status(404).json({ msg: 'Business not found' });
@@ -35,11 +35,12 @@ exports.requestWithdrawal = async (req, res) => {
       }
       payoutResult = await createPayPalPayout(withdrawalAmount, "USD", details.paypalEmail);
     } else if (method === 'bank') {
-      if (!details || !details.bankAccount) {
-        return res.status(400).json({ msg: 'Bank account details are required for withdrawal' });
+      // For bank transfers, ensure the business has a connected Stripe account.
+      if (!business.stripeAccountId) {
+        return res.status(400).json({ msg: 'No connected bank account. Please connect your bank account first.' });
       }
-      // In production, you may need to verify the bank account details or use a payment provider.
-      payoutResult = await createStripeTransfer(withdrawalAmount, "USD", details.bankAccount);
+      // Use the stored Stripe connected account ID to create the transfer.
+      payoutResult = await createStripeTransfer(withdrawalAmount, "USD", business.stripeAccountId);
     }
 
     // Deduct the withdrawn amount from the business balance and save

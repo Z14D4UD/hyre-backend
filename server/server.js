@@ -22,6 +22,8 @@ const accountRoutes = require('./routes/accountRoutes');
 const supportRoutes = require('./routes/supportRoutes');
 const reviewRoutes = require ('./routes/reviewRoutes');
 const withdrawalRoutes = require('./routes/withdrawalRoutes');
+const connectBankRoutes = require('./routes/connectBankRoutes');
+
 
 
 const app = express();
@@ -62,6 +64,8 @@ app.use('/api/account', accountRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api', reviewRoutes);
 app.use('/api/withdrawals', withdrawalRoutes);
+app.use('/api/connect-bank', connectBankRoutes);
+
 
 
 const io = new Server(server, {

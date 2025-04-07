@@ -4,352 +4,451 @@
   Root Variables
 --------------------------------------------*/
 :root {
-    --color-background: #f4f6f8;
-    --color-surface: #ffffff;
-    --color-primary: #4f3cc9;
-    --color-text-main: #333333;
-    --color-text-muted: #888888;
-    --color-border: #e0e0e0;
-  }
-  
-  /*--------------------------------------------
-    Base Styles (Mobile-first)
-  --------------------------------------------*/
-  .dashboardContainer {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    background: var(--color-background);
-    font-family: 'Roboto', sans-serif;
-    color: var(--color-text-main);
-    font-size: 0.9rem;
-  }
-  
-  /*--------------------------------------------
-    Header
-  --------------------------------------------*/
-  .header {
-    width: 100%;
-    height: 56px;
-    background: var(--color-surface);
-    border-bottom: 1px solid var(--color-border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 1rem;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 1000;
-  }
-  .logo {
-    font-size: 5.85rem;
-    font-weight: 700;
-    cursor: pointer;
-    color: #38b6ff;
-  }
-  .menuIcon {
-    font-size: 1.85rem;
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--color-text-main);
-    margin-right: 1rem; /* Moves the icon left by adding space on the right */
+  --color-background: #f4f6f8;
+  --color-surface: #ffffff;
+  --color-primary: #4f3cc9;
+  --color-primary-hover: #3c2fa1;
+  --color-text-main: #333333;
+  --color-text-muted: #888888;
+  --color-border: #e0e0e0;
+  --color-success: #2ecc71;
+  --color-warning: #f1c40f;
+  --color-error: #e74c3c;
+}
 
+/*--------------------------------------------
+  Base Styles (Mobile-first)
+--------------------------------------------*/
+.dashboardContainer {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--color-background);
+  font-family: 'Roboto', sans-serif;
+  color: var(--color-text-main);
+  font-size: 0.9rem;
+}
+
+/*--------------------------------------------
+  Header
+--------------------------------------------*/
+.header {
+  width: 100%;
+  height: 56px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+.logo {
+  font-size: 1.4rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: #38b6ff;
+}
+.menuIcon {
+  font-size: 1.4rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-main);
+  margin-right: 1rem;
+}
+
+/*--------------------------------------------
+  Main Content Area
+--------------------------------------------*/
+.mainContent {
+  margin-top: 56px;
+  padding: 1rem;
+  flex: 1;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/*--------------------------------------------
+  Page Title
+--------------------------------------------*/
+.pageTitle {
+  margin-bottom: 1rem;
+}
+.pageTitle h1 {
+  font-size: 1.3rem;
+  margin-bottom: 0.25rem;
+}
+.pageTitle span {
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+}
+
+/*--------------------------------------------
+  Stats Cards
+--------------------------------------------*/
+.statsCards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.card {
+  background: var(--color-surface);
+  border-radius: 8px;
+  padding: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+}
+.card h3 {
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+  color: var(--color-text-muted);
+}
+.card p {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+/*--------------------------------------------
+  Row for Charts and Panels
+--------------------------------------------*/
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.leftColumn,
+.rightColumn {
+  width: 100%;
+}
+
+/*--------------------------------------------
+  Chart Cards
+--------------------------------------------*/
+.chartCard {
+  background: var(--color-surface);
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.chartCard h2 {
+  font-size: 1rem;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-main);
+}
+
+/*--------------------------------------------
+  Rent Status Labels
+--------------------------------------------*/
+.rentStatusLabels {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.rentStatusLabels div {
+  font-size: 0.85rem;
+  display: flex;
+  justify-content: space-between;
+  color: var(--color-text-main);
+}
+
+/*--------------------------------------------
+  Reminders Card
+--------------------------------------------*/
+.remindersCard {
+  background: var(--color-surface);
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.remindersCard h2 {
+  font-size: 1rem;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+}
+.remindersCard ul {
+  padding-left: 1.25rem;
+  margin: 0;
+  list-style: disc;
+}
+.remindersCard ul li {
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+  color: var(--color-text-main);
+}
+
+/*--------------------------------------------
+  Table Section
+--------------------------------------------*/
+.tableSection {
+  background: var(--color-surface);
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.tableHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+.tableHeader h2 {
+  font-size: 1rem;
+  margin: 0;
+  font-weight: 600;
+}
+.tableSearch {
+  display: flex;
+  gap: 0.5rem;
+}
+.tableSearch input {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.85rem;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+}
+.tableSearch button {
+  padding: 0.4rem 0.75rem;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.tableSearch button:hover {
+  background: var(--color-primary-hover);
+}
+.bookingsTable {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  background: var(--color-surface);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.bookingsTable thead {
+  background: #f7f7f7;
+}
+.bookingsTable th,
+.bookingsTable td {
+  padding: 0.6rem 0.5rem;
+  font-size: 0.85rem;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bookingsTable th:nth-child(1),
+.bookingsTable td:nth-child(1) {
+  width: 12%;
+}
+.bookingsTable th:nth-child(2),
+.bookingsTable td:nth-child(2) {
+  width: 10%;
+}
+.bookingsTable th:nth-child(3),
+.bookingsTable td:nth-child(3) {
+  width: 10%;
+}
+.bookingsTable th:nth-child(4),
+.bookingsTable td:nth-child(4) {
+  width: 15%;
+}
+.bookingsTable th:nth-child(5),
+.bookingsTable td:nth-child(5) {
+  width: 15%;
+}
+.bookingsTable th:nth-child(6),
+.bookingsTable td:nth-child(6) {
+  width: 10%;
+}
+.bookingsTable th:nth-child(7),
+.bookingsTable td:nth-child(7) {
+  width: 10%;
+}
+.bookingsTable th:nth-child(8),
+.bookingsTable td:nth-child(8) {
+  width: 8%;
+  text-align: center;
+}
+.bookingsTable tbody tr:hover {
+  background: #fafafa;
+}
+.hired {
+  color: var(--color-success);
+  font-weight: 600;
+}
+.pending {
+  color: var(--color-warning);
+  font-weight: 600;
+}
+.cancelled {
+  color: var(--color-error);
+  font-weight: 600;
+}
+
+/*--------------------------------------------
+  Withdrawal Button and Modal
+--------------------------------------------*/
+
+/* Withdraw Funds Button */
+.withdrawButton {
+  margin-top: 0.5rem;
+  background-color: #38b6ff;
+  color: #fff;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 9999px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.withdrawButton:hover {
+  background-color: #2a9cdc;
+}
+
+/* Modal Overlay */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+/* Modal Content Box */
+.modalContent {
+  background-color: var(--color-surface);
+  padding: 2rem;
+  border-radius: 12px;
+  max-width: 480px;
+  width: 90%;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  text-align: left;
+}
+
+.modalContent h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+  color: var(--color-text-main);
+}
+
+.modalContent label {
+  display: block;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.modalContent input,
+.modalContent select {
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  font-size: 0.95rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.modalButtons {
+  margin-top: 1.5rem;
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+.buttonPrimary {
+  background-color: #38b6ff;
+  color: #fff;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 9999px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.buttonPrimary:hover {
+  background-color: #2a9cdc;
+}
+
+.buttonDanger {
+  background-color: #e74c3c;
+  color: #fff;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 9999px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.buttonDanger:hover {
+  background-color: #c0392b;
+}
+
+/*--------------------------------------------
+  Responsive Adjustments
+--------------------------------------------*/
+@media (min-width: 576px) {
+  .statsCards {
+    grid-template-columns: repeat(4, 1fr);
   }
-  
-  /*--------------------------------------------
-    Main Content Area
-  --------------------------------------------*/
-  .mainContent {
-    margin-top: 56px;
-    padding: 1rem;
-    flex: 1;
-    width: 100%;
-    box-sizing: border-box;
-  }
-  
-  /*--------------------------------------------
-    Page Title
-  --------------------------------------------*/
-  .pageTitle {
-    margin-bottom: 1rem;
-  }
-  .pageTitle h1 {
-    font-size: 1.3rem;
-    margin-bottom: 0.25rem;
-  }
-  .pageTitle span {
-    color: var(--color-text-muted);
+}
+@media (min-width: 768px) {
+  .dashboardContainer {
     font-size: 0.95rem;
   }
-  
-  /*--------------------------------------------
-    Stats Cards
-  --------------------------------------------*/
-  .statsCards {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    margin-bottom: 1rem;
+  .header {
+    height: 60px;
   }
-  .card {
-    background: var(--color-surface);
-    border-radius: 8px;
-    padding: 0.75rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+  .logo {
+    font-size: 1.4rem;
   }
-  .card h3 {
-    font-size: 0.9rem;
-    margin-bottom: 0.25rem;
-    color: var(--color-text-muted);
+  .menuIcon {
+    font-size: 1.4rem;
   }
-  .card p {
-    font-size: 1.2rem;
-    font-weight: 600;
-    margin: 0;
+  .mainContent {
+    padding: 1.25rem;
   }
-  
-  /*--------------------------------------------
-    Row for Charts and Panels
-  --------------------------------------------*/
   .row {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
+    flex-direction: row;
   }
-  
-  /* Columns (default stacking for mobile) */
-  .leftColumn, 
+  .leftColumn {
+    width: 65%;
+  }
   .rightColumn {
-    width: 100%;
+    width: 35%;
   }
-  
-  /*--------------------------------------------
-    Chart Cards
-  --------------------------------------------*/
-  .chartCard {
-    background: var(--color-surface);
-    border-radius: 8px;
-    padding: 1rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  .chartCard, .remindersCard {
+    padding: 1.25rem;
   }
-  .chartCard h2 {
-    font-size: 1rem;
-    margin-bottom: 0.75rem;
-    font-weight: 600;
-    color: var(--color-text-main);
+  .chartCard h2, .remindersCard h2 {
+    font-size: 1.05rem;
   }
-  
-  /*--------------------------------------------
-    Rent Status Labels
-  --------------------------------------------*/
-  .rentStatusLabels {
-    margin-top: 0.75rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-  .rentStatusLabels div {
-    font-size: 0.85rem;
-    display: flex;
-    justify-content: space-between;
-    color: var(--color-text-main);
-  }
-  
-  /*--------------------------------------------
-    Reminders Card
-  --------------------------------------------*/
-  .remindersCard {
-    background: var(--color-surface);
-    border-radius: 8px;
-    padding: 1rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-  }
-  .remindersCard h2 {
-    font-size: 1rem;
-    margin-bottom: 0.75rem;
-    font-weight: 600;
-  }
-  .remindersCard ul {
-    padding-left: 1.25rem;
-    margin: 0;
-    list-style: disc;
-  }
-  .remindersCard ul li {
-    font-size: 0.85rem;
-    margin-bottom: 0.5rem;
-    color: var(--color-text-main);
-  }
-  
-  /*--------------------------------------------
-    Table Section
-  --------------------------------------------*/
   .tableSection {
-    background: var(--color-surface);
-    border-radius: 8px;
-    padding: 1rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-  }
-  .tableHeader {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.75rem;
-  }
-  .tableHeader h2 {
-    font-size: 1rem;
-    margin: 0;
-    font-weight: 600;
-  }
-  .tableSearch {
-    display: flex;
-    gap: 0.5rem;
-  }
-  .tableSearch input {
-    padding: 0.4rem 0.6rem;
-    font-size: 0.85rem;
-    border: 1px solid var(--color-border);
-    border-radius: 4px;
-  }
-  .tableSearch button {
-    padding: 0.4rem 0.75rem;
-    background: var(--color-primary);
-    color: #fff;
-    border: none;
-    border-radius: 4px;
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  .tableSearch button:hover {
-    background: #3c2fa1;
-  }
-  
-  /*--------------------------------------------
-    Bookings Table - Refined Table Styling
-  --------------------------------------------*/
-  .bookingsTable {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed;
-    background: var(--color-surface);
-    border-radius: 8px;
-    overflow: hidden;
-  }
-  .bookingsTable thead {
-    background: #f7f7f7;
+    padding: 1.25rem;
   }
   .bookingsTable th,
   .bookingsTable td {
-    padding: 0.6rem 0.5rem;
-    font-size: 0.85rem;
-    text-align: left;
-    border-bottom: 1px solid var(--color-border);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-size: 0.9rem;
   }
-  
-  /* Fixed Column Widths */
-  .bookingsTable th:nth-child(1),
-  .bookingsTable td:nth-child(1) {
-    width: 12%;
-  }
-  .bookingsTable th:nth-child(2),
-  .bookingsTable td:nth-child(2) {
-    width: 10%;
-  }
-  .bookingsTable th:nth-child(3),
-  .bookingsTable td:nth-child(3) {
-    width: 10%;
-  }
-  .bookingsTable th:nth-child(4),
-  .bookingsTable td:nth-child(4) {
-    width: 15%;
-  }
-  .bookingsTable th:nth-child(5),
-  .bookingsTable td:nth-child(5) {
-    width: 15%;
-  }
-  .bookingsTable th:nth-child(6),
-  .bookingsTable td:nth-child(6) {
-    width: 10%;
-  }
-  .bookingsTable th:nth-child(7),
-  .bookingsTable td:nth-child(7) {
-    width: 10%;
-  }
-  .bookingsTable th:nth-child(8),
-  .bookingsTable td:nth-child(8) {
-    width: 8%;
-    text-align: center;
-  }
-  .bookingsTable tbody tr:hover {
-    background: #fafafa;
-  }
-  .hired {
-    color: #2ecc71;
-    font-weight: 600;
-  }
-  .pending {
-    color: #f1c40f;
-    font-weight: 600;
-  }
-  .cancelled {
-    color: #e74c3c;
-    font-weight: 600;
-  }
-  
-  /*--------------------------------------------
-    Media Queries for Larger Screens
-  --------------------------------------------*/
-  @media (min-width: 576px) {
-    .statsCards {
-      grid-template-columns: repeat(4, 1fr);
-    }
-  }
-  @media (min-width: 768px) {
-    .dashboardContainer {
-      font-size: 0.95rem;
-    }
-    .header {
-      height: 60px;
-    }
-    .logo {
-      font-size: 1.4rem;
-    }
-    .menuIcon {
-      font-size: 1.4rem;
-    }
-    .mainContent {
-      padding: 1.25rem;
-    }
-    .row {
-      flex-direction: row;
-    }
-    .leftColumn {
-      width: 65%;
-    }
-    .rightColumn {
-      width: 35%;
-    }
-    .chartCard, .remindersCard {
-      padding: 1.25rem;
-    }
-    .chartCard h2, .remindersCard h2 {
-      font-size: 1.05rem;
-    }
-    .tableSection {
-      padding: 1.25rem;
-    }
-    .bookingsTable th,
-    .bookingsTable td {
-      font-size: 0.9rem;
-    }
-  }
-  
+}

@@ -7,7 +7,7 @@ const BusinessSchema = new mongoose.Schema({
   password: { type: String, required: true },
   emailConfirmationToken: { type: String },
   verified: { type: Boolean, default: false },
-  balance: { type: Number, default: 0 },  // <-- Ensure balance is always a Number
+  balance: { type: Number, default: 0 },
   isFeatured: { type: Boolean, default: false },
   image: { type: String },
   description: { type: String },
@@ -15,6 +15,7 @@ const BusinessSchema = new mongoose.Schema({
   phoneNumber: { type: String },
   aboutMe: { type: String },
   avatarUrl: { type: String },
+  stripeAccountId: { type: String }, // NEW field for storing Stripe Connect account ID
 }, { timestamps: true });
 
 module.exports = mongoose.model('Business', BusinessSchema);

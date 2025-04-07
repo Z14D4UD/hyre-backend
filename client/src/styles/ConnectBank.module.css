@@ -1,0 +1,11 @@
+/* client/src/styles/ConnectBank.module.css */
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-family: 'Roboto', sans-serif;
+    color: #333;
+    font-size: 1.2rem;
+  }
+  
