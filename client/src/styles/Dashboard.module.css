@@ -1,5 +1,3 @@
-/* client/src/styles/Dashboard.module.css */
-
 /*--------------------------------------------
   Root Variables
 --------------------------------------------*/
@@ -47,12 +45,14 @@
   right: 0;
   z-index: 1000;
 }
+
 .logo {
   font-size: 1.4rem;
   font-weight: 700;
   cursor: pointer;
   color: #38b6ff;
 }
+
 .menuIcon {
   font-size: 1.4rem;
   background: none;
@@ -101,7 +101,7 @@
   background: var(--color-surface);
   border-radius: 8px;
   padding: 0.75rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -138,7 +138,7 @@
   background: var(--color-surface);
   border-radius: 8px;
   padding: 1rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 .chartCard h2 {
   font-size: 1rem;
@@ -170,22 +170,82 @@
   background: var(--color-surface);
   border-radius: 8px;
   padding: 1rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  margin-bottom: 1rem;
 }
 .remindersCard h2 {
   font-size: 1rem;
   margin-bottom: 0.75rem;
   font-weight: 600;
 }
-.remindersCard ul {
-  padding-left: 1.25rem;
-  margin: 0;
-  list-style: disc;
+
+/* Reminders Form */
+.reminderForm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
 }
-.remindersCard ul li {
+.reminderForm input {
+  flex: 1 1 100px;
+  padding: 0.4rem;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
   font-size: 0.85rem;
+}
+.reminderForm button {
+  flex: 0 0 auto;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.2s;
+}
+.reminderForm button:hover {
+  background: var(--color-primary-hover);
+}
+
+/* Reminders List */
+.reminderList {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+.reminderList li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  background: #f7f7f7;
+  padding: 0.5rem;
   margin-bottom: 0.5rem;
-  color: var(--color-text-main);
+  border-radius: 4px;
+}
+.reminderList li strong {
+  margin-right: 0.5rem;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+.reminderList li button {
+  margin-left: 0.5rem;
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+.reminderList li button:hover {
+  color: var(--color-primary-hover);
+}
+/* Ensure long text wraps within reminder list items */
+.reminderList li,
+.reminderList li span,
+.reminderList li strong {
+  white-space: normal;
+  word-wrap: break-word;
 }
 
 /*--------------------------------------------
@@ -195,7 +255,7 @@
   background: var(--color-surface);
   border-radius: 8px;
   padding: 1rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 .tableHeader {
   display: flex;
@@ -251,39 +311,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-.bookingsTable th:nth-child(1),
-.bookingsTable td:nth-child(1) {
-  width: 12%;
-}
-.bookingsTable th:nth-child(2),
-.bookingsTable td:nth-child(2) {
-  width: 10%;
-}
-.bookingsTable th:nth-child(3),
-.bookingsTable td:nth-child(3) {
-  width: 10%;
-}
-.bookingsTable th:nth-child(4),
-.bookingsTable td:nth-child(4) {
-  width: 15%;
-}
-.bookingsTable th:nth-child(5),
-.bookingsTable td:nth-child(5) {
-  width: 15%;
-}
-.bookingsTable th:nth-child(6),
-.bookingsTable td:nth-child(6) {
-  width: 10%;
-}
-.bookingsTable th:nth-child(7),
-.bookingsTable td:nth-child(7) {
-  width: 10%;
-}
-.bookingsTable th:nth-child(8),
-.bookingsTable td:nth-child(8) {
-  width: 8%;
-  text-align: center;
 }
 .bookingsTable tbody tr:hover {
   background: #fafafa;
@@ -342,7 +369,7 @@
   border-radius: 12px;
   max-width: 480px;
   width: 90%;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
   text-align: left;
 }
 
@@ -438,10 +465,12 @@
   .rightColumn {
     width: 35%;
   }
-  .chartCard, .remindersCard {
+  .chartCard,
+  .remindersCard {
     padding: 1.25rem;
   }
-  .chartCard h2, .remindersCard h2 {
+  .chartCard h2,
+  .remindersCard h2 {
     font-size: 1.05rem;
   }
   .tableSection {
@@ -450,5 +479,16 @@
   .bookingsTable th,
   .bookingsTable td {
     font-size: 0.9rem;
+  }
+}
+
+/* Additional Responsive Styles for Reminders Section */
+@media (max-width: 768px) {
+  .rightColumn {
+    width: 100%;
+  }
+  .remindersCard {
+    width: 100%;
+    padding: 1rem 0.75rem;
   }
 }

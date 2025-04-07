@@ -1,6 +1,6 @@
 // server/controllers/remindersController.js
 
-const Business = require('../models/Business'); // or a separate Reminder model
+const Business = require('../models/Business');
 
 // GET /api/reminders
 exports.getReminders = async (req, res) => {
@@ -81,21 +81,30 @@ exports.deleteReminder = async (req, res) => {
   try {
     const businessId = req.business.id;
     const { reminderId } = req.params;
-
+    
+    console.log(`Attempting to delete reminder with ID: ${reminderId} for business: ${businessId}`);
+    
     const business = await Business.findById(businessId);
     if (!business) {
+      console.error('Business not found:', businessId);
       return res.status(404).json({ msg: 'Business not found' });
     }
 
-    // Use Mongoose subdocument removal
+    // Retrieve the subdocument using its ID
     const reminder = business.reminders.id(reminderId);
     if (!reminder) {
+      console.error(`Reminder with ID ${reminderId} not found for business ${businessId}`);
       return res.status(404).json({ msg: 'Reminder not found' });
     }
 
+    console.log('Found reminder:', reminder);
+
+    // Remove the subdocument and mark the field as modified
     reminder.remove();
+    business.markModified('reminders');
     await business.save();
 
+    console.log(`Reminder ${reminderId} deleted successfully for business ${businessId}`);
     res.json({ msg: 'Reminder deleted successfully', reminders: business.reminders });
   } catch (error) {
     console.error('Error deleting reminder:', error);
