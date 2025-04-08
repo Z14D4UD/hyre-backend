@@ -15,6 +15,8 @@ const AffiliateSchema = new mongoose.Schema({
   paidReferrals: { type: Number, default: 0 },       // Number of referrals that resulted in paid earnings
   unpaidEarnings: { type: Number, default: 0 }, 
   aboutMe: { type: String, default: '' },
+  phoneNumber: { type: String, default: '' },
+
   // Earnings pending payment
   totalEarnings: { type: Number, default: 0 },       // Total earnings
   avatarUrl: { type: String }                        // New field for profile picture URL

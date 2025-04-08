@@ -41,10 +41,7 @@ export default function SideMenuAffiliate({ isOpen, toggleMenu, closeMenu }) {
           <FaUser className={styles.icon} />
           <span>Profile</span>
         </li>
-        <li className={styles.menuItem} onClick={() => goTo('/account')}>
-          <FaUserCog className={styles.icon} />
-          <span>Account</span>
-        </li>
+
         {/* New Dashboard menu item */}
         <li className={styles.menuItem} onClick={() => goTo('/dashboard/affiliate')}>
           <FaChartLine className={styles.icon} />
