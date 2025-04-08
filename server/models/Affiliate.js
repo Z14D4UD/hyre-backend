@@ -1,3 +1,4 @@
+// server/models/Affiliate.js
 const mongoose = require('mongoose');
 
 const AffiliateSchema = new mongoose.Schema({
@@ -13,7 +14,8 @@ const AffiliateSchema = new mongoose.Schema({
   conversions: { type: Number, default: 0 },         // Conversions in the last 30 days
   paidReferrals: { type: Number, default: 0 },       // Number of referrals that resulted in paid earnings
   unpaidEarnings: { type: Number, default: 0 },      // Earnings pending payment
-  totalEarnings: { type: Number, default: 0 }        // Total earnings (could be a sum of earnings and unpaidEarnings, for example)
+  totalEarnings: { type: Number, default: 0 },       // Total earnings
+  avatarUrl: { type: String }                        // New field for profile picture URL
 }, { timestamps: true });
 
 module.exports = mongoose.model('Affiliate', AffiliateSchema);

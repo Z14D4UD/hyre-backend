@@ -22,7 +22,7 @@ exports.getAffiliateStats = async (req, res) => {
         unpaidEarnings: affiliate.unpaidEarnings || 0,
         totalEarnings: affiliate.totalEarnings || 0,
       },
-      affiliateCode: affiliate.affiliateCode,  // the unique code for referrals
+      affiliateCode: affiliate.affiliateCode, // the unique code for referrals
       recentActivity: [] // populate with real activity if available
     };
 
@@ -33,7 +33,7 @@ exports.getAffiliateStats = async (req, res) => {
   }
 };
 
-// New: Get Affiliate Profile – mirrors the customer profile GET endpoint
+// Get Affiliate Profile – mirrors the customer profile GET endpoint
 exports.getAffiliateProfile = async (req, res) => {
   try {
     const affiliate = await Affiliate.findById(req.affiliate.id);
@@ -47,18 +47,33 @@ exports.getAffiliateProfile = async (req, res) => {
   }
 };
 
-// New: Update Affiliate Profile – mirrors the customer profile update logic
-// (If you need to handle file uploads for an avatar, you can integrate multer or similar middleware here.)
+// Update Affiliate Profile – updated to handle file uploads for avatar
 exports.updateAffiliateProfile = async (req, res) => {
   try {
     // Extract fields from the request body that affiliates are allowed to update.
     const { name, email, location, aboutMe, phoneNumber } = req.body;
-    // You can expand this list as needed.
+
+    // Build the update object from request body data.
+    let updateData = {
+      name,
+      email,
+      location,
+      aboutMe,
+      phoneNumber,
+    };
+
+    // If a file (avatar) was uploaded, update avatarUrl.
+    if (req.file) {
+      // req.file.path contains the file path from your multer configuration.
+      updateData.avatarUrl = req.file.path;
+    }
+
     const updatedAffiliate = await Affiliate.findByIdAndUpdate(
       req.affiliate.id,
-      { name, email, location, aboutMe, phoneNumber },
+      updateData,
       { new: true }
     );
+    
     if (!updatedAffiliate) {
       return res.status(404).json({ msg: 'Affiliate not found' });
     }

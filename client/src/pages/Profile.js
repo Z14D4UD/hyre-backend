@@ -14,12 +14,12 @@ export default function Profile() {
   const token = localStorage.getItem('token') || '';
   const accountType = localStorage.getItem('accountType') || '';
   
-  // We allow access for either 'customer' or 'affiliate'
+  // Allow access for either 'customer' or 'affiliate'
   const isCustomer = token && accountType.toLowerCase() === 'customer';
   const isAffiliate = token && accountType.toLowerCase() === 'affiliate';
   const isLoggedIn = isCustomer || isAffiliate;
 
-  // If neither is an affiliate nor a customer, redirect to home
+  // Redirect if neither is a customer nor an affiliate
   useEffect(() => {
     if (!isLoggedIn) {
       alert('Please log in as a customer or affiliate to view your profile.');
@@ -44,7 +44,7 @@ export default function Profile() {
 
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
-  // Decide which endpoint to use based on accountType
+  // Choose endpoint based on account type
   const profileEndpoint = isCustomer
     ? `${backendUrl}/customer/me`
     : `${backendUrl}/affiliate/me`;
@@ -77,6 +77,7 @@ export default function Profile() {
   };
 
   const handleSaveProfile = () => {
+    // For both affiliates and customers, use FormData so that file uploads work
     const formData = new FormData();
     formData.append('name', editName);
     formData.append('location', editLocation);
@@ -84,11 +85,11 @@ export default function Profile() {
     formData.append('phoneNumber', editPhone);
     formData.append('email', editEmail);
 
+    // Always allow file upload regardless of account type
     if (avatarFile) {
       formData.append('avatar', avatarFile);
     }
 
-    // Use the same endpoint for PUT, adjusting logic on your backend if needed
     axios
       .put(profileEndpoint, formData, {
         headers: {
@@ -136,7 +137,7 @@ export default function Profile() {
         </button>
       </header>
 
-      {/* Side Menu: render the affiliate side menu if isAffiliate, else the customer side menu */}
+      {/* Side Menu: render affiliate side menu if affiliate, else customer side menu */}
       {isAffiliate ? (
         <SideMenuAffiliate
           isOpen={menuOpen}
@@ -264,8 +265,7 @@ export default function Profile() {
                 )}
               </li>
               <li>
-                <strong>Approved to drive:</strong>{' '}
-                {user.approvedToDrive ? 'Yes' : 'No'}
+                <strong>Approved to drive:</strong> {user.approvedToDrive ? 'Yes' : 'No'}
               </li>
             </ul>
           </div>
