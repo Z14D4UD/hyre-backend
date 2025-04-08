@@ -1,5 +1,4 @@
 // server/routes/carRoutes.js
-
 const express = require('express');
 const router = express.Router();
 const { uploadCar, getCars, searchCars, getCarById } = require('../controllers/carController');

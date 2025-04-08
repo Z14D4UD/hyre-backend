@@ -10,7 +10,7 @@ import AffiliateDashboard from './components/AffiliateDashboard';
 import CarUpload from './pages/CarUpload';
 import IdVerification from './components/IdVerification';
 import Payment from './components/Payment';
-import Search from './components/Search';
+import SearchResultsPage from './pages/SearchResultsPage';
 import CarDetails from './pages/CarDetails';
 import Chat from './components/Chat';
 import Profile from './pages/Profile';
@@ -51,7 +51,7 @@ function App() {
         <Route path="/upload-car" element={<CarUpload />} />
         <Route path="/verify-id" element={<IdVerification />} />
         <Route path="/payment" element={<Payment />} />
-        <Route path="/search" element={<Search />} />
+        <Route path="/search" element={<SearchResultsPage />} />
         <Route path="/car/:id" element={<CarDetails />} />
         <Route path="/chat" element={<Chat />} />
         <Route path="/insurance-legal" element={<div>Insurance & Legal Page</div>} />

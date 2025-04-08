@@ -5,7 +5,7 @@ import axios from 'axios';
 import SideMenuAffiliate from '../components/SideMenuAffiliate';
 import styles from '../styles/AffiliateDashboard.module.css';
 
-// (Optional) Chart.js can be registered and used if you wish to display charts
+// Chart.js imports (optional)
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -35,8 +35,8 @@ ChartJS.register(
 export default function AffiliateDashboard() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  
-  // Stats states
+
+  // States for stats
   const [last30Days, setLast30Days] = useState({});
   const [allTime, setAllTime] = useState({});
   const [affiliateCode, setAffiliateCode] = useState('');
@@ -51,8 +51,6 @@ export default function AffiliateDashboard() {
   const navigate = useNavigate();
   const token = (localStorage.getItem('token') || '').trim();
   const axiosConfig = { headers: { Authorization: `Bearer ${token}` } };
-
-  // Make sure your REACT_APP_BACKEND_URL includes the API prefix if necessary (e.g., "https://your-domain.com/api")
   const baseUrl = process.env.REACT_APP_BACKEND_URL;
 
   const toggleMenu = () => setMenuOpen(!menuOpen);
@@ -84,7 +82,7 @@ export default function AffiliateDashboard() {
     }
   }, [token, baseUrl, axiosConfig, navigate]);
 
-  // Handle withdrawal submission for affiliates
+  // Handle withdrawal submission
   const handleWithdrawalSubmit = async () => {
     const amount = parseFloat(withdrawalAmount);
     if (isNaN(amount) || amount <= 0) {
@@ -93,37 +91,20 @@ export default function AffiliateDashboard() {
     }
 
     if (withdrawalMethod === 'bank') {
-      // Redirect to Stripe Connect onboarding flow for bank withdrawals
       localStorage.setItem('pendingWithdrawalAmount', withdrawalAmount);
       navigate('/connect-bank');
       return;
     }
 
     try {
-      const payload = {
-        amount,
-        method: 'paypal',
-        details: { paypalEmail },
-      };
+      const payload = { amount, method: 'paypal', details: { paypalEmail } };
       await axios.post(`${baseUrl}/withdrawals`, payload, axiosConfig);
       alert('Withdrawal request submitted successfully!');
       setWithdrawalModalOpen(false);
     } catch (error) {
       console.error('Error submitting withdrawal:', error);
-      alert('Failed to submit withdrawal request.');
+      alert('Failed to submit withdrawal.');
     }
-  };
-
-  // (Optional) Chart Data Example (you can customize based on your data)
-  const earningsChartData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-    datasets: [{
-      label: 'Total Earnings ($)',
-      data: allTime.totalEarnings ? [allTime.totalEarnings] : [],
-      fill: false,
-      borderColor: '#4f3cc9',
-      tension: 0.1
-    }]
   };
 
   if (loading) {
@@ -153,9 +134,20 @@ export default function AffiliateDashboard() {
 
       {/* Main Content */}
       <div className={styles.mainContent}>
+
+        {/* Page Title */}
         <div className={styles.pageTitle}>
           <h1>Affiliate Dashboard</h1>
           <span>Welcome back, here’s your affiliate overview</span>
+        </div>
+
+        {/* Affiliate Code at Top */}
+        <div className={styles.affiliateCodeSection}>
+          <h2>Your Affiliate Code</h2>
+          <div className={styles.affiliateCodeBox}>
+            {affiliateCode || 'N/A'}
+          </div>
+          <p>Share this code with customers to earn referral rewards!</p>
         </div>
 
         {/* Last 30 Days Section */}
@@ -200,16 +192,7 @@ export default function AffiliateDashboard() {
           </div>
         </div>
 
-        {/* Affiliate Code Section */}
-        <div className={styles.affiliateCodeSection}>
-          <h2>Your Affiliate Code</h2>
-          <div className={styles.affiliateCodeBox}>
-            <span>{affiliateCode}</span>
-          </div>
-          <p>Share this code with customers to earn referral rewards!</p>
-        </div>
-
-        {/* (Optional) Recent Referral Activity Section */}
+        {/* Recent Referral Activity Section */}
         <div className={styles.recentActivity}>
           <h2>Recent Referral Activity</h2>
           {recentActivity.length === 0 ? (
@@ -239,7 +222,7 @@ export default function AffiliateDashboard() {
         </div>
 
         {/* Withdraw Funds Section */}
-        <div style={{ textAlign: 'center', margin: '1rem 0' }}>
+        <div style={{ textAlign: 'center', margin: '1.5rem 0' }}>
           <button
             className={styles.withdrawButton}
             onClick={() => setWithdrawalModalOpen(true)}
@@ -296,6 +279,7 @@ export default function AffiliateDashboard() {
             </div>
           </div>
         )}
+
       </div>
     </div>
   );

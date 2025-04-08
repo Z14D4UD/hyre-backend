@@ -5,32 +5,48 @@ const Business = require('../models/Business');
 
 // Upload a new car listing
 exports.uploadCar = async (req, res) => {
-  const { make, model, year, type, features, lat, lng, price_per_day } = req.body;
-  // Assuming the authenticated business info is attached to req.business
+  // Extract fields from req.body using updated field names.
+  const {
+    carMake,     // updated from "make"
+    model,
+    location,    // location as string (e.g., "London, UK")
+    latitude,
+    longitude,
+    pricePerDay, // updated field name
+    description, // optional
+    year,        // optional
+    mileage,     // optional
+    features     // expects a comma-separated string
+  } = req.body;
+
+  // The authenticated business's ID should be in req.business.
   const businessId = req.business.id;
-  // Determine the image path if an image was uploaded
-  const imagePath = req.file ? req.file.path : '';
   
+  // Determine the image path; if a file was uploaded, use its path (normalize path separators if needed)
+  const imageUrl = req.file ? req.file.path.replace(/\\/g, '/') : '';
+
   try {
+    // Create a new Car document
     const car = new Car({
       business: businessId,
-      make,
+      carMake,
       model,
+      location,
+      latitude: parseFloat(latitude),
+      longitude: parseFloat(longitude),
+      pricePerDay,
+      imageUrl,
+      description,
       year,
-      image: imagePath,
-      type,
-      features: features ? features.split(',') : [],
-      location: { lat: parseFloat(lat), lng: parseFloat(lng) },
-      availableFrom: req.body.availableFrom,
-      availableTo: req.body.availableTo,
-      price_per_day
+      mileage,
+      features: features ? features.split(',').map(s => s.trim()) : []
     });
-    
+
     await car.save();
-    
-    // Optionally add points to the business for uploading a car
+
+    // Optionally add points to the business (assuming your Business model supports a "points" field)
     await Business.findByIdAndUpdate(businessId, { $inc: { points: 10 } });
-    
+
     res.json({ car });
   } catch (error) {
     console.error('Error uploading car:', error);
@@ -41,6 +57,7 @@ exports.uploadCar = async (req, res) => {
 // Retrieve all cars
 exports.getCars = async (req, res) => {
   try {
+    // Populate business details if desired (only name and email)
     const cars = await Car.find({}).populate('business', 'name email');
     res.json(cars);
   } catch (error) {
@@ -52,27 +69,27 @@ exports.getCars = async (req, res) => {
 // Search for cars based on query parameters
 exports.searchCars = async (req, res) => {
   try {
-    const { type, features, lat, lng, radius } = req.query;
-    let query = {};
-    
-    if (type) {
-      query.type = type;
+    // Expect query parameters:
+    //  - query: search term for location (or part of the address)
+    //  - make: car make filter (for carMake field)
+    //  - Optionally: lat, lng, radius for geo-based searches (if you implement that)
+    const { query, make, lat, lng, radius } = req.query;
+    let filter = {};
+
+    if (query) {
+      // Search case-insensitively in the "location" field (or address if you prefer)
+      filter.location = { $regex: query, $options: 'i' };
     }
-    if (features) {
-      // Split features by comma and ensure all are present
-      const featureArray = features.split(',');
-      query.features = { $all: featureArray };
+    if (make) {
+      filter.carMake = { $regex: make, $options: 'i' };
     }
     if (lat && lng && radius) {
-      query.location = {
-        $near: {
-          $geometry: { type: 'Point', coordinates: [parseFloat(lng), parseFloat(lat)] },
-          $maxDistance: parseFloat(radius)
-        }
-      };
+      // For a geo-based search, you would need to store your location in GeoJSON format and create a 2dsphere index.
+      // For this example, we assume filtering by text is sufficient.
+      // Alternatively, you can add additional conditions here.
     }
     
-    const cars = await Car.find(query).populate('business', 'name email');
+    const cars = await Car.find(filter).populate('business', 'name email');
     res.json(cars);
   } catch (error) {
     console.error('Error searching cars:', error);

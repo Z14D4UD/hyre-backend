@@ -17,12 +17,11 @@ export default function LocationAutocomplete({ location, setLocation }) {
   });
   console.log("Google Maps API Key:", process.env.REACT_APP_GOOGLE_MAPS_API_KEY);
 
-
   useEffect(() => {
     if (isLoaded && !autocomplete && inputRef.current) {
       const auto = new window.google.maps.places.Autocomplete(inputRef.current, {
-        types: ['(cities)'],
-        componentRestrictions: { country: 'ae' },
+        // Removed types property to allow for results beyond cities.
+        // componentRestrictions: { country: 'ae' } // Optionally remove or keep if needed.
       });
       auto.addListener('place_changed', () => {
         const place = auto.getPlace();
