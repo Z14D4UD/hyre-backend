@@ -1,53 +1,85 @@
 // client/src/pages/SearchResultsPage.js
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { GoogleMap, Marker, useJsApiLoader } from '@react-google-maps/api';
 
-// Import side menus (adjust based on your project)
+// Import side menus
 import SideMenu from '../components/SideMenu';
 import SideMenuCustomer from '../components/SideMenuCustomer';
 import SideMenuBusiness from '../components/SideMenuBusiness';
 import SideMenuAffiliate from '../components/SideMenuAffiliate';
 
 import styles from '../styles/SearchResultsPage.module.css';
-import heroImage from '../assets/lambo.jpg'; // Use a relevant image if desired
+import heroImage from '../assets/lambo.jpg';
 
-// Set the container style for Google Map
 const containerStyle = {
   width: '100%',
   height: '300px',
 };
 
+// Geocode function (if needed for fallback geocoding)
+async function geocodeAddress(address) {
+  if (!window.google) return null;
+  const geocoder = new window.google.maps.Geocoder();
+  return new Promise((resolve, reject) => {
+    geocoder.geocode({ address }, (results, status) => {
+      if (status === 'OK' && results[0]) {
+        const lat = results[0].geometry.location.lat();
+        const lng = results[0].geometry.location.lng();
+        resolve({ lat, lng });
+      } else {
+        reject(status);
+      }
+    });
+  });
+}
+
 export default function SearchResultsPage() {
   const navigate = useNavigate();
-  const token = localStorage.getItem('token') || '';
-  const accountType = localStorage.getItem('accountType') || '';
+  const [searchParams] = useSearchParams();
+  
+  // Get search parameters from the URL
+  const initialLocation = searchParams.get('location') || '';
+  const latParam = searchParams.get('lat');
+  const lngParam = searchParams.get('lng');
 
-  // Determine which side menu to use
-  const sideMenuComponent = token 
-    ? (accountType.toLowerCase() === 'customer' ? <SideMenuCustomer /> :
-       accountType.toLowerCase() === 'business' ? <SideMenuBusiness /> :
-       accountType.toLowerCase() === 'affiliate' ? <SideMenuAffiliate /> : <SideMenu />)
+  // Set initial state using the query parameters
+  const [searchQuery, setSearchQuery] = useState(initialLocation);
+  const [carMakeFilter, setCarMakeFilter] = useState('');
+  const [listings, setListings] = useState([]);
+  const [mapCenter, setMapCenter] = useState(
+    latParam && lngParam
+      ? { lat: parseFloat(latParam), lng: parseFloat(lngParam) }
+      : { lat: 48.8566, lng: 2.3522 } // Default to Paris if no coordinates provided
+  );
+  const [loading, setLoading] = useState(false);
+
+  // Determine side menu based on user login
+  const token = localStorage.getItem('token') || '';
+  const accountType = (localStorage.getItem('accountType') || '').toLowerCase();
+  const sideMenuComponent = token
+    ? accountType === 'customer'
+      ? <SideMenuCustomer />
+      : accountType === 'business'
+      ? <SideMenuBusiness />
+      : accountType === 'affiliate'
+      ? <SideMenuAffiliate />
+      : <SideMenu />
     : <SideMenu />;
 
-  // Backend URL from environment (e.g. "https://hyre-backend.onrender.com/api")
+  // Backend URL from env variables (assumes /api at the end)
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
   const staticUrl = backendUrl.replace('/api', ''); // Remove '/api' for static assets
 
-  // States for search query, filters, and listings
-  const [searchQuery, setSearchQuery] = useState('');
-  const [carMakeFilter, setCarMakeFilter] = useState('');
-  const [listings, setListings] = useState([]);
-  const [loading, setLoading] = useState(false);
-
-  // Load Google Maps with Places library
+  // Load Google Maps API
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
     libraries: ['places'],
   });
+  if (loadError) return <div>Error loading Google Maps</div>;
 
-  // Fetch listings from backend based on filters
+  // Fetch matching listings from backend based on search query and filter
   const fetchListings = async (query, make) => {
     setLoading(true);
     try {
@@ -63,31 +95,41 @@ export default function SearchResultsPage() {
     }
   };
 
-  // When user clicks Search button, trigger fetch
-  const handleSearch = () => {
+  // If initialLocation is provided but lat/lng are not in query params,
+  // attempt to geocode and update the map center.
+  useEffect(() => {
+    if (initialLocation && (!latParam || !lngParam) && isLoaded && window.google) {
+      geocodeAddress(initialLocation)
+        .then((coords) => {
+          setMapCenter(coords);
+        })
+        .catch((err) => console.error('Geocode error:', err));
+    }
+    // Always fetch listings on mount or if initialLocation changes:
+    fetchListings(initialLocation, carMakeFilter);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialLocation, isLoaded]);
+
+  // Manual search via search bar (if user changes filters)
+  const handleSearch = async () => {
+    // Optionally, geocode the searchQuery again if needed:
+    if (searchQuery && isLoaded && window.google) {
+      try {
+        const coords = await geocodeAddress(searchQuery);
+        setMapCenter(coords);
+      } catch (err) {
+        console.error('Geocode error:', err);
+      }
+    }
     fetchListings(searchQuery, carMakeFilter);
   };
 
-  // Set default map center based on first listing or fallback
-  const mapCenter = listings.length > 0 
-    ? { lat: listings[0].latitude, lng: listings[0].longitude }
-    : { lat: 48.8566, lng: 2.3522 }; // Example: Paris coordinates
-
-  if (loadError) return <div>Error loading Google Maps</div>;
-
   return (
     <div className={styles.container}>
-      {/* Inline Header (matching the AboutHyre style) */}
+      {/* Header (inline, matching AboutHyre style) */}
       <header className={styles.header}>
-        <div className={styles.logo} onClick={() => navigate('/')}>
-          Hyre
-        </div>
-        <button className={styles.menuIcon} onClick={() => {
-          // Toggle side menu; if using inline state here or use a separate toggle function
-          // For simplicity, assume side menu is always visible in desktop and togglable in mobile.
-          // You can implement toggleMenu similar to your AboutHyre.js.
-          // For now, we'll redirect to a side menu component if needed.
-        }}>
+        <div className={styles.logo} onClick={() => navigate('/')}>Hyre</div>
+        <button className={styles.menuIcon} onClick={() => { /* Implement mobile menu toggle if needed */ }}>
           ☰
         </button>
       </header>
@@ -99,7 +141,7 @@ export default function SearchResultsPage() {
 
       {/* Main Content */}
       <div className={styles.mainContent}>
-        {/* Hero/Search Section */}
+        {/* Hero Section */}
         <section
           className={styles.heroSection}
           style={{
@@ -109,13 +151,14 @@ export default function SearchResultsPage() {
             position: 'relative',
           }}
         >
-          {/* Optional overlay – use CSS if needed */}
           <div className={styles.heroOverlay}></div>
           <div className={styles.heroText}>
             <h1>Search Cars</h1>
             <p>Find the perfect car near you</p>
           </div>
         </section>
+
+        {/* Search & Filter Bar */}
         <div className={styles.searchBar}>
           <input
             type="text"
@@ -135,7 +178,6 @@ export default function SearchResultsPage() {
             <option value="Ford">Ford</option>
             <option value="BMW">BMW</option>
             <option value="Audi">Audi</option>
-            {/* Add more makes as needed */}
           </select>
           <button onClick={handleSearch} className={styles.searchButton}>
             Search
@@ -167,7 +209,7 @@ export default function SearchResultsPage() {
           {loading ? (
             <p>Loading listings...</p>
           ) : listings.length === 0 ? (
-            <p>No listings found.</p>
+            <p>No listings found for "{searchQuery}".</p>
           ) : (
             <div className={styles.resultsGrid}>
               {listings.map((listing) => (

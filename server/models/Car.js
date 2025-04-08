@@ -2,11 +2,15 @@
 const mongoose = require('mongoose');
 
 const CarSchema = new mongoose.Schema({
-  business: { type: mongoose.Schema.Types.ObjectId, ref: 'Business', required: true },
+  business: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Business', 
+    required: true 
+  },
   carMake: { type: String, required: true },
   model: { type: String, required: true },
   location: { type: String, required: true },
-  address: { type: String }, // optional for full address if needed
+  address: { type: String }, // optional for a full address
   latitude: { type: Number, required: true },
   longitude: { type: Number, required: true },
   pricePerDay: { type: Number, required: true },

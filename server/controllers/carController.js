@@ -7,26 +7,26 @@ const Business = require('../models/Business');
 exports.uploadCar = async (req, res) => {
   // Extract fields from req.body using updated field names.
   const {
-    carMake,     // updated from "make"
+    carMake,
     model,
-    location,    // location as string (e.g., "London, UK")
+    location,
     latitude,
     longitude,
-    pricePerDay, // updated field name
-    description, // optional
-    year,        // optional
-    mileage,     // optional
-    features     // expects a comma-separated string
+    pricePerDay,
+    description,
+    year,
+    mileage,
+    features  // expects a comma-separated string
   } = req.body;
 
-  // The authenticated business's ID should be in req.business.
+  // Get the authenticated business's ID from req.business
   const businessId = req.business.id;
   
-  // Determine the image path; if a file was uploaded, use its path (normalize path separators if needed)
+  // Determine the image URL; if a file was uploaded, use its path and normalize it.
   const imageUrl = req.file ? req.file.path.replace(/\\/g, '/') : '';
 
   try {
-    // Create a new Car document
+    // Create a new Car document with the provided fields.
     const car = new Car({
       business: businessId,
       carMake,
@@ -44,7 +44,7 @@ exports.uploadCar = async (req, res) => {
 
     await car.save();
 
-    // Optionally add points to the business (assuming your Business model supports a "points" field)
+    // Optionally add points to the business (if your Business model supports a "points" field)
     await Business.findByIdAndUpdate(businessId, { $inc: { points: 10 } });
 
     res.json({ car });
@@ -57,7 +57,6 @@ exports.uploadCar = async (req, res) => {
 // Retrieve all cars
 exports.getCars = async (req, res) => {
   try {
-    // Populate business details if desired (only name and email)
     const cars = await Car.find({}).populate('business', 'name email');
     res.json(cars);
   } catch (error) {
@@ -69,26 +68,33 @@ exports.getCars = async (req, res) => {
 // Search for cars based on query parameters
 exports.searchCars = async (req, res) => {
   try {
-    // Expect query parameters:
-    //  - query: search term for location (or part of the address)
-    //  - make: car make filter (for carMake field)
-    //  - Optionally: lat, lng, radius for geo-based searches (if you implement that)
+    // Expect query parameters: query (for location search), make, and optionally lat, lng, radius (for geo-based bounding box search)
     const { query, make, lat, lng, radius } = req.query;
     let filter = {};
 
     if (query) {
-      // Search case-insensitively in the "location" field (or address if you prefer)
+      // A case-insensitive regex search in the "location" field
       filter.location = { $regex: query, $options: 'i' };
     }
+
     if (make) {
+      // A regex filter on carMake
       filter.carMake = { $regex: make, $options: 'i' };
     }
+
+    // If lat, lng, and radius are provided, build a rudimentary bounding box filter.
     if (lat && lng && radius) {
-      // For a geo-based search, you would need to store your location in GeoJSON format and create a 2dsphere index.
-      // For this example, we assume filtering by text is sufficient.
-      // Alternatively, you can add additional conditions here.
+      // Note: This is a simple approximation. For precise geo-search,
+      // consider storing a GeoJSON point and creating a 2dsphere index.
+      const latNum = parseFloat(lat);
+      const lngNum = parseFloat(lng);
+      const rad = parseFloat(radius); // Use an approximate value in degrees or compute conversion from meters
+
+      // Here we compute a naive bounding box
+      filter.latitude = { $gte: latNum - rad, $lte: latNum + rad };
+      filter.longitude = { $gte: lngNum - rad, $lte: lngNum + rad };
     }
-    
+
     const cars = await Car.find(filter).populate('business', 'name email');
     res.json(cars);
   } catch (error) {
