@@ -1,7 +1,7 @@
 // server/services/payoutService.js
 
 const paypal = require('@paypal/payouts-sdk');
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY); // Set your Stripe secret key in env
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY); // Stripe secret key from env
 
 // --- PayPal Payouts Integration ---
 
@@ -9,8 +9,18 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY); // Set your Str
 function getPayPalClient() {
   const clientId = process.env.PAYPAL_CLIENT_ID;
   const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
+  const mode = process.env.PAYPAL_MODE;
+
+  // Debug logging: confirm that credentials exist (do NOT log the actual secret in production)
+  if (!clientId || !clientSecret || !mode) {
+    console.error('PayPal environment variables are missing. Please set PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET, and PAYPAL_MODE in your environment.');
+    throw new Error('Missing PayPal environment variables');
+  } else {
+    console.log(`PayPal environment: ${mode} mode (client ID is set)`);
+  }
+
   let environment;
-  if (process.env.PAYPAL_MODE === 'live') {
+  if (mode === 'live') {
     environment = new paypal.core.LiveEnvironment(clientId, clientSecret);
   } else {
     environment = new paypal.core.SandboxEnvironment(clientId, clientSecret);
@@ -29,6 +39,7 @@ async function createPayPalPayout(amount, currency, recipientEmail) {
   const request = new paypal.payouts.PayoutsPostRequest();
   request.requestBody({
     sender_batch_header: {
+      // Using a random string as batch id; consider more robust generation in production.
       sender_batch_id: Math.random().toString(36).substring(9),
       email_subject: "You have a payout!",
       email_message: "You have received a payout! Thanks for using our service!"
@@ -49,7 +60,9 @@ async function createPayPalPayout(amount, currency, recipientEmail) {
   
   const client = getPayPalClient();
   try {
+    console.log('Executing PayPal payout request...');
     const response = await client.execute(request);
+    console.log('PayPal payout response received.');
     return response.result;
   } catch (err) {
     console.error("Error creating PayPal payout", err);
