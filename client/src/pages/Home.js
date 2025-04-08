@@ -7,7 +7,8 @@ import { useTranslation } from 'react-i18next';
 // Import all menus
 import SideMenu from '../components/SideMenu';
 import SideMenuCustomer from '../components/SideMenuCustomer';
-import SideMenuBusiness from '../components/SideMenuBusiness'; // import the business menu
+import SideMenuBusiness from '../components/SideMenuBusiness';
+import SideMenuAffiliate from '../components/SideMenuAffiliate'; // new import for affiliate
 
 import FeaturedBusinesses from '../components/FeaturedBusinesses';
 import LocationAutocomplete from '../components/LocationAutoComplete';
@@ -29,9 +30,10 @@ export default function Home() {
   const token = (localStorage.getItem('token') || '').trim();
   const accountType = (localStorage.getItem('accountType') || '').toLowerCase();
 
-  // Determine if a customer or business is logged in
+  // Determine if a customer, business, or affiliate is logged in
   const isCustomerLoggedIn = token !== '' && accountType === 'customer';
   const isBusinessLoggedIn = token !== '' && accountType === 'business';
+  const isAffiliateLoggedIn = token !== '' && accountType === 'affiliate';
 
   // Toggle menu open/closed
   const toggleMenu = () => setMenuOpen(!menuOpen);
@@ -43,14 +45,18 @@ export default function Home() {
   };
 
   const handleListYourCar = () => {
-    if (token) {
+    if (isBusinessLoggedIn) {
+      // Logged in as a business -> Go to upload-car
       navigate('/upload-car');
+    } else if (token) {
+      // Logged in, but as a customer or affiliate
+      alert('You must be logged in as a business to list your car.');
     } else {
+      // Not logged in at all
       alert('Please log in to list your car.');
       navigate('/login');
     }
   };
-
 
   return (
     <div className={styles.container}>
@@ -72,6 +78,12 @@ export default function Home() {
         />
       ) : isCustomerLoggedIn ? (
         <SideMenuCustomer
+          isOpen={menuOpen}
+          toggleMenu={toggleMenu}
+          closeMenu={closeMenu}
+        />
+      ) : isAffiliateLoggedIn ? (
+        <SideMenuAffiliate
           isOpen={menuOpen}
           toggleMenu={toggleMenu}
           closeMenu={closeMenu}

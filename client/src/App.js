@@ -29,6 +29,10 @@ import BusinessBookings from './pages/BusinessBookings';
 import BusinessMessagesPage from './pages/BusinessMessagesPage';
 import ConnectBank from './pages/ConnectBank';
 
+
+
+
+
 function App() {
   return (
     <div>

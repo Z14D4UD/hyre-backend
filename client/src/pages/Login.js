@@ -35,11 +35,8 @@ export default function Login() {
 
       console.log('Server returned accountType:', accountType);
 
-      // Redirect customers and businesses to the Home page
-      if (
-        accountType?.toLowerCase() === 'customer' ||
-        accountType?.toLowerCase() === 'business'
-      ) {
+      // For customers, businesses, and affiliates, navigate to the home page.
+      if (token && accountType) {
         navigate('/');
         return;
       }

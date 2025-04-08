@@ -61,7 +61,7 @@ app.use('/api/customer', customerRoutes);
 app.use('/api/cars', carRoutes);
 app.use('/api/business', businessRoutes);
 app.use('/api/payments', paymentRoutes);
-app.use('/api/affiliates', affiliateRoutes);
+app.use('/api/affiliate', affiliateRoutes);
 app.use('/api/account', accountRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api', reviewRoutes);

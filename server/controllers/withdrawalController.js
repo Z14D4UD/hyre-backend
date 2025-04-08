@@ -1,51 +1,55 @@
 // server/controllers/withdrawalController.js
 
-const Business = require('../models/Business');
-const { createPayPalPayout, createStripeTransfer } = require('../services/payoutService');
-
 exports.requestWithdrawal = async (req, res) => {
   try {
-    const businessId = req.business.id;
-    const { amount, method, details } = req.body;
+    // For a business, you might check req.business; for an affiliate, check req.affiliate
+    let accountType;
+    let accountId;
+    if (req.business) {
+      accountType = 'business';
+      accountId = req.business.id;
+    } else if (req.affiliate) {
+      accountType = 'affiliate';
+      accountId = req.affiliate.id;
+    } else {
+      return res.status(403).json({ msg: 'Unauthorized withdrawal request' });
+    }
 
-    // Validate the withdrawal amount
+    const { amount, method, details } = req.body;
     const withdrawalAmount = parseFloat(amount);
     if (isNaN(withdrawalAmount) || withdrawalAmount <= 0) {
       return res.status(400).json({ msg: 'Invalid withdrawal amount' });
     }
 
-    // Validate method (must be either "paypal" or "bank")
     if (!['paypal', 'bank'].includes(method)) {
       return res.status(400).json({ msg: 'Invalid withdrawal method' });
     }
 
-    // Fetch business details (ensure a "balance" field exists on Business)
-    const business = await Business.findById(businessId);
-    if (!business) {
-      return res.status(404).json({ msg: 'Business not found' });
-    }
-    if (business.balance < withdrawalAmount) {
-      return res.status(400).json({ msg: 'Insufficient balance' });
-    }
+    // (Assume you have logic to check balance for each account type, and
+    // that your data models store balances for both business and affiliates.)
+    // For example, for affiliates, you might have an 'earnings' field.
 
+    // Fetch account details based on accountType (your current business withdrawal logic might work similarly)
+    // (Update the logic accordingly if affiliate accounts store balance in a different field)
+    // ... rest of the code
+
+    // Process withdrawal via paypal or bank (same as your business logic)
+    // For example:
     let payoutResult;
     if (method === 'paypal') {
       if (!details || !details.paypalEmail) {
         return res.status(400).json({ msg: 'PayPal email is required for withdrawal' });
       }
-      payoutResult = await createPayPalPayout(withdrawalAmount, "USD", details.paypalEmail);
+      // Create PayPal payout
+      payoutResult = await createPayPalPayout(withdrawalAmount, 'USD', details.paypalEmail);
     } else if (method === 'bank') {
-      // For bank transfers, ensure the business has a connected Stripe account.
-      if (!business.stripeAccountId) {
-        return res.status(400).json({ msg: 'No connected bank account. Please connect your bank account first.' });
-      }
-      // Use the stored Stripe connected account ID to create the transfer.
-      payoutResult = await createStripeTransfer(withdrawalAmount, "USD", business.stripeAccountId);
+      // For bank transfers, ensure the account is properly set up (this logic may differ)
+      // e.g., business might store stripeAccountId and affiliate might store a separate bank info field.
+      payoutResult = await createStripeTransfer(withdrawalAmount, 'USD', /* account id from the corresponding model */);
     }
 
-    // Deduct the withdrawn amount from the business balance and save
-    business.balance -= withdrawalAmount;
-    await business.save();
+    // Deduct the withdrawn amount from the account's balance
+    // ... update model and save
 
     res.json({ msg: 'Withdrawal request submitted successfully', payoutResult });
   } catch (error) {

@@ -1,8 +1,11 @@
+// server/routes/affiliateRoutes.js
+
 const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middlewares/authMiddleware');
-const { getAffiliateData } = require('../controllers/affiliateController');
+const { getAffiliateStats } = require('../controllers/affiliateController');
 
-router.get('/me', authMiddleware, getAffiliateData);
+// GET /api/affiliate/stats
+router.get('/stats', authMiddleware, getAffiliateStats);
 
 module.exports = router;
