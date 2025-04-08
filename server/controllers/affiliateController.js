@@ -50,7 +50,6 @@ exports.getAffiliateProfile = async (req, res) => {
 // Update Affiliate Profile – now handles file uploads for avatar
 exports.updateAffiliateProfile = async (req, res) => {
   try {
-    // Debug logging: check what body and file data you receive
     console.log('Received update affiliate profile request:');
     console.log('req.body:', req.body);
     console.log('req.file:', req.file);
@@ -69,9 +68,8 @@ exports.updateAffiliateProfile = async (req, res) => {
 
     // If a file (avatar) was uploaded, update avatarUrl.
     if (req.file) {
-      // req.file.path is set by your multer configuration.
-      updateData.avatarUrl = req.file.path;
-      console.log('Updating avatarUrl with file path:', req.file.path);
+      updateData.avatarUrl = req.file.path.replace(/\\/g, '/');
+      console.log('Updating avatarUrl with file path:', updateData.avatarUrl);
     }
 
     const updatedAffiliate = await Affiliate.findByIdAndUpdate(
@@ -83,6 +81,7 @@ exports.updateAffiliateProfile = async (req, res) => {
     if (!updatedAffiliate) {
       return res.status(404).json({ msg: 'Affiliate not found' });
     }
+    console.log('Updated Affiliate:', updatedAffiliate);
     res.json(updatedAffiliate);
   } catch (error) {
     console.error('Error updating affiliate profile:', error);

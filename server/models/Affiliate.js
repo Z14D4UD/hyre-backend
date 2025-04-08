@@ -13,7 +13,9 @@ const AffiliateSchema = new mongoose.Schema({
   recentVisits: { type: Number, default: 0 },        // Visits in the last 30 days
   conversions: { type: Number, default: 0 },         // Conversions in the last 30 days
   paidReferrals: { type: Number, default: 0 },       // Number of referrals that resulted in paid earnings
-  unpaidEarnings: { type: Number, default: 0 },      // Earnings pending payment
+  unpaidEarnings: { type: Number, default: 0 }, 
+  aboutMe: { type: String, default: '' },
+  // Earnings pending payment
   totalEarnings: { type: Number, default: 0 },       // Total earnings
   avatarUrl: { type: String }                        // New field for profile picture URL
 }, { timestamps: true });

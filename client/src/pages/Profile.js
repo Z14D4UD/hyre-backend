@@ -19,7 +19,7 @@ export default function Profile() {
   const isAffiliate = token && accountType.toLowerCase() === 'affiliate';
   const isLoggedIn = isCustomer || isAffiliate;
 
-  // Redirect if neither is a customer nor an affiliate
+  // Redirect if not logged in as customer or affiliate
   useEffect(() => {
     if (!isLoggedIn) {
       alert('Please log in as a customer or affiliate to view your profile.');
@@ -42,7 +42,11 @@ export default function Profile() {
   const [editEmail, setEditEmail] = useState('');
   const [avatarFile, setAvatarFile] = useState(null);
 
+  // Make sure your REACT_APP_BACKEND_URL is set to your server's base URL with /api if used for API calls.
+  // For static content, we'll remove /api from the URL.
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
+  // Assume the backend API URL might include /api, so for static files remove it:
+  const staticUrl = backendUrl.replace('/api', '');
 
   // Choose endpoint based on account type
   const profileEndpoint = isCustomer
@@ -72,12 +76,13 @@ export default function Profile() {
 
   const handleAvatarChange = (e) => {
     if (e.target.files && e.target.files[0]) {
+      console.log('File selected:', e.target.files[0]);
       setAvatarFile(e.target.files[0]);
     }
   };
 
   const handleSaveProfile = () => {
-    // For both affiliates and customers, use FormData so that file uploads work
+    // Build a FormData object so that file uploads work correctly.
     const formData = new FormData();
     formData.append('name', editName);
     formData.append('location', editLocation);
@@ -85,19 +90,25 @@ export default function Profile() {
     formData.append('phoneNumber', editPhone);
     formData.append('email', editEmail);
 
-    // Always allow file upload regardless of account type
+    // Ensure the file input is appended with the key 'avatar'
     if (avatarFile) {
       formData.append('avatar', avatarFile);
     }
 
+    // Log FormData entries for debugging (Note: logging file objects may not show full details)
+    for (let pair of formData.entries()) {
+      console.log(`${pair[0]}:`, pair[1]);
+    }
+
+    // Let Axios set the content-type header automatically.
     axios
       .put(profileEndpoint, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
         },
       })
       .then((res) => {
+        console.log('Profile updated:', res.data);
         setUser(res.data);
         setIsEditing(false);
         alert('Profile updated successfully.');
@@ -157,7 +168,7 @@ export default function Profile() {
           <div className={styles.avatarWrapper}>
             {user.avatarUrl ? (
               <img
-                src={`${backendUrl}/${user.avatarUrl}`}
+                src={`${staticUrl}/${user.avatarUrl}`}
                 alt="User avatar"
                 className={styles.avatar}
               />
@@ -193,7 +204,7 @@ export default function Profile() {
                   onChange={(e) => setEditLocation(e.target.value)}
                 />
                 <label>Change Avatar</label>
-                <input type="file" accept="image/*" onChange={handleAvatarChange} />
+                <input type="file" name="avatar" accept="image/*" onChange={handleAvatarChange} />
               </div>
             )}
           </div>
