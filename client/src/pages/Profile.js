@@ -1,22 +1,31 @@
+// client/src/pages/Profile.js
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+
+// Import both side menus
 import SideMenuCustomer from '../components/SideMenuCustomer';
+import SideMenuAffiliate from '../components/SideMenuAffiliate';
+
 import styles from '../styles/Profile.module.css';
 
 export default function Profile() {
   const navigate = useNavigate();
-  const token = localStorage.getItem('token');
-  const accountType = localStorage.getItem('accountType');
-  const isCustomer = token && accountType === 'customer';
+  const token = localStorage.getItem('token') || '';
+  const accountType = localStorage.getItem('accountType') || '';
+  
+  // We allow access for either 'customer' or 'affiliate'
+  const isCustomer = token && accountType.toLowerCase() === 'customer';
+  const isAffiliate = token && accountType.toLowerCase() === 'affiliate';
+  const isLoggedIn = isCustomer || isAffiliate;
 
-  // Redirect if not logged in as customer
+  // If neither is an affiliate nor a customer, redirect to home
   useEffect(() => {
-    if (!isCustomer) {
-      alert('Please log in as a customer to view your profile.');
+    if (!isLoggedIn) {
+      alert('Please log in as a customer or affiliate to view your profile.');
       navigate('/');
     }
-  }, [isCustomer, navigate]);
+  }, [isLoggedIn, navigate]);
 
   const [menuOpen, setMenuOpen] = useState(false);
   const toggleMenu = () => setMenuOpen(!menuOpen);
@@ -34,27 +43,32 @@ export default function Profile() {
   const [avatarFile, setAvatarFile] = useState(null);
 
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
-  console.log('Backend URL:', backendUrl);
+
+  // Decide which endpoint to use based on accountType
+  const profileEndpoint = isCustomer
+    ? `${backendUrl}/customer/me`
+    : `${backendUrl}/affiliate/me`;
 
   useEffect(() => {
-    axios
-      .get(`${backendUrl}/customer/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => {
-        console.log('Fetched profile:', res.data);
-        setUser(res.data);
-        setEditName(res.data.name || '');
-        setEditLocation(res.data.location || '');
-        setEditAboutMe(res.data.aboutMe || '');
-        setEditPhone(res.data.phoneNumber || '');
-        setEditEmail(res.data.email || '');
-      })
-      .catch((err) => {
-        console.error('Error fetching profile:', err);
-        alert('Failed to load profile data.');
-      });
-  }, [backendUrl, token]);
+    if (isLoggedIn) {
+      axios
+        .get(profileEndpoint, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then((res) => {
+          setUser(res.data);
+          setEditName(res.data.name || '');
+          setEditLocation(res.data.location || '');
+          setEditAboutMe(res.data.aboutMe || '');
+          setEditPhone(res.data.phoneNumber || '');
+          setEditEmail(res.data.email || '');
+        })
+        .catch((err) => {
+          console.error('Error fetching profile:', err);
+          alert('Failed to load profile data.');
+        });
+    }
+  }, [isLoggedIn, profileEndpoint, token]);
 
   const handleAvatarChange = (e) => {
     if (e.target.files && e.target.files[0]) {
@@ -74,15 +88,15 @@ export default function Profile() {
       formData.append('avatar', avatarFile);
     }
 
+    // Use the same endpoint for PUT, adjusting logic on your backend if needed
     axios
-      .put(`${backendUrl}/customer/me`, formData, {
+      .put(profileEndpoint, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data',
         },
       })
       .then((res) => {
-        console.log('Profile updated:', res.data);
         setUser(res.data);
         setIsEditing(false);
         alert('Profile updated successfully.');
@@ -112,6 +126,7 @@ export default function Profile() {
 
   return (
     <div className={styles.profileContainer}>
+      {/* Header */}
       <header className={styles.header}>
         <div className={styles.logo} onClick={() => navigate('/')}>
           Hyre
@@ -121,7 +136,14 @@ export default function Profile() {
         </button>
       </header>
 
-      {isCustomer && (
+      {/* Side Menu: render the affiliate side menu if isAffiliate, else the customer side menu */}
+      {isAffiliate ? (
+        <SideMenuAffiliate
+          isOpen={menuOpen}
+          toggleMenu={toggleMenu}
+          closeMenu={closeMenu}
+        />
+      ) : (
         <SideMenuCustomer
           isOpen={menuOpen}
           toggleMenu={toggleMenu}
@@ -134,7 +156,7 @@ export default function Profile() {
           <div className={styles.avatarWrapper}>
             {user.avatarUrl ? (
               <img
-                src={`https://hyre-backend.onrender.com/${user.avatarUrl}`}
+                src={`${backendUrl}/${user.avatarUrl}`}
                 alt="User avatar"
                 className={styles.avatar}
               />
@@ -242,13 +264,14 @@ export default function Profile() {
                 )}
               </li>
               <li>
-                <strong>Approved to drive:</strong> {user.approvedToDrive ? 'Yes' : 'No'}
+                <strong>Approved to drive:</strong>{' '}
+                {user.approvedToDrive ? 'Yes' : 'No'}
               </li>
             </ul>
           </div>
 
           <div className={styles.reviewsSection}>
-            <h4>Reviews From Hosts</h4>
+            <h4>Reviews</h4>
             <p>No reviews yet.</p>
           </div>
         </div>
