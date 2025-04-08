@@ -37,10 +37,12 @@ function getPayPalClient() {
  */
 async function createPayPalPayout(amount, currency, recipientEmail) {
   const request = new paypal.payouts.PayoutsPostRequest();
+  // Generate a robust unique sender_batch_id (timestamp + random number)
+  const senderBatchId = Date.now().toString() + "-" + Math.floor(Math.random() * 1000).toString();
+
   request.requestBody({
     sender_batch_header: {
-      // Using a random string as batch id; consider more robust generation in production.
-      sender_batch_id: Math.random().toString(36).substring(9),
+      sender_batch_id: senderBatchId,
       email_subject: "You have a payout!",
       email_message: "You have received a payout! Thanks for using our service!"
     },
@@ -53,22 +55,21 @@ async function createPayPalPayout(amount, currency, recipientEmail) {
         },
         note: "Thank you for your business.",
         receiver: recipientEmail,
-        sender_item_id: "item_1"
+        sender_item_id: "item_001"
       }
     ]
   });
-  
+
   const client = getPayPalClient();
   try {
-    console.log('Executing PayPal payout request...');
     const response = await client.execute(request);
-    console.log('PayPal payout response received.');
     return response.result;
   } catch (err) {
     console.error("Error creating PayPal payout", err);
     throw err;
   }
 }
+
 
 // --- Stripe Bank Transfer Integration ---
 
