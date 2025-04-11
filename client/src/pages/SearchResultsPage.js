@@ -1,10 +1,10 @@
 // client/src/pages/SearchResultsPage.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-import { GoogleMap, Marker, useJsApiLoader } from '@react-google-maps/api';
+import { GoogleMap, Marker, Autocomplete, useJsApiLoader } from '@react-google-maps/api';
 
-// Import side menus
+// Side menu components (unchanged)
 import SideMenu from '../components/SideMenu';
 import SideMenuCustomer from '../components/SideMenuCustomer';
 import SideMenuBusiness from '../components/SideMenuBusiness';
@@ -13,12 +13,11 @@ import SideMenuAffiliate from '../components/SideMenuAffiliate';
 import styles from '../styles/SearchResultsPage.module.css';
 import heroImage from '../assets/lambo.jpg';
 
-const containerStyle = {
+const mapContainerStyle = {
   width: '100%',
-  height: '300px',
+  height: '100%',
 };
 
-// Geocode function (if needed for fallback geocoding)
 async function geocodeAddress(address) {
   if (!window.google) return null;
   const geocoder = new window.google.maps.Geocoder();
@@ -38,160 +37,350 @@ async function geocodeAddress(address) {
 export default function SearchResultsPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  
-  // Get search parameters from the URL
+
   const initialLocation = searchParams.get('location') || '';
   const latParam = searchParams.get('lat');
   const lngParam = searchParams.get('lng');
 
-  // Set initial state using the query parameters
   const [searchQuery, setSearchQuery] = useState(initialLocation);
-  const [carMakeFilter, setCarMakeFilter] = useState('');
   const [listings, setListings] = useState([]);
   const [mapCenter, setMapCenter] = useState(
     latParam && lngParam
       ? { lat: parseFloat(latParam), lng: parseFloat(lngParam) }
-      : { lat: 48.8566, lng: 2.3522 } // Default to Paris if no coordinates provided
+      : { lat: 51.5074, lng: -0.1278 } // Default center: London
   );
+  const [mapZoom, setMapZoom] = useState(12);
   const [loading, setLoading] = useState(false);
 
-  // Determine side menu based on user login
+  // Filters
+  const [fromDate, setFromDate] = useState('');
+  const [fromTime, setFromTime] = useState('');
+  const [untilDate, setUntilDate] = useState('');
+  const [untilTime, setUntilTime] = useState('');
+  const [price, setPrice] = useState(0);
+  const [vehicleType, setVehicleType] = useState('');
+  const [make, setMake] = useState('');
+  const [year, setYear] = useState('');
+
+  // Side menu toggle
+  const [sideMenuOpen, setSideMenuOpen] = useState(false);
+
+  // Google Places Autocomplete
+  const autocompleteRef = useRef(null);
+  const onLoadAutocomplete = (autocomplete) => {
+    autocompleteRef.current = autocomplete;
+  };
+  const onPlaceChanged = () => {
+    if (!autocompleteRef.current) return;
+    const place = autocompleteRef.current.getPlace();
+    if (place?.formatted_address) {
+      setSearchQuery(place.formatted_address);
+    }
+    if (place?.geometry?.location) {
+      const lat = place.geometry.location.lat();
+      const lng = place.geometry.location.lng();
+      setMapCenter({ lat, lng });
+      setMapZoom(14);
+    }
+  };
+
+  // Determine side menu based on login
   const token = localStorage.getItem('token') || '';
   const accountType = (localStorage.getItem('accountType') || '').toLowerCase();
-  const sideMenuComponent = token
-    ? accountType === 'customer'
-      ? <SideMenuCustomer />
-      : accountType === 'business'
-      ? <SideMenuBusiness />
-      : accountType === 'affiliate'
-      ? <SideMenuAffiliate />
-      : <SideMenu />
-    : <SideMenu />;
+  let sideMenuComponent = (
+    <SideMenu
+      isOpen={sideMenuOpen}
+      toggleMenu={() => setSideMenuOpen(false)}
+      closeMenu={() => setSideMenuOpen(false)}
+    />
+  );
+  if (token) {
+    if (accountType === 'business') {
+      sideMenuComponent = (
+        <SideMenuBusiness
+          isOpen={sideMenuOpen}
+          toggleMenu={() => setSideMenuOpen(false)}
+          closeMenu={() => setSideMenuOpen(false)}
+        />
+      );
+    } else if (accountType === 'affiliate') {
+      sideMenuComponent = (
+        <SideMenuAffiliate
+          isOpen={sideMenuOpen}
+          toggleMenu={() => setSideMenuOpen(false)}
+          closeMenu={() => setSideMenuOpen(false)}
+        />
+      );
+    } else {
+      sideMenuComponent = (
+        <SideMenuCustomer
+          isOpen={sideMenuOpen}
+          toggleMenu={() => setSideMenuOpen(false)}
+          closeMenu={() => setSideMenuOpen(false)}
+        />
+      );
+    }
+  }
 
-  // Backend URL from env variables (assumes /api at the end)
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
-  const staticUrl = backendUrl.replace('/api', ''); // Remove '/api' for static assets
+  const staticUrl = backendUrl.replace('/api', '');
 
-  // Load Google Maps API
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
-    libraries: ['places'],
+    libraries: ['places']
   });
-  if (loadError) return <div>Error loading Google Maps</div>;
 
-  // Fetch matching listings from backend based on search query and filter
-  const fetchListings = async (query, make) => {
+  const fetchListings = async (query) => {
     setLoading(true);
     try {
       const res = await axios.get(`${backendUrl}/cars/search`, {
-        params: { query, make },
+        params: {
+          query,
+          price,
+          vehicleType,
+          make,
+          year,
+          fromDate,
+          fromTime,
+          untilDate,
+          untilTime,
+        },
       });
       setListings(res.data);
-    } catch (error) {
-      console.error('Error fetching car listings:', error);
-      alert('Failed to fetch car listings.');
+    } catch (err) {
+      console.error('Error fetching listings:', err);
+      alert('Failed to fetch listings.');
     } finally {
       setLoading(false);
     }
   };
 
-  // If initialLocation is provided but lat/lng are not in query params,
-  // attempt to geocode and update the map center.
   useEffect(() => {
     if (initialLocation && (!latParam || !lngParam) && isLoaded && window.google) {
       geocodeAddress(initialLocation)
         .then((coords) => {
           setMapCenter(coords);
+          setMapZoom(14);
         })
         .catch((err) => console.error('Geocode error:', err));
     }
-    // Always fetch listings on mount or if initialLocation changes:
-    fetchListings(initialLocation, carMakeFilter);
+    fetchListings(initialLocation);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialLocation, isLoaded]);
 
-  // Manual search via search bar (if user changes filters)
   const handleSearch = async () => {
-    // Optionally, geocode the searchQuery again if needed:
     if (searchQuery && isLoaded && window.google) {
       try {
         const coords = await geocodeAddress(searchQuery);
-        setMapCenter(coords);
+        if (coords) {
+          setMapCenter(coords);
+          setMapZoom(14);
+        }
       } catch (err) {
         console.error('Geocode error:', err);
       }
     }
-    fetchListings(searchQuery, carMakeFilter);
+    fetchListings(searchQuery);
   };
 
   return (
     <div className={styles.container}>
-      {/* Header (inline, matching AboutHyre style) */}
+      {/* HEADER */}
       <header className={styles.header}>
-        <div className={styles.logo} onClick={() => navigate('/')}>Hyre</div>
-        <button className={styles.menuIcon} onClick={() => { /* Implement mobile menu toggle if needed */ }}>
+        <div className={styles.logo} onClick={() => navigate('/')}>
+          Hyre
+        </div>
+        <button className={styles.menuIcon} onClick={() => setSideMenuOpen(!sideMenuOpen)}>
           ☰
         </button>
       </header>
 
-      {/* Side Menu */}
-      <div className={styles.sideMenu}>
-        {sideMenuComponent}
-      </div>
-
-      {/* Main Content */}
       <div className={styles.mainContent}>
-        {/* Hero Section */}
+        {/* HERO SECTION */}
         <section
           className={styles.heroSection}
-          style={{
-            backgroundImage: `url(${heroImage})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            position: 'relative',
-          }}
+          style={{ backgroundImage: `url(${heroImage})` }}
         >
           <div className={styles.heroOverlay}></div>
-          <div className={styles.heroText}>
-            <h1>Search Cars</h1>
-            <p>Find the perfect car near you</p>
+
+          {/* FIRST ROW: Where to? + Date/Time fields */}
+          <div className={styles.hyreTopRow}>
+            <Autocomplete onLoad={onLoadAutocomplete} onPlaceChanged={onPlaceChanged}>
+              <input
+                type="text"
+                placeholder="Where to?"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className={styles.hyreLocationInput}
+              />
+            </Autocomplete>
+
+            <div className={styles.hyreDateTime}>
+              <label>From:</label>
+              <input
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+              />
+              <input
+                type="time"
+                value={fromTime}
+                onChange={(e) => setFromTime(e.target.value)}
+              />
+            </div>
+
+            <div className={styles.hyreDateTime}>
+              <label>Until:</label>
+              <input
+                type="date"
+                value={untilDate}
+                onChange={(e) => setUntilDate(e.target.value)}
+              />
+              <input
+                type="time"
+                value={untilTime}
+                onChange={(e) => setUntilTime(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* SECOND ROW: Price, Type, Make, Year, Search button */}
+          <div className={styles.hyreBottomRow}>
+            <div className={styles.filterInline}>
+              <label>Price £0-£20,000 (Current: £{price})</label>
+              <input
+                type="range"
+                min="0"
+                max="20000"
+                step="100"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                className={styles.rangeInput}
+              />
+              <input
+                type="number"
+                min="0"
+                max="20000"
+                step="100"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                className={styles.numberInput}
+              />
+            </div>
+
+            <div className={styles.filterInline}>
+              <label>Type:</label>
+              <select
+                value={vehicleType}
+                onChange={(e) => setVehicleType(e.target.value)}
+                className={styles.selectInput}
+              >
+                <option value="">All</option>
+                <option value="Sedan">Sedan</option>
+                <option value="SUV">SUV</option>
+                <option value="Hatchback">Hatchback</option>
+                <option value="Coupe">Coupe</option>
+                <option value="Convertible">Convertible</option>
+                <option value="Pickup truck">Pickup truck</option>
+                <option value="Minivan">Minivan</option>
+                <option value="Motorcycle">Motorcycle</option>
+                <option value="Truck">Truck</option>
+                <option value="Wagon">Wagon</option>
+                <option value="Van">Van</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <div className={styles.filterInline}>
+              <label>Make:</label>
+              <select
+                value={make}
+                onChange={(e) => setMake(e.target.value)}
+                className={styles.selectInput}
+              >
+                <option value="">All</option>
+                <option value="Toyota">Toyota</option>
+                <option value="Honda">Honda</option>
+                <option value="Ford">Ford</option>
+                <option value="BMW">BMW</option>
+                <option value="Audi">Audi</option>
+                <option value="Mercedes-Benz">Mercedes-Benz</option>
+                <option value="Chevrolet">Chevrolet</option>
+                <option value="Nissan">Nissan</option>
+                <option value="Volkswagen">Volkswagen</option>
+                <option value="Kia">Kia</option>
+                <option value="Hyundai">Hyundai</option>
+                <option value="Subaru">Subaru</option>
+                <option value="Mazda">Mazda</option>
+                <option value="Dodge">Dodge</option>
+                <option value="Jeep">Jeep</option>
+                <option value="Lexus">Lexus</option>
+                <option value="Acura">Acura</option>
+              </select>
+            </div>
+
+            <div className={styles.filterInline}>
+              <label>Year:</label>
+              <select
+                value={year}
+                onChange={(e) => setYear(e.target.value)}
+                className={styles.selectInput}
+              >
+                <option value="">All</option>
+                {Array.from({ length: 2025 - 1950 + 1 }, (_, i) => 2025 - i).map((yr) => (
+                  <option key={yr} value={yr}>
+                    {yr}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className={styles.filterInline}>
+              <button className={styles.searchBtn} onClick={handleSearch}>
+                Search
+              </button>
+            </div>
           </div>
         </section>
+      </div>
 
-        {/* Search & Filter Bar */}
-        <div className={styles.searchBar}>
-          <input
-            type="text"
-            placeholder="Enter location, postcode, etc."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className={styles.searchInput}
-          />
-          <select
-            value={carMakeFilter}
-            onChange={(e) => setCarMakeFilter(e.target.value)}
-            className={styles.filterSelect}
-          >
-            <option value="">All Makes</option>
-            <option value="Toyota">Toyota</option>
-            <option value="Honda">Honda</option>
-            <option value="Ford">Ford</option>
-            <option value="BMW">BMW</option>
-            <option value="Audi">Audi</option>
-          </select>
-          <button onClick={handleSearch} className={styles.searchButton}>
-            Search
-          </button>
+      {loadError && (
+        <div style={{ color: 'red', margin: '1rem 0' }}>
+          Error loading Google Maps.
         </div>
+      )}
 
-        {/* Google Map Section */}
-        {isLoaded && listings.length > 0 && (
-          <div className={styles.mapSection}>
-            <GoogleMap
-              mapContainerStyle={containerStyle}
-              center={mapCenter}
-              zoom={12}
-            >
+      {/* Two-Column Layout: Desktop side by side, Mobile stacked. */}
+      <div className={styles.searchPageColumns}>
+        <div className={styles.resultsContainer}>
+          {loading ? (
+            <p>Loading listings...</p>
+          ) : listings.length === 0 ? (
+            <p>No listings found for "{searchQuery}".</p>
+          ) : (
+            listings.map((listing) => (
+              <div
+                key={listing._id}
+                className={styles.listingCard}
+                onClick={() => navigate(`/car/${listing._id}`)}
+              >
+                <img
+                  src={`${staticUrl}/${listing.imageUrl}`}
+                  alt={`${listing.carMake} ${listing.model}`}
+                  className={styles.listingImage}
+                />
+                <div className={styles.listingInfo}>
+                  <h3>{listing.carMake} {listing.model}</h3>
+                  <p>{listing.location}</p>
+                  <p>£{parseFloat(listing.pricePerDay).toFixed(2)}/day</p>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+        <div className={styles.mapContainer}>
+          {isLoaded && (
+            <GoogleMap mapContainerStyle={mapContainerStyle} center={mapCenter} zoom={mapZoom}>
               {listings.map((listing) => (
                 <Marker
                   key={listing._id}
@@ -201,39 +390,11 @@ export default function SearchResultsPage() {
                 />
               ))}
             </GoogleMap>
-          </div>
-        )}
-
-        {/* Listings Section */}
-        <div className={styles.resultsSection}>
-          {loading ? (
-            <p>Loading listings...</p>
-          ) : listings.length === 0 ? (
-            <p>No listings found for "{searchQuery}".</p>
-          ) : (
-            <div className={styles.resultsGrid}>
-              {listings.map((listing) => (
-                <div
-                  key={listing._id}
-                  className={styles.listingCard}
-                  onClick={() => navigate(`/car/${listing._id}`)}
-                >
-                  <img
-                    src={`${staticUrl}/${listing.imageUrl}`}
-                    alt={`${listing.carMake} ${listing.model}`}
-                    className={styles.listingImage}
-                  />
-                  <div className={styles.listingInfo}>
-                    <h3>{listing.carMake} {listing.model}</h3>
-                    <p>{listing.location}</p>
-                    <p>${parseFloat(listing.pricePerDay).toFixed(2)}/day</p>
-                  </div>
-                </div>
-              ))}
-            </div>
           )}
         </div>
       </div>
+
+      {sideMenuOpen && sideMenuComponent}
     </div>
   );
 }

@@ -1,187 +1,302 @@
 /* client/src/styles/SearchResultsPage.module.css */
+
+/* Overall Container */
 .container {
-    display: flex;
-    min-height: 100vh;
-    background: #f4f6f8;
-    font-family: 'Roboto', sans-serif;
-  }
-  
-  /* Header – matching the AboutHyre style */
-  .header {
-    width: 100%;
-    height: 56px;
-    background: #fff;
-    border-bottom: 1px solid #e0e0e0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 1rem;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 1000;
-  }
-  .logo {
-    font-size: 1.4rem;
-    font-weight: 700;
-    cursor: pointer;
-    color: #38b6ff;
-  }
-  .menuIcon {
-    font-size: 1.4rem;
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: #333;
-  }
-  
-  /* Side Menu */
-  .sideMenu {
-    width: 250px;
-    background: #fff;
-    border-right: 1px solid #e0e0e0;
-  }
-  
-  /* Main Content */
-  .mainContent {
-    flex: 1;
-    padding: 70px 2rem 2rem 2rem; /* extra top padding to account for fixed header */
-  }
-  
-  /* Hero Section */
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: #f4f6f8;
+  font-family: 'Roboto', sans-serif;
+}
+
+/* Header */
+.header {
+  width: 100%;
+  height: 56px;
+  background: #fff;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+.logo {
+  font-size: 1.4rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: #38b6ff;
+}
+.menuIcon {
+  font-size: 1.4rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #333;
+}
+
+/* Main Content */
+.mainContent {
+  flex: 1;
+  margin-top: 56px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+/* Hero Section with Background */
+.heroSection {
+  position: relative;
+  background-size: cover;
+  background-position: center;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 1rem;
+  color: #fff;
+}
+.heroOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 1;
+}
+
+/* FIRST ROW: Where to? + Date/Time */
+.hyreTopRow {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: rgba(255,255,255,0.15);
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+.hyreLocationInput {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  min-width: 150px;
+}
+.hyreDateTime {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.4rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.1);
+}
+.hyreDateTime label {
+  font-size: 0.9rem;
+  white-space: nowrap;
+  color: #fff;
+}
+.hyreDateTime input[type="date"],
+.hyreDateTime input[type="time"] {
+  border: none;
+  background: transparent;
+  color: #fff;
+  min-width: 80px;
+  appearance: auto;
+  -webkit-appearance: auto;
+}
+.hyreDateTime input[type="date"]::-webkit-calendar-picker-indicator,
+.hyreDateTime input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
+/* SECOND ROW: Price, Type, Make, Year, Search, Map Toggle */
+.hyreBottomRow {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  background: rgba(255,255,255,0.15);
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+.filterInline {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.selectInput {
+  padding: 0.4rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  min-width: 80px;
+}
+.rangeInput {
+  width: 120px;
+}
+.numberInput {
+  width: 80px;
+  padding: 0.4rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-left: 0.5rem;
+}
+.searchBtn {
+  padding: 0.5rem 1.25rem;
+  background: #4f3cc9;
+  border: none;
+  color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.searchBtn:hover {
+  background: #3c2fa1;
+}
+/* Removed any auto right-margin for search button */
+.yearSearchGroup {
+  /* Intentionally left empty */
+}
+
+/* NEW: Map Toggle Button for Mobile */
+.mapToggleBtn {
+  padding: 0.5rem 1.25rem;
+  background: #4f3cc9;
+  border: none;
+  color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-left: 0.5rem;
+}
+.mapToggleBtn:hover {
+  background: #3c2fa1;
+}
+
+/* NEW: Map Full Mobile - force map container to full width when toggled */
+.mapFullMobile {
+  width: 100% !important;
+  flex: none !important;
+}
+
+/* Two-Column Layout: Listings and Map */
+.searchPageColumns {
+  display: flex;
+  gap: 1rem;
+  flex: 1;
+  padding: 1rem;
+}
+.resultsContainer {
+  flex: 2;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  overflow-y: auto;
+  padding: 1rem;
+}
+.mapContainer {
+  flex: 3;
+  height: 600px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Listing Cards */
+.listingCard {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  margin-bottom: 1rem;
+}
+.listingCard:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.listingImage {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+}
+.listingInfo {
+  padding: 0.75rem;
+}
+.listingInfo h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+/* Side Menu Overlay Smooth Transition */
+.sideMenuOverlay {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background: #fff;
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+  z-index: 9999;
+}
+.sideMenuOverlayOpen {
+  transform: translateX(0);
+}
+
+/* Responsive Adjustments (MOBILE) */
+@media (max-width: 768px) {
   .heroSection {
-    position: relative;
-    height: 250px;
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #fff;
-  }
-  .heroOverlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.5);
-  }
-  .heroText {
-    position: relative;
-    text-align: center;
-    z-index: 1;
-  }
-  .heroText h1 {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-  }
-  .heroText p {
-    font-size: 1.1rem;
-  }
-  
-  /* Search Bar */
-  .searchBar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-  }
-  .searchInput {
-    flex: 2;
-    padding: 0.75rem;
-    border: 1px solid #e0e0e0;
-    border-radius: 4px;
-  }
-  .filterSelect {
-    flex: 1;
-    padding: 0.75rem;
-    border: 1px solid #e0e0e0;
-    border-radius: 4px;
-  }
-  .searchButton {
-    padding: 0.75rem 1.25rem;
-    background: #4f3cc9;
-    color: #fff;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  .searchButton:hover {
-    background: #3c2fa1;
-  }
-  
-  /* Map Section */
-  .mapSection {
-    margin: 1rem 0;
-  }
-  
-  /* Results Section */
-  .resultsSection {
-    margin-top: 1rem;
-  }
-  .resultsGrid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1rem;
-  }
-  .listingCard {
-    background: #fff;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    overflow: hidden;
-    cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
-  }
-  .listingCard:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  }
-  .listingImage {
-    width: 100%;
-    height: 150px;
-    object-fit: cover;
-  }
-  .listingInfo {
-    padding: 0.75rem;
-  }
-  .listingInfo h3 {
-    font-size: 1.1rem;
-    margin: 0;
-  }
-  
-  /* Affiliate Code Section */
-  .affiliateCodeSection {
-    background: #fff;
+    min-height: 220px;
     padding: 1rem;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    text-align: center;
-    margin-bottom: 1.5rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
   }
-  .affiliateCodeSection h2 {
-    font-size: 1rem;
+  .hyreTopRow,
+  .hyreBottomRow {
+    flex-direction: column;
+    align-items: flex-start;
+    /* Retain the same background (transparent overlay from hero) */
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+    border-radius: 6px;
+    padding: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  .filterInline {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
     margin-bottom: 0.5rem;
-    font-weight: 600;
   }
-  .affiliateCodeBox {
-    background: #f7f7f7;
-    padding: 0.75rem;
-    font-size: 1.25rem;
-    font-weight: bold;
-    letter-spacing: 1px;
-    margin-bottom: 0.5rem;
+  .filterInline label,
+  .filterInline input,
+  .filterInline select,
+  .searchBtn,
+  .mapToggleBtn {
+    width: 100%;
   }
-  
-  /* Responsive Adjustments */
-  @media (max-width: 768px) {
-    .sideMenu {
-      display: none;
-    }
-    .mainContent {
-      padding: 70px 1rem 1rem 1rem;
-    }
+  .hyreDateTime {
+    width: 100%;
+    justify-content: space-between;
   }
-  
+  .searchPageColumns {
+    flex-direction: column;
+  }
+  .resultsContainer,
+  .mapContainer {
+    width: 100%;
+    margin-bottom: 1rem;
+    height: auto;
+  }
+}
