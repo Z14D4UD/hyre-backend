@@ -4,24 +4,25 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { GoogleMap, Marker, useJsApiLoader } from '@react-google-maps/api';
 
-// Side menu components
+// Side menu components (unchanged)
 import SideMenu from '../components/SideMenu';
 import SideMenuCustomer from '../components/SideMenuCustomer';
 import SideMenuBusiness from '../components/SideMenuBusiness';
 import SideMenuAffiliate from '../components/SideMenuAffiliate';
 
-// Import our custom PlaceAutocomplete component
+// Import our custom PlaceAutocomplete component for live suggestions
 import PlaceAutocomplete from '../components/PlaceAutocomplete';
 
 import styles from '../styles/SearchResultsPage.module.css';
 import heroImage from '../assets/lambo.jpg';
 
+// Define the container style for the Google Map
 const mapContainerStyle = {
   width: '100%',
   height: '100%',
 };
 
-// Geocode a given address using Google Maps Geocoder
+// Function to geocode a given address into coordinates using the Geocoder
 async function geocodeAddress(address) {
   if (!window.google) return null;
   const geocoder = new window.google.maps.Geocoder();
@@ -42,22 +43,25 @@ export default function SearchResultsPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // Get initial location and coordinates from query parameters
+  // Extract the initial location and (optionally) latitude and longitude from query parameters
   const initialLocation = searchParams.get('location') || '';
   const latParam = searchParams.get('lat');
   const lngParam = searchParams.get('lng');
 
+  // State for the search query; this field uses PlaceAutocomplete
   const [searchQuery, setSearchQuery] = useState(initialLocation);
+
+  // Listings from backend and map settings
   const [listings, setListings] = useState([]);
   const [mapCenter, setMapCenter] = useState(
     latParam && lngParam
       ? { lat: parseFloat(latParam), lng: parseFloat(lngParam) }
-      : { lat: 51.5074, lng: -0.1278 } // Default: London
+      : { lat: 51.5074, lng: -0.1278 } // Default center (London)
   );
-  const [mapZoom, setMapZoom] = useState(12);
+  const [mapZoom, setMapZoom] = useState(latParam && lngParam ? 14 : 12);
   const [loading, setLoading] = useState(false);
 
-  // Filters and additional states
+  // Additional filters (if any)
   const [fromDate, setFromDate] = useState('');
   const [fromTime, setFromTime] = useState('');
   const [untilDate, setUntilDate] = useState('');
@@ -67,18 +71,20 @@ export default function SearchResultsPage() {
   const [make, setMake] = useState('');
   const [year, setYear] = useState('');
 
+  // Side menu toggle state
   const [sideMenuOpen, setSideMenuOpen] = useState(false);
 
-  // Load Google Maps API
+  // Load the Google Maps JavaScript API
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
     libraries: ['places']
   });
 
-  // Define backendUrl and derive staticUrl for images
+  // Define backend URL and derive a URL for static assets
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
   const staticUrl = backendUrl.replace('/api', '');
 
+  // Function to fetch listings from the backend search endpoint
   const fetchListings = async (query) => {
     setLoading(true);
     try {
@@ -104,7 +110,7 @@ export default function SearchResultsPage() {
     }
   };
 
-  // On mount: if no lat/lng are provided, geocode the initial location
+  // On mount, if no lat/lng are present from query then geocode the initialLocation
   useEffect(() => {
     if ((!latParam || !lngParam) && initialLocation && isLoaded && window.google) {
       geocodeAddress(initialLocation)
@@ -120,7 +126,7 @@ export default function SearchResultsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialLocation, latParam, lngParam, isLoaded]);
 
-  // When user presses Search from SRP
+  // When the user presses the search button in SearchResultsPage
   const handleSearch = async () => {
     if (searchQuery && isLoaded && window.google) {
       try {
@@ -136,12 +142,12 @@ export default function SearchResultsPage() {
     fetchListings(searchQuery);
   };
 
-  // Callback from PlaceAutocomplete when the user selects a suggestion
+  // Callback when the user selects a suggestion from PlaceAutocomplete
   const handlePlaceSelect = (prediction) => {
     setSearchQuery(prediction.description);
   };
 
-  // Determine side menu based on login status
+  // Side menu determination based on login information
   const token = localStorage.getItem('token') || '';
   const accountType = (localStorage.getItem('accountType') || '').toLowerCase();
   let sideMenuComponent = (
@@ -196,14 +202,14 @@ export default function SearchResultsPage() {
         <section className={styles.heroSection} style={{ backgroundImage: `url(${heroImage})` }}>
           <div className={styles.heroOverlay}></div>
 
-          {/* FIRST ROW: Location input with live suggestions (PlaceAutocomplete) and Date/Time fields */}
+          {/* FIRST ROW: Location input with live suggestions and Date/Time fields */}
           <div className={styles.hyreTopRow}>
             <PlaceAutocomplete
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onPlaceSelect={handlePlaceSelect}
               placeholder="Where to?"
-              hideDropdownOnInitial={true}  // Hides dropdown if input equals initialLocation
+              hideDropdownOnInitial={true}  // Hide suggestions by default if not modified
             />
             <div className={styles.hyreDateTime}>
               <label>From:</label>
@@ -233,7 +239,7 @@ export default function SearchResultsPage() {
             </div>
           </div>
 
-          {/* SECOND ROW: Advanced Filters and Search Button */}
+          {/* SECOND ROW: Filters and Search button */}
           <div className={styles.hyreBottomRow}>
             <div className={styles.filterInline}>
               <label>Price £0-£20,000 (Current: £{price})</label>
@@ -314,9 +320,7 @@ export default function SearchResultsPage() {
               >
                 <option value="">All</option>
                 {Array.from({ length: 2025 - 1950 + 1 }, (_, i) => 2025 - i).map((yr) => (
-                  <option key={yr} value={yr}>
-                    {yr}
-                  </option>
+                  <option key={yr} value={yr}>{yr}</option>
                 ))}
               </select>
             </div>
@@ -335,7 +339,6 @@ export default function SearchResultsPage() {
         </div>
       )}
 
-      {/* Two-column layout: Listings and Map */}
       <div className={styles.searchPageColumns}>
         <div className={styles.resultsContainer}>
           {loading ? (
@@ -365,11 +368,7 @@ export default function SearchResultsPage() {
         </div>
         <div className={styles.mapContainer}>
           {isLoaded && (
-            <GoogleMap
-              mapContainerStyle={mapContainerStyle}
-              center={mapCenter}
-              zoom={mapZoom}
-            >
+            <GoogleMap mapContainerStyle={mapContainerStyle} center={mapCenter} zoom={mapZoom}>
               {listings.map((listing) => (
                 <Marker
                   key={listing._id}
@@ -383,7 +382,7 @@ export default function SearchResultsPage() {
         </div>
       </div>
 
-      {sideMenuOpen && (
+      {sideMenuOpen &&
         (() => {
           if (!token) return <SideMenu isOpen={sideMenuOpen} toggleMenu={() => setSideMenuOpen(false)} />;
           if (accountType === 'business') {
@@ -411,8 +410,7 @@ export default function SearchResultsPage() {
               closeMenu={() => setSideMenuOpen(false)}
             />
           );
-        })()
-      )}
+        })()}
     </div>
   );
 }

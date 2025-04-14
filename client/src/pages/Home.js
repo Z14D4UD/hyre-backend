@@ -1,22 +1,37 @@
-// client/src/pages/Home.js
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { FaSearch } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useJsApiLoader } from '@react-google-maps/api';
 
-// Import all menus
 import SideMenu from '../components/SideMenu';
 import SideMenuCustomer from '../components/SideMenuCustomer';
 import SideMenuBusiness from '../components/SideMenuBusiness';
 import SideMenuAffiliate from '../components/SideMenuAffiliate';
 
 import FeaturedBusinesses from '../components/FeaturedBusinesses';
-import LocationAutocomplete from '../components/LocationAutoComplete';
+import PlaceAutocomplete from '../components/PlaceAutocomplete';
 import Footer from '../components/Footer';
 
 import styles from '../styles/Home.module.css';
 import heroImage from '../assets/hero.jpg';
+
+// We'll geocode the location on the Home page to pass lat & lng in the URL:
+async function geocodeAddress(address) {
+  if (!window.google) return null;
+  const geocoder = new window.google.maps.Geocoder();
+  return new Promise((resolve, reject) => {
+    geocoder.geocode({ address }, (results, status) => {
+      if (status === 'OK' && results[0]) {
+        const lat = results[0].geometry.location.lat();
+        const lng = results[0].geometry.location.lng();
+        resolve({ lat, lng });
+      } else {
+        reject(status);
+      }
+    });
+  });
+}
 
 const libraries = ['places'];
 
@@ -25,70 +40,52 @@ export default function Home() {
   const [location, setLocation] = useState('');
   const [fromDateTime, setFromDateTime] = useState('2025-03-25T10:00');
   const [toDateTime, setToDateTime] = useState('2025-03-27T10:00');
-  const [mapCenter, setMapCenter] = useState(null);
 
   const navigate = useNavigate();
   const { t } = useTranslation();
 
-  // Load Google Maps API (for geocoding)
-  const { isLoaded } = useJsApiLoader({
+  // load google maps for geocoding + autocomplete
+  const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
-    libraries,
+    libraries
   });
 
-  // Retrieve token and accountType from localStorage
+  // side menu logic
   const token = (localStorage.getItem('token') || '').trim();
   const accountType = (localStorage.getItem('accountType') || '').toLowerCase();
-
-  // Determine login status
   const isCustomerLoggedIn = token !== '' && accountType === 'customer';
   const isBusinessLoggedIn = token !== '' && accountType === 'business';
   const isAffiliateLoggedIn = token !== '' && accountType === 'affiliate';
 
-  // Toggle menu open/closed
   const toggleMenu = () => setMenuOpen(!menuOpen);
   const closeMenu = () => setMenuOpen(false);
 
-  // Geocode function: resolves address to lat/lng using Google Maps Geocoder
-  const geocodeAddress = async (address) => {
-    if (!window.google) return null;
-    const geocoder = new window.google.maps.Geocoder();
-    return new Promise((resolve, reject) => {
-      geocoder.geocode({ address }, (results, status) => {
-        if (status === 'OK' && results[0]) {
-          const lat = results[0].geometry.location.lat();
-          const lng = results[0].geometry.location.lng();
-          resolve({ lat, lng });
-        } else {
-          reject(status);
-        }
-      });
-    });
+  // Callback from PlaceAutocomplete
+  const handlePlaceSelect = (prediction) => {
+    setLocation(prediction.description);
   };
 
-  // Handle search: geocode the address then navigate to search page with query parameters
+  // On user pressing "Search"
   const handleSearch = async () => {
-    try {
-      let lat = '';
-      let lng = '';
-      if (location && isLoaded) {
-        // Attempt to geocode the location. If it fails, continue with only the location string.
-        try {
-          const coords = await geocodeAddress(location);
+    let lat = '';
+    let lng = '';
+    if (location && isLoaded && window.google) {
+      try {
+        const coords = await geocodeAddress(location);
+        if (coords) {
           lat = coords.lat;
           lng = coords.lng;
-          setMapCenter({ lat, lng });
-        } catch (error) {
-          console.error('Geocode error:', error);
+          console.log('Home → handleSearch: geocoded to', { lat, lng });
         }
+      } catch (err) {
+        console.error('Geocode error on Home page:', err);
       }
-      // Navigate to the search page with location, lat and lng as query parameters
-      navigate(
-        `/search?location=${encodeURIComponent(location)}&lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}&from=${encodeURIComponent(fromDateTime)}&to=${encodeURIComponent(toDateTime)}`
-      );
-    } catch (err) {
-      console.error('Error in search handling:', err);
     }
+
+    // pass location & lat/lng in URL
+    navigate(
+      `/search?location=${encodeURIComponent(location)}&lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}&from=${encodeURIComponent(fromDateTime)}&to=${encodeURIComponent(toDateTime)}`
+    );
   };
 
   const handleListYourCar = () => {
@@ -102,6 +99,34 @@ export default function Home() {
     }
   };
 
+  // side menu
+  let sideMenuComponent = <SideMenu isOpen={menuOpen} toggleMenu={toggleMenu} />;
+  if (isBusinessLoggedIn) {
+    sideMenuComponent = (
+      <SideMenuBusiness
+        isOpen={menuOpen}
+        toggleMenu={toggleMenu}
+        closeMenu={closeMenu}
+      />
+    );
+  } else if (isCustomerLoggedIn) {
+    sideMenuComponent = (
+      <SideMenuCustomer
+        isOpen={menuOpen}
+        toggleMenu={toggleMenu}
+        closeMenu={closeMenu}
+      />
+    );
+  } else if (isAffiliateLoggedIn) {
+    sideMenuComponent = (
+      <SideMenuAffiliate
+        isOpen={menuOpen}
+        toggleMenu={toggleMenu}
+        closeMenu={closeMenu}
+      />
+    );
+  }
+
   return (
     <div className={styles.container}>
       {/* Header */}
@@ -112,24 +137,21 @@ export default function Home() {
         </button>
       </header>
 
-      {/* Render appropriate side menu based on user account type */}
-      {isBusinessLoggedIn ? (
-        <SideMenuBusiness isOpen={menuOpen} toggleMenu={toggleMenu} closeMenu={closeMenu} />
-      ) : isCustomerLoggedIn ? (
-        <SideMenuCustomer isOpen={menuOpen} toggleMenu={toggleMenu} closeMenu={closeMenu} />
-      ) : isAffiliateLoggedIn ? (
-        <SideMenuAffiliate isOpen={menuOpen} toggleMenu={toggleMenu} closeMenu={closeMenu} />
-      ) : (
-        <SideMenu isOpen={menuOpen} toggleMenu={toggleMenu} />
-      )}
+      {sideMenuComponent}
 
-      {/* Hero Section */}
+      {/* Hero */}
       <section className={styles.hero} style={{ backgroundImage: `url(${heroImage})` }}>
-        <div className={styles.heroOverlay}></div>
+        <div className={styles.heroOverlay} />
         <div className={styles.searchContainer}>
           <div className={styles.fieldGroup}>
             <label className={styles.fieldLabel}>Where</label>
-            <LocationAutocomplete location={location} setLocation={setLocation} />
+            {/* Live suggestions */}
+            <PlaceAutocomplete
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              onPlaceSelect={handlePlaceSelect}
+              placeholder="Enter a location..."
+            />
           </div>
           <div className={styles.fieldGroup}>
             <label className={styles.fieldLabel}>From</label>
@@ -159,13 +181,11 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Featured Businesses */}
       <section className={styles.featuredSection}>
         <h2 className={styles.featuredTitle}>Featured Businesses</h2>
         <FeaturedBusinesses />
       </section>
 
-      {/* Promo Section */}
       <section className={styles.promoSection}>
         <div className={styles.promoItem}>
           <div className={styles.promoIcon}>🎉</div>
@@ -185,7 +205,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* List Your Car Section */}
       <section className={styles.listYourCarSection}>
         <h2>List Your Car</h2>
         <p className={styles.listYourCarContent}>
@@ -196,7 +215,6 @@ export default function Home() {
         </button>
       </section>
 
-      {/* Footer */}
       <Footer />
     </div>
   );

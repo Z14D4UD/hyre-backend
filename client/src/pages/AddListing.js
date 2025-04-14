@@ -237,7 +237,7 @@ export default function AddListing() {
               <DatePicker
                 selected={availableFrom}
                 onChange={(date) => setAvailableFrom(date)}
-                dateFormat="yyyy-MM-dd"
+                dateFormat="dd-MM-yyyy"
                 className={styles.inputField}
                 placeholderText="Select start date"
               />
@@ -247,7 +247,7 @@ export default function AddListing() {
               <DatePicker
                 selected={availableTo}
                 onChange={(date) => setAvailableTo(date)}
-                dateFormat="yyyy-MM-dd"
+                dateFormat="dd-MM-yyyy"
                 className={styles.inputField}
                 placeholderText="Select end date"
               />
