@@ -10,9 +10,7 @@ import SideMenuCustomer from '../components/SideMenuCustomer';
 import SideMenuBusiness from '../components/SideMenuBusiness';
 import SideMenuAffiliate from '../components/SideMenuAffiliate';
 
-// Import our custom PlaceAutocomplete component
 import PlaceAutocomplete from '../components/PlaceAutocomplete';
-
 import styles from '../styles/SearchResultsPage.module.css';
 import heroImage from '../assets/lambo.jpg';
 
@@ -21,7 +19,6 @@ const mapContainerStyle = {
   height: '100%',
 };
 
-// Geocode a given address using Google Maps Geocoder
 async function geocodeAddress(address) {
   if (!window.google) return null;
   const geocoder = new window.google.maps.Geocoder();
@@ -42,7 +39,7 @@ export default function SearchResultsPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // Get initial location and coordinates from query parameters
+  // Get initial location from query params
   const initialLocation = searchParams.get('location') || '';
   const latParam = searchParams.get('lat');
   const lngParam = searchParams.get('lng');
@@ -52,12 +49,12 @@ export default function SearchResultsPage() {
   const [mapCenter, setMapCenter] = useState(
     latParam && lngParam
       ? { lat: parseFloat(latParam), lng: parseFloat(lngParam) }
-      : { lat: 51.5074, lng: -0.1278 } // Default: London
+      : { lat: 51.5074, lng: -0.1278 }
   );
   const [mapZoom, setMapZoom] = useState(12);
   const [loading, setLoading] = useState(false);
 
-  // Filters and additional states
+  // Additional states for date/time and filters
   const [fromDate, setFromDate] = useState('');
   const [fromTime, setFromTime] = useState('');
   const [untilDate, setUntilDate] = useState('');
@@ -69,13 +66,11 @@ export default function SearchResultsPage() {
 
   const [sideMenuOpen, setSideMenuOpen] = useState(false);
 
-  // Load Google Maps API
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
-    libraries: ['places']
+    libraries: ['places'],
   });
 
-  // Define backendUrl and derive staticUrl for images
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
   const staticUrl = backendUrl.replace('/api', '');
 
@@ -104,7 +99,7 @@ export default function SearchResultsPage() {
     }
   };
 
-  // On mount: if no lat/lng are provided, geocode the initial location
+  // On mount or location change
   useEffect(() => {
     if ((!latParam || !lngParam) && initialLocation && isLoaded && window.google) {
       geocodeAddress(initialLocation)
@@ -120,7 +115,6 @@ export default function SearchResultsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialLocation, latParam, lngParam, isLoaded]);
 
-  // When user presses Search from SRP
   const handleSearch = async () => {
     if (searchQuery && isLoaded && window.google) {
       try {
@@ -136,21 +130,14 @@ export default function SearchResultsPage() {
     fetchListings(searchQuery);
   };
 
-  // Callback from PlaceAutocomplete when the user selects a suggestion
   const handlePlaceSelect = (prediction) => {
     setSearchQuery(prediction.description);
   };
 
-  // Determine side menu based on login status
+  // Decide which side menu to show
   const token = localStorage.getItem('token') || '';
   const accountType = (localStorage.getItem('accountType') || '').toLowerCase();
-  let sideMenuComponent = (
-    <SideMenu
-      isOpen={sideMenuOpen}
-      toggleMenu={() => setSideMenuOpen(false)}
-      closeMenu={() => setSideMenuOpen(false)}
-    />
-  );
+  let sideMenuComponent = <SideMenu isOpen={sideMenuOpen} toggleMenu={() => setSideMenuOpen(false)} />;
   if (token) {
     if (accountType === 'business') {
       sideMenuComponent = (
@@ -194,16 +181,15 @@ export default function SearchResultsPage() {
       <div className={styles.mainContent}>
         {/* HERO SECTION */}
         <section className={styles.heroSection} style={{ backgroundImage: `url(${heroImage})` }}>
-          <div className={styles.heroOverlay}></div>
+          <div className={styles.heroOverlay} />
 
-          {/* FIRST ROW: Location input with live suggestions (PlaceAutocomplete) and Date/Time fields */}
+          {/* FIRST ROW: location + date/time */}
           <div className={styles.hyreTopRow}>
             <PlaceAutocomplete
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onPlaceSelect={handlePlaceSelect}
               placeholder="Where to?"
-              hideDropdownOnInitial={true}  // Hides dropdown if input equals initialLocation
             />
             <div className={styles.hyreDateTime}>
               <label>From:</label>
@@ -233,7 +219,7 @@ export default function SearchResultsPage() {
             </div>
           </div>
 
-          {/* SECOND ROW: Advanced Filters and Search Button */}
+          {/* SECOND ROW: filters + search */}
           <div className={styles.hyreBottomRow}>
             <div className={styles.filterInline}>
               <label>Price £0-£20,000 (Current: £{price})</label>
@@ -335,41 +321,61 @@ export default function SearchResultsPage() {
         </div>
       )}
 
-      {/* Two-column layout: Listings and Map */}
       <div className={styles.searchPageColumns}>
+        {/* LISTINGS COLUMN */}
         <div className={styles.resultsContainer}>
           {loading ? (
             <p>Loading listings...</p>
           ) : listings.length === 0 ? (
             <p>No listings found for "{searchQuery}".</p>
           ) : (
-            listings.map((listing) => (
-              <div
-                key={listing._id}
-                className={styles.listingCard}
-                onClick={() => navigate(`/car/${listing._id}`)}
-              >
-                <img
-                  src={`${staticUrl}/${listing.imageUrl}`}
-                  alt={`${listing.carMake} ${listing.model}`}
-                  className={styles.listingImage}
-                />
-                <div className={styles.listingInfo}>
-                  <h3>{listing.carMake} {listing.model}</h3>
-                  <p>{listing.location}</p>
-                  <p>£{parseFloat(listing.pricePerDay).toFixed(2)}/day</p>
-                </div>
+            <>
+              {/* Turo-like header above the card grid */}
+              <div className={styles.listingsHeader}>
+                <h2>
+                  {listings.length}+ cars available 
+                  <span className={styles.subHeader}> • Sorted by relevance</span>
+                </h2>
+                <p className={styles.subText}>
+                  These cars are located in and around {searchQuery}.
+                </p>
               </div>
-            ))
+
+              {/* Card Grid */}
+              <div className={styles.listingsGrid}>
+                {listings.map((listing) => (
+                  <div
+                    key={listing._id}
+                    className={styles.listingCard}
+                    onClick={() => navigate(`/car/${listing._id}`)}
+                  >
+                    <div className={styles.imageWrapper}>
+                      <img
+                        src={`${staticUrl}/${listing.imageUrl}`}
+                        alt={`${listing.carMake} ${listing.model}`}
+                        className={styles.cardImage}
+                      />
+                    </div>
+                    <div className={styles.cardInfo}>
+                      <h3 className={styles.carTitle}>
+                        {listing.carMake} {listing.model}
+                      </h3>
+                      <p className={styles.carLocation}>{listing.location}</p>
+                      <p className={styles.price}>
+                        £{parseFloat(listing.pricePerDay).toFixed(2)}/day
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
+
+        {/* MAP COLUMN */}
         <div className={styles.mapContainer}>
           {isLoaded && (
-            <GoogleMap
-              mapContainerStyle={mapContainerStyle}
-              center={mapCenter}
-              zoom={mapZoom}
-            >
+            <GoogleMap mapContainerStyle={mapContainerStyle} center={mapCenter} zoom={mapZoom}>
               {listings.map((listing) => (
                 <Marker
                   key={listing._id}
@@ -383,6 +389,7 @@ export default function SearchResultsPage() {
         </div>
       </div>
 
+      {/* SIDE MENU */}
       {sideMenuOpen && (
         (() => {
           if (!token) return <SideMenu isOpen={sideMenuOpen} toggleMenu={() => setSideMenuOpen(false)} />;
