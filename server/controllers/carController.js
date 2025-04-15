@@ -75,15 +75,18 @@ exports.searchCars = async (req, res) => {
     const { query, make, lat, lng, radius, price, vehicleType, year } = req.query;
     let filter = {};
 
-    if (query) {
+    // If a query is provided, use regex on location and address.
+    if (query && query.trim() !== "") {
       filter.$or = [
         { location: { $regex: query, $options: 'i' } },
         { address: { $regex: query, $options: 'i' } }
       ];
     }
-    if (make) {
+
+    if (make && make.trim() !== "") {
       filter.carMake = { $regex: make, $options: 'i' };
     }
+    
     if (lat && lng && radius) {
       const latNum = parseFloat(lat);
       const lngNum = parseFloat(lng);
@@ -91,18 +94,22 @@ exports.searchCars = async (req, res) => {
       filter.latitude = { $gte: latNum - rad, $lte: latNum + rad };
       filter.longitude = { $gte: lngNum - rad, $lte: lngNum + rad };
     }
-    // Only add the price filter if price > 0.
+    
+    // Only add the price filter if the price parameter is greater than 0.
     if (price && parseFloat(price) > 0) {
       filter.pricePerDay = { $lte: parseFloat(price) };
     }
-    if (year) {
+    
+    if (year && year.trim() !== "") {
       filter.year = parseInt(year, 10);
     }
-    if (vehicleType) {
+    
+    if (vehicleType && vehicleType.trim() !== "") {
+      // Adjust here if you store vehicle type in a separate field; otherwise, using model.
       filter.model = { $regex: vehicleType, $options: 'i' };
     }
     
-    console.log('Car Search Filter:', filter);
+    console.log('Car Search Filter:', require('util').inspect(filter, { depth: null }));
     const cars = await Car.find(filter).populate('business', 'name email');
     res.json(cars);
   } catch (error) {
@@ -113,31 +120,26 @@ exports.searchCars = async (req, res) => {
 
 /**
  * Search across both the Car and Listing collections.
- * For the Car collection, this uses full-text search (requires text index) if a query is provided.
- * For the Listing collection, it also uses full-text search on address and title,
- * and applies date overlap filtering.
+ * 
+ * For the Car collection:
+ *   - If a location query is provided, use full-text search (requires text index).
+ *   - Additional filters (make, price, year, vehicleType) are applied.
+ *   - Date filtering is omitted.
+ * 
+ * For the Listing collection:
+ *   - If a location query is provided, use full-text search on address/title (requires text index).
+ *   - Additional filters (make, price, year, vehicleType) are applied.
+ *   - Date filtering is applied only if both fromDate and untilDate are provided.
+ *     Otherwise, listings are returned based solely on location and other filters.
  */
-// server/controllers/carController.js
-
 exports.searchAll = async (req, res) => {
   try {
-    const { 
-      query, 
-      make, 
-      lat, 
-      lng, 
-      radius, 
-      fromDate, 
-      untilDate, 
-      price, 
-      vehicleType, 
-      year 
-    } = req.query;
+    const { query, make, lat, lng, radius, fromDate, untilDate, price, vehicleType, year } = req.query;
     
     // Build filter for the Car collection.
     let carFilter = {};
     if (query && query.trim() !== "") {
-      // Use full-text search (requires text index) on Car.
+      // Use full-text search on Car (requires text index).
       carFilter.$text = { $search: query };
     }
     if (make && make.trim() !== "") {
@@ -157,11 +159,10 @@ exports.searchAll = async (req, res) => {
       carFilter.year = parseInt(year, 10);
     }
     if (vehicleType && vehicleType.trim() !== "") {
-      // Assuming that a vehicle type is stored in the model field (or adjust if you have a dedicated vehicleType field)
       carFilter.model = { $regex: vehicleType, $options: 'i' };
     }
-    // Note: For Cars, date filtering is omitted.
-    
+    // Date filtering for Cars is omitted.
+
     // Build filter for the Listing collection.
     let listingFilter = {};
     if (query && query.trim() !== "") {
@@ -180,7 +181,7 @@ exports.searchAll = async (req, res) => {
     if (vehicleType && vehicleType.trim() !== "") {
       listingFilter.carType = { $regex: vehicleType, $options: 'i' };
     }
-    // Apply date overlap filtering for Listings only if both dates are provided.
+    // Apply date overlap filtering for Listings only if both fromDate and untilDate are provided.
     if (
       fromDate && fromDate.trim() !== "" &&
       untilDate && untilDate.trim() !== ""
@@ -188,25 +189,22 @@ exports.searchAll = async (req, res) => {
       const searchFrom = new Date(fromDate);
       const searchUntil = new Date(untilDate);
       if (!isNaN(searchFrom.valueOf()) && !isNaN(searchUntil.valueOf())) {
-        // Overlap condition: listing.availableFrom <= requested until 
-        // and listing.availableTo >= requested from.
+        // Overlap condition:
+        // listing.availableFrom <= requested untilDate AND listing.availableTo >= requested fromDate.
         listingFilter.availableFrom = { $lte: searchUntil };
         listingFilter.availableTo = { $gte: searchFrom };
       }
     }
     
-    // Optional: Log the filters for debugging.
     const util = require('util');
     console.log('Car Filter:', util.inspect(carFilter, { depth: null }));
     console.log('Listing Filter:', util.inspect(listingFilter, { depth: null }));
     
-    // Execute both queries concurrently.
     const [cars, listings] = await Promise.all([
       Car.find(carFilter).populate('business', 'name email'),
       Listing.find(listingFilter)
     ]);
     
-    // Merge results and tag each with a type.
     const results = [
       ...cars.map(item => ({ type: 'car', data: item })),
       ...listings.map(item => ({ type: 'listing', data: item }))
@@ -218,7 +216,6 @@ exports.searchAll = async (req, res) => {
     res.status(500).json({ message: 'Server error while searching.' });
   }
 };
-
 
 /**
  * Retrieve a single car by its ID.
