@@ -1,3 +1,4 @@
+// client/src/pages/Home.js
 import React, { useState } from 'react';
 import { FaSearch } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
@@ -35,22 +36,38 @@ async function geocodeAddress(address) {
 
 const libraries = ['places'];
 
-export default function Home() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [location, setLocation] = useState('');
-  const [fromDateTime, setFromDateTime] = useState('2025-03-25T10:00');
-  const [toDateTime, setToDateTime] = useState('2025-03-27T10:00');
+/**
+ * Helper to format the current local time in yyyy-mm-ddThh:mm
+ * so that it can be used as a default value for <input type="datetime-local" />
+ */
+function getLocalDateTimeString(date) {
+  // Convert the Date object to local time by adjusting for time zone offset
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  // Then slice off the seconds, leaving yyyy-mm-ddThh:mm
+  return local.toISOString().slice(0, 16);
+}
 
+export default function Home() {
   const navigate = useNavigate();
   const { t } = useTranslation();
 
-  // load google maps for geocoding + autocomplete
+  // Load Google Maps for geocoding + autocomplete
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
     libraries
   });
 
-  // side menu logic
+  // Compute default "From" = Now, and "Until" = 2 days from now
+  const now = new Date();
+  const twoDaysLater = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
+
+  const [location, setLocation] = useState('');
+  const [fromDateTime, setFromDateTime] = useState(getLocalDateTimeString(now));
+  const [toDateTime, setToDateTime] = useState(getLocalDateTimeString(twoDaysLater));
+
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  // side menu login status
   const token = (localStorage.getItem('token') || '').trim();
   const accountType = (localStorage.getItem('accountType') || '').toLowerCase();
   const isCustomerLoggedIn = token !== '' && accountType === 'customer';
@@ -82,7 +99,7 @@ export default function Home() {
       }
     }
 
-    // pass location & lat/lng in URL
+    // Pass location & lat/lng in URL
     navigate(
       `/search?location=${encodeURIComponent(location)}&lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}&from=${encodeURIComponent(fromDateTime)}&to=${encodeURIComponent(toDateTime)}`
     );
@@ -99,7 +116,7 @@ export default function Home() {
     }
   };
 
-  // side menu
+  // Determine which side menu to render
   let sideMenuComponent = <SideMenu isOpen={menuOpen} toggleMenu={toggleMenu} />;
   if (isBusinessLoggedIn) {
     sideMenuComponent = (
@@ -143,9 +160,9 @@ export default function Home() {
       <section className={styles.hero} style={{ backgroundImage: `url(${heroImage})` }}>
         <div className={styles.heroOverlay} />
         <div className={styles.searchContainer}>
+          {/* Where field */}
           <div className={styles.fieldGroup}>
             <label className={styles.fieldLabel}>Where</label>
-            {/* Live suggestions */}
             <PlaceAutocomplete
               value={location}
               onChange={(e) => setLocation(e.target.value)}
@@ -153,6 +170,7 @@ export default function Home() {
               placeholder="Enter a location..."
             />
           </div>
+          {/* From field */}
           <div className={styles.fieldGroup}>
             <label className={styles.fieldLabel}>From</label>
             <input
@@ -162,6 +180,7 @@ export default function Home() {
               onChange={(e) => setFromDateTime(e.target.value)}
             />
           </div>
+          {/* Until field */}
           <div className={styles.fieldGroup}>
             <label className={styles.fieldLabel}>Until</label>
             <input
@@ -171,6 +190,7 @@ export default function Home() {
               onChange={(e) => setToDateTime(e.target.value)}
             />
           </div>
+          {/* Search button */}
           <button
             className={styles.searchIconButton}
             onClick={handleSearch}
@@ -181,11 +201,13 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Featured Businesses */}
       <section className={styles.featuredSection}>
         <h2 className={styles.featuredTitle}>Featured Businesses</h2>
         <FeaturedBusinesses />
       </section>
 
+      {/* Promo Section */}
       <section className={styles.promoSection}>
         <div className={styles.promoItem}>
           <div className={styles.promoIcon}>🎉</div>
@@ -205,6 +227,7 @@ export default function Home() {
         </div>
       </section>
 
+      {/* List Your Car */}
       <section className={styles.listYourCarSection}>
         <h2>List Your Car</h2>
         <p className={styles.listYourCarContent}>
