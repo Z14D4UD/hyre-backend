@@ -117,17 +117,30 @@ exports.searchCars = async (req, res) => {
  * For the Listing collection, it also uses full-text search on address and title,
  * and applies date overlap filtering.
  */
+// server/controllers/carController.js
+
 exports.searchAll = async (req, res) => {
   try {
-    const { query, make, lat, lng, radius, fromDate, untilDate, price, vehicleType, year } = req.query;
+    const { 
+      query, 
+      make, 
+      lat, 
+      lng, 
+      radius, 
+      fromDate, 
+      untilDate, 
+      price, 
+      vehicleType, 
+      year 
+    } = req.query;
     
     // Build filter for the Car collection.
     let carFilter = {};
     if (query && query.trim() !== "") {
-      // Use full-text search on Car (requires text index)
+      // Use full-text search (requires text index) on Car.
       carFilter.$text = { $search: query };
     }
-    if (make) {
+    if (make && make.trim() !== "") {
       carFilter.carMake = { $regex: make, $options: 'i' };
     }
     if (lat && lng && radius) {
@@ -140,49 +153,60 @@ exports.searchAll = async (req, res) => {
     if (price && parseFloat(price) > 0) {
       carFilter.pricePerDay = { $lte: parseFloat(price) };
     }
-    if (year) {
+    if (year && year.trim() !== "") {
       carFilter.year = parseInt(year, 10);
     }
-    if (vehicleType) {
+    if (vehicleType && vehicleType.trim() !== "") {
+      // Assuming that a vehicle type is stored in the model field (or adjust if you have a dedicated vehicleType field)
       carFilter.model = { $regex: vehicleType, $options: 'i' };
     }
-    // Date filtering for Car is omitted.
+    // Note: For Cars, date filtering is omitted.
     
     // Build filter for the Listing collection.
     let listingFilter = {};
     if (query && query.trim() !== "") {
-      // Use full-text search on Listing (requires text index)
+      // Use full-text search on Listing (requires text index).
       listingFilter.$text = { $search: query };
     }
-    if (make) {
+    if (make && make.trim() !== "") {
       listingFilter.make = { $regex: make, $options: 'i' };
     }
     if (price && parseFloat(price) > 0) {
       listingFilter.pricePerDay = { $lte: parseFloat(price) };
     }
-    if (year) {
+    if (year && year.trim() !== "") {
       listingFilter.year = parseInt(year, 10);
     }
-    if (vehicleType) {
+    if (vehicleType && vehicleType.trim() !== "") {
       listingFilter.carType = { $regex: vehicleType, $options: 'i' };
     }
-    // Apply date overlap filtering for Listings.
-    if (fromDate && untilDate && fromDate.trim() !== "" && untilDate.trim() !== "") {
+    // Apply date overlap filtering for Listings only if both dates are provided.
+    if (
+      fromDate && fromDate.trim() !== "" &&
+      untilDate && untilDate.trim() !== ""
+    ) {
       const searchFrom = new Date(fromDate);
       const searchUntil = new Date(untilDate);
       if (!isNaN(searchFrom.valueOf()) && !isNaN(searchUntil.valueOf())) {
+        // Overlap condition: listing.availableFrom <= requested until 
+        // and listing.availableTo >= requested from.
         listingFilter.availableFrom = { $lte: searchUntil };
         listingFilter.availableTo = { $gte: searchFrom };
       }
     }
     
-    console.log('Car Filter:', carFilter);
-    console.log('Listing Filter:', listingFilter);
+    // Optional: Log the filters for debugging.
+    const util = require('util');
+    console.log('Car Filter:', util.inspect(carFilter, { depth: null }));
+    console.log('Listing Filter:', util.inspect(listingFilter, { depth: null }));
+    
+    // Execute both queries concurrently.
     const [cars, listings] = await Promise.all([
       Car.find(carFilter).populate('business', 'name email'),
       Listing.find(listingFilter)
     ]);
     
+    // Merge results and tag each with a type.
     const results = [
       ...cars.map(item => ({ type: 'car', data: item })),
       ...listings.map(item => ({ type: 'listing', data: item }))
@@ -194,6 +218,7 @@ exports.searchAll = async (req, res) => {
     res.status(500).json({ message: 'Server error while searching.' });
   }
 };
+
 
 /**
  * Retrieve a single car by its ID.
