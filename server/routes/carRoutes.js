@@ -1,7 +1,7 @@
 // server/routes/carRoutes.js
 const express = require('express');
 const router = express.Router();
-const { uploadCar, getCars, searchCars, getCarById } = require('../controllers/carController');
+const { uploadCar, getCars, searchCars, getCarById, searchAll } = require('../controllers/carController');
 const authMiddleware = require('../middlewares/authMiddleware');
 const upload = require('../middlewares/uploadMiddleware');
 
@@ -18,7 +18,6 @@ router.get('/search', searchCars);
 router.get('/:id', getCarById);
 
 // GET /api/cars/searchAll – search across both Cars and Listings
-router.get('/searchAll', exports.searchAll);
-
+router.get('/searchAll', searchAll);
 
 module.exports = router;
