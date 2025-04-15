@@ -1,8 +1,11 @@
 // server/controllers/carController.js
 const Car = require('../models/Car');
+const Listing = require('../models/Listing');
 const Business = require('../models/Business');
 
-// Upload a new car listing
+/**
+ * Upload a new car listing to the Car collection.
+ */
 exports.uploadCar = async (req, res) => {
   const {
     carMake,
@@ -15,19 +18,19 @@ exports.uploadCar = async (req, res) => {
     year,
     mileage,
     features,
-    availableFrom, // expected as a date string (e.g. "2025-03-25")
-    availableTo    // expected as a date string (e.g. "2025-03-27")
+    availableFrom, // expected as a date string, e.g. "2025-03-25"
+    availableTo    // expected as a date string, e.g. "2025-03-27"
   } = req.body;
 
-  // Get the authenticated business's ID from req.business
+  // Get the authenticated business's ID from req.business (set by your auth middleware)
   const businessId = req.business.id;
   
-  // Normalize the image path if a file is uploaded
+  // Normalize the image path if a file is uploaded.
   const imageUrl = req.file ? req.file.path.replace(/\\/g, '/') : '';
 
   try {
-    // Create a new Car document using the provided fields.
-    // Make sure your Car model contains "availableFrom" and "availableTo" if you want to use date filters later.
+    // Create a new Car document with the provided fields.
+    // (Ensure that your Car model contains availableFrom and availableTo if you want to use date filtering later.)
     const car = new Car({
       business: businessId,
       carMake,
@@ -47,7 +50,7 @@ exports.uploadCar = async (req, res) => {
 
     await car.save();
 
-    // Optionally, add points to the Business (if supported in your Business model)
+    // Optionally, add points to the Business (if your Business model supports a "points" field)
     await Business.findByIdAndUpdate(businessId, { $inc: { points: 10 } });
 
     res.status(201).json({ car });
@@ -57,7 +60,9 @@ exports.uploadCar = async (req, res) => {
   }
 };
 
-// Retrieve all cars
+/**
+ * Retrieve all cars from the Car collection.
+ */
 exports.getCars = async (req, res) => {
   try {
     const cars = await Car.find({}).populate('business', 'name email');
@@ -68,37 +73,27 @@ exports.getCars = async (req, res) => {
   }
 };
 
-// Search for cars using full-text search for fuzzy matching, plus additional filters.
-// This function uses MongoDB's text search, so you must create a text index on the Car model.
+/**
+ * Search for cars (from the Car collection) using fuzzy matching on location and address.
+ * This endpoint uses regex filters (case-insensitive) and applies other filters for make, price, year, and vehicle type.
+ * Note: Date filtering is omitted for Car because the model may not be reliably populated for that.
+ */
 exports.searchCars = async (req, res) => {
   try {
-    const {
-      query,
-      make,
-      lat,
-      lng,
-      radius,
-      fromDate,    // not currently used in filtering
-      untilDate,   // not currently used in filtering
-      price,
-      vehicleType,
-      year
-    } = req.query;
-    
+    const { query, make, lat, lng, radius, price, vehicleType, year } = req.query;
     let filter = {};
 
     if (query) {
-      // Use text search for broad matching.
-      // Ensure you have created a text index on: location, address, carMake, and model.
-      filter.$text = { $search: query };
+      filter.$or = [
+        { location: { $regex: query, $options: 'i' } },
+        { address: { $regex: query, $options: 'i' } }
+      ];
     }
-
+    
     if (make) {
-      // Further narrow by carMake using a regex match.
       filter.carMake = { $regex: make, $options: 'i' };
     }
-
-    // Optional: If lat, lng, and radius are provided, create a bounding box filter.
+    
     if (lat && lng && radius) {
       const latNum = parseFloat(lat);
       const lngNum = parseFloat(lng);
@@ -106,24 +101,20 @@ exports.searchCars = async (req, res) => {
       filter.latitude = { $gte: latNum - rad, $lte: latNum + rad };
       filter.longitude = { $gte: lngNum - rad, $lte: lngNum + rad };
     }
-
+    
     if (price) {
       filter.pricePerDay = { $lte: parseFloat(price) };
     }
-
+    
     if (year) {
       filter.year = parseInt(year, 10);
     }
-
+    
     if (vehicleType) {
-      // Assuming you have a field for vehicleType.
-      // If not, you might use a regex on model or a dedicated field.
-      filter.vehicleType = { $regex: vehicleType, $options: 'i' };
+      // Assuming the type might be stored in the model or features; adjust as needed.
+      filter.model = { $regex: vehicleType, $options: 'i' };
     }
-
-    // OPTIONAL: Date filtering logic is omitted here so that listings appear regardless of chosen dates.
-    // You could add date overlap logic here if needed.
-
+    
     const cars = await Car.find(filter).populate('business', 'name email');
     res.json(cars);
   } catch (error) {
@@ -132,7 +123,96 @@ exports.searchCars = async (req, res) => {
   }
 };
 
-// Retrieve a single car by its ID
+/**
+ * Search across both the Car and Listing collections.
+ * This is useful if business listings (in the Listing collection) need to be shown as well.
+ * For Cars, we use fuzzy matching on the location and address fields.
+ * For Listings, we use fuzzy matching on the address and title fields.
+ * Additionally, if fromDate and untilDate are provided, we filter listings by availability overlap.
+ */
+exports.searchAll = async (req, res) => {
+  try {
+    const { query, make, lat, lng, radius, fromDate, untilDate, price, vehicleType, year } = req.query;
+    
+    // Build filter for the Car collection
+    let carFilter = {};
+    if (query) {
+      carFilter.$or = [
+        { location: { $regex: query, $options: 'i' } },
+        { address: { $regex: query, $options: 'i' } }
+      ];
+    }
+    if (make) {
+      carFilter.carMake = { $regex: make, $options: 'i' };
+    }
+    if (lat && lng && radius) {
+      const latNum = parseFloat(lat);
+      const lngNum = parseFloat(lng);
+      const rad = parseFloat(radius);
+      carFilter.latitude = { $gte: latNum - rad, $lte: latNum + rad };
+      carFilter.longitude = { $gte: lngNum - rad, $lte: lngNum + rad };
+    }
+    if (price) {
+      carFilter.pricePerDay = { $lte: parseFloat(price) };
+    }
+    if (year) {
+      carFilter.year = parseInt(year, 10);
+    }
+    if (vehicleType) {
+      carFilter.model = { $regex: vehicleType, $options: 'i' };
+    }
+    // (Date filtering for Car is omitted here.)
+
+    // Build filter for the Listing collection
+    let listingFilter = {};
+    if (query) {
+      listingFilter.$or = [
+        { address: { $regex: query, $options: 'i' } },
+        { title: { $regex: query, $options: 'i' } }
+      ];
+    }
+    if (make) {
+      listingFilter.make = { $regex: make, $options: 'i' };
+    }
+    if (price) {
+      listingFilter.pricePerDay = { $lte: parseFloat(price) };
+    }
+    if (year) {
+      listingFilter.year = parseInt(year, 10);
+    }
+    if (vehicleType) {
+      listingFilter.carType = { $regex: vehicleType, $options: 'i' };
+    }
+    // Date filtering for Listings: only return if the requested date range overlaps the listing's availability.
+    if (fromDate && untilDate) {
+      const searchFrom = new Date(fromDate);
+      const searchUntil = new Date(untilDate);
+      listingFilter.availableFrom = { $lte: searchUntil };
+      listingFilter.availableTo = { $gte: searchFrom };
+    }
+    
+    // Execute both queries concurrently
+    const [cars, listings] = await Promise.all([
+      Car.find(carFilter).populate('business', 'name email'),
+      Listing.find(listingFilter)
+    ]);
+    
+    // Merge the results and tag each item with a type for the front end to differentiate.
+    const results = [
+      ...cars.map(item => ({ type: 'car', data: item })),
+      ...listings.map(item => ({ type: 'listing', data: item }))
+    ];
+    
+    res.json(results);
+  } catch (error) {
+    console.error('Error searching cars and listings:', error);
+    res.status(500).json({ message: 'Server error while searching.' });
+  }
+};
+  
+/**
+ * Retrieve a single car by its ID.
+ */
 exports.getCarById = async (req, res) => {
   try {
     const car = await Car.findById(req.params.id).populate('business', 'name email');

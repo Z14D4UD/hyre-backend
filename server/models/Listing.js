@@ -42,4 +42,7 @@ const ListingSchema = new mongoose.Schema({
   terms: { type: String },
 }, { timestamps: true });
 
+ListingSchema.index({ address: 'text', title: 'text', make: 'text', model: 'text' });
+
+
 module.exports = mongoose.model('Listing', ListingSchema);

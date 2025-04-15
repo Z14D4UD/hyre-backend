@@ -17,4 +17,8 @@ router.get('/search', searchCars);
 // GET /api/cars/:id – Retrieve a single car by its ID
 router.get('/:id', getCarById);
 
+// GET /api/cars/searchAll – search across both Cars and Listings
+router.get('/searchAll', exports.searchAll);
+
+
 module.exports = router;
