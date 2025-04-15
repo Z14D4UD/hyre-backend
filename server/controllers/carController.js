@@ -3,7 +3,6 @@ const Car = require('../models/Car');
 const Listing = require('../models/Listing');
 const Business = require('../models/Business');
 
-// Import node-geocoder
 const NodeGeocoder = require('node-geocoder');
 const geocoderOptions = {
   provider: 'google',
@@ -27,10 +26,10 @@ exports.uploadCar = async (req, res) => {
     year,
     mileage,
     features,
-    availableFrom, // e.g., "2025-03-25"
-    availableTo    // e.g., "2025-03-27"
+    availableFrom, // expected as a date string, e.g. "2025-03-25"
+    availableTo    // expected as a date string, e.g. "2025-03-27"
   } = req.body;
-  
+
   const businessId = req.business.id;
   const imageUrl = req.file ? req.file.path.replace(/\\/g, '/') : '';
 
@@ -75,13 +74,12 @@ exports.getCars = async (req, res) => {
 };
 
 /**
- * Search for cars in the Car collection.
+ * Search for cars only.
  */
 exports.searchCars = async (req, res) => {
   try {
     const { query, make, lat, lng, radius, price, vehicleType, year } = req.query;
     let filter = {};
-
     if (query && query.trim() !== "") {
       filter.$or = [
         { location: { $regex: query, $options: 'i' } },
@@ -107,7 +105,6 @@ exports.searchCars = async (req, res) => {
     if (vehicleType && vehicleType.trim() !== "") {
       filter.model = { $regex: vehicleType, $options: 'i' };
     }
-    
     console.log('Car Search Filter:', require('util').inspect(filter, { depth: null }));
     const cars = await Car.find(filter).populate('business', 'name email');
     res.json(cars);
@@ -118,16 +115,17 @@ exports.searchCars = async (req, res) => {
 };
 
 /**
- * Search across both Cars and Listings.
- * - For Cars: uses full-text search (if query provided) and additional filters.
- * - For Listings: uses full-text search on address/title and (if provided) date overlap filtering.
- *   If a Listing lacks latitude/longitude, it is geocoded on the fly.
+ * Search across both Car and Listing collections.
+ * - For Cars: use full-text search if a query is provided, and apply additional filters.
+ * - For Listings: use full-text search on address/title and apply filters.
+ *   If fromDate and untilDate are provided, perform an overlap check.
+ *   Listings lacking coordinates are geocoded via node-geocoder.
  */
 exports.searchAll = async (req, res) => {
   try {
     const { query, make, lat, lng, radius, fromDate, untilDate, price, vehicleType, year } = req.query;
     
-    // Build filter for Cars.
+    // Car filter:
     let carFilter = {};
     if (query && query.trim() !== "") {
       carFilter.$text = { $search: query };
@@ -151,9 +149,8 @@ exports.searchAll = async (req, res) => {
     if (vehicleType && vehicleType.trim() !== "") {
       carFilter.model = { $regex: vehicleType, $options: 'i' };
     }
-    // (Date filtering is omitted for Cars.)
     
-    // Build filter for Listings.
+    // Listing filter:
     let listingFilter = {};
     if (query && query.trim() !== "") {
       listingFilter.$text = { $search: query };
@@ -170,7 +167,7 @@ exports.searchAll = async (req, res) => {
     if (vehicleType && vehicleType.trim() !== "") {
       listingFilter.carType = { $regex: vehicleType, $options: 'i' };
     }
-    // Apply date overlap filtering if both dates are provided.
+    // Date overlap filter for Listings:
     if (fromDate && fromDate.trim() !== "" && untilDate && untilDate.trim() !== "") {
       const searchFrom = new Date(fromDate);
       const searchUntil = new Date(untilDate);
@@ -184,12 +181,13 @@ exports.searchAll = async (req, res) => {
     console.log('Car Filter:', util.inspect(carFilter, { depth: null }));
     console.log('Listing Filter:', util.inspect(listingFilter, { depth: null }));
     
+    // Execute queries concurrently.
     const [cars, listings] = await Promise.all([
       Car.find(carFilter).populate('business', 'name email'),
       Listing.find(listingFilter)
     ]);
     
-    // For each listing without coordinates, attempt to geocode.
+    // For each listing, if latitude/longitude are missing, geocode the address.
     const geocodedListings = await Promise.all(
       listings.map(async (listing) => {
         if (!listing.latitude || !listing.longitude) {
@@ -208,6 +206,7 @@ exports.searchAll = async (req, res) => {
       })
     );
     
+    // Merge results.
     const results = [
       ...cars.map(item => ({ type: 'car', data: item })),
       ...geocodedListings.map(item => ({ type: 'listing', data: item }))
