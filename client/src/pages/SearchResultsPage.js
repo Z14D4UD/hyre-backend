@@ -10,7 +10,9 @@ import SideMenuCustomer from '../components/SideMenuCustomer';
 import SideMenuBusiness from '../components/SideMenuBusiness';
 import SideMenuAffiliate from '../components/SideMenuAffiliate';
 
+// Our custom PlaceAutocomplete component
 import PlaceAutocomplete from '../components/PlaceAutocomplete';
+
 import styles from '../styles/SearchResultsPage.module.css';
 import heroImage from '../assets/lambo.jpg';
 
@@ -25,9 +27,10 @@ async function geocodeAddress(address) {
   return new Promise((resolve, reject) => {
     geocoder.geocode({ address }, (results, status) => {
       if (status === 'OK' && results[0]) {
-        const lat = results[0].geometry.location.lat();
-        const lng = results[0].geometry.location.lng();
-        resolve({ lat, lng });
+        resolve({
+          lat: results[0].geometry.location.lat(),
+          lng: results[0].geometry.location.lng(),
+        });
       } else {
         reject(status);
       }
@@ -39,22 +42,22 @@ export default function SearchResultsPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // Get initial location from query params
+  // Extract initial search details from query parameters
   const initialLocation = searchParams.get('location') || '';
   const latParam = searchParams.get('lat');
   const lngParam = searchParams.get('lng');
 
   const [searchQuery, setSearchQuery] = useState(initialLocation);
-  const [listings, setListings] = useState([]);
+  const [results, setResults] = useState([]);
   const [mapCenter, setMapCenter] = useState(
     latParam && lngParam
       ? { lat: parseFloat(latParam), lng: parseFloat(lngParam) }
-      : { lat: 51.5074, lng: -0.1278 }
+      : { lat: 51.5074, lng: -0.1278 } // Default to London
   );
   const [mapZoom, setMapZoom] = useState(12);
   const [loading, setLoading] = useState(false);
 
-  // Additional states for date/time and filters
+  // Filters and extra states
   const [fromDate, setFromDate] = useState('');
   const [fromTime, setFromTime] = useState('');
   const [untilDate, setUntilDate] = useState('');
@@ -74,10 +77,11 @@ export default function SearchResultsPage() {
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
   const staticUrl = backendUrl.replace('/api', '');
 
-  const fetchListings = async (query) => {
+  // Use searchAll endpoint to retrieve merged results (both Car and Listing)
+  const fetchResults = async (query) => {
     setLoading(true);
     try {
-      const res = await axios.get(`${backendUrl}/cars/search`, {
+      const res = await axios.get(`${backendUrl}/cars/searchAll`, {
         params: {
           query,
           price,
@@ -90,7 +94,7 @@ export default function SearchResultsPage() {
           untilTime,
         },
       });
-      setListings(res.data);
+      setResults(res.data);
     } catch (err) {
       console.error('Error fetching listings:', err);
       alert('Failed to fetch listings.');
@@ -99,7 +103,6 @@ export default function SearchResultsPage() {
     }
   };
 
-  // On mount or location change
   useEffect(() => {
     if ((!latParam || !lngParam) && initialLocation && isLoaded && window.google) {
       geocodeAddress(initialLocation)
@@ -111,7 +114,7 @@ export default function SearchResultsPage() {
     } else if (latParam && lngParam) {
       setMapZoom(14);
     }
-    fetchListings(initialLocation);
+    fetchResults(initialLocation);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialLocation, latParam, lngParam, isLoaded]);
 
@@ -127,41 +130,29 @@ export default function SearchResultsPage() {
         console.error('Geocode error:', err);
       }
     }
-    fetchListings(searchQuery);
+    fetchResults(searchQuery);
   };
 
   const handlePlaceSelect = (prediction) => {
     setSearchQuery(prediction.description);
   };
 
-  // Decide which side menu to show
+  // Decide which side menu to render based on authentication.
   const token = localStorage.getItem('token') || '';
   const accountType = (localStorage.getItem('accountType') || '').toLowerCase();
   let sideMenuComponent = <SideMenu isOpen={sideMenuOpen} toggleMenu={() => setSideMenuOpen(false)} />;
   if (token) {
     if (accountType === 'business') {
       sideMenuComponent = (
-        <SideMenuBusiness
-          isOpen={sideMenuOpen}
-          toggleMenu={() => setSideMenuOpen(false)}
-          closeMenu={() => setSideMenuOpen(false)}
-        />
+        <SideMenuBusiness isOpen={sideMenuOpen} toggleMenu={() => setSideMenuOpen(false)} closeMenu={() => setSideMenuOpen(false)} />
       );
     } else if (accountType === 'affiliate') {
       sideMenuComponent = (
-        <SideMenuAffiliate
-          isOpen={sideMenuOpen}
-          toggleMenu={() => setSideMenuOpen(false)}
-          closeMenu={() => setSideMenuOpen(false)}
-        />
+        <SideMenuAffiliate isOpen={sideMenuOpen} toggleMenu={() => setSideMenuOpen(false)} closeMenu={() => setSideMenuOpen(false)} />
       );
     } else {
       sideMenuComponent = (
-        <SideMenuCustomer
-          isOpen={sideMenuOpen}
-          toggleMenu={() => setSideMenuOpen(false)}
-          closeMenu={() => setSideMenuOpen(false)}
-        />
+        <SideMenuCustomer isOpen={sideMenuOpen} toggleMenu={() => setSideMenuOpen(false)} closeMenu={() => setSideMenuOpen(false)} />
       );
     }
   }
@@ -170,20 +161,15 @@ export default function SearchResultsPage() {
     <div className={styles.container}>
       {/* HEADER */}
       <header className={styles.header}>
-        <div className={styles.logo} onClick={() => navigate('/')}>
-          Hyre
-        </div>
-        <button className={styles.menuIcon} onClick={() => setSideMenuOpen(!sideMenuOpen)}>
-          ☰
-        </button>
+        <div className={styles.logo} onClick={() => navigate('/')}>Hyre</div>
+        <button className={styles.menuIcon} onClick={() => setSideMenuOpen(!sideMenuOpen)}>☰</button>
       </header>
 
       <div className={styles.mainContent}>
         {/* HERO SECTION */}
         <section className={styles.heroSection} style={{ backgroundImage: `url(${heroImage})` }}>
           <div className={styles.heroOverlay} />
-
-          {/* FIRST ROW: location + date/time */}
+          {/* FIRST ROW: Location and Date/Time */}
           <div className={styles.hyreTopRow}>
             <PlaceAutocomplete
               value={searchQuery}
@@ -193,33 +179,17 @@ export default function SearchResultsPage() {
             />
             <div className={styles.hyreDateTime}>
               <label>From:</label>
-              <input
-                type="date"
-                value={fromDate}
-                onChange={(e) => setFromDate(e.target.value)}
-              />
-              <input
-                type="time"
-                value={fromTime}
-                onChange={(e) => setFromTime(e.target.value)}
-              />
+              <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+              <input type="time" value={fromTime} onChange={(e) => setFromTime(e.target.value)} />
             </div>
             <div className={styles.hyreDateTime}>
               <label>Until:</label>
-              <input
-                type="date"
-                value={untilDate}
-                onChange={(e) => setUntilDate(e.target.value)}
-              />
-              <input
-                type="time"
-                value={untilTime}
-                onChange={(e) => setUntilTime(e.target.value)}
-              />
+              <input type="date" value={untilDate} onChange={(e) => setUntilDate(e.target.value)} />
+              <input type="time" value={untilTime} onChange={(e) => setUntilTime(e.target.value)} />
             </div>
           </div>
 
-          {/* SECOND ROW: filters + search */}
+          {/* SECOND ROW: Additional Filters and Search Button */}
           <div className={styles.hyreBottomRow}>
             <div className={styles.filterInline}>
               <label>Price £0-£20,000 (Current: £{price})</label>
@@ -244,11 +214,7 @@ export default function SearchResultsPage() {
             </div>
             <div className={styles.filterInline}>
               <label>Type:</label>
-              <select
-                value={vehicleType}
-                onChange={(e) => setVehicleType(e.target.value)}
-                className={styles.selectInput}
-              >
+              <select value={vehicleType} onChange={(e) => setVehicleType(e.target.value)} className={styles.selectInput}>
                 <option value="">All</option>
                 <option value="Sedan">Sedan</option>
                 <option value="SUV">SUV</option>
@@ -266,11 +232,7 @@ export default function SearchResultsPage() {
             </div>
             <div className={styles.filterInline}>
               <label>Make:</label>
-              <select
-                value={make}
-                onChange={(e) => setMake(e.target.value)}
-                className={styles.selectInput}
-              >
+              <select value={make} onChange={(e) => setMake(e.target.value)} className={styles.selectInput}>
                 <option value="">All</option>
                 <option value="Toyota">Toyota</option>
                 <option value="Honda">Honda</option>
@@ -293,23 +255,15 @@ export default function SearchResultsPage() {
             </div>
             <div className={styles.filterInline}>
               <label>Year:</label>
-              <select
-                value={year}
-                onChange={(e) => setYear(e.target.value)}
-                className={styles.selectInput}
-              >
+              <select value={year} onChange={(e) => setYear(e.target.value)} className={styles.selectInput}>
                 <option value="">All</option>
                 {Array.from({ length: 2025 - 1950 + 1 }, (_, i) => 2025 - i).map((yr) => (
-                  <option key={yr} value={yr}>
-                    {yr}
-                  </option>
+                  <option key={yr} value={yr}>{yr}</option>
                 ))}
               </select>
             </div>
             <div className={styles.filterInline}>
-              <button className={styles.searchBtn} onClick={handleSearch}>
-                Search
-              </button>
+              <button className={styles.searchBtn} onClick={handleSearch}>Search</button>
             </div>
           </div>
         </section>
@@ -326,47 +280,51 @@ export default function SearchResultsPage() {
         <div className={styles.resultsContainer}>
           {loading ? (
             <p>Loading listings...</p>
-          ) : listings.length === 0 ? (
+          ) : results.length === 0 ? (
             <p>No listings found for "{searchQuery}".</p>
           ) : (
             <>
-              {/* Turo-like header above the card grid */}
               <div className={styles.listingsHeader}>
                 <h2>
-                  {listings.length}+ cars available 
+                  {results.length}+ cars available 
                   <span className={styles.subHeader}> • Sorted by relevance</span>
                 </h2>
                 <p className={styles.subText}>
                   These cars are located in and around {searchQuery}.
                 </p>
               </div>
-
-              {/* Card Grid */}
               <div className={styles.listingsGrid}>
-                {listings.map((listing) => (
-                  <div
-                    key={listing._id}
-                    className={styles.listingCard}
-                    onClick={() => navigate(`/car/${listing._id}`)}
-                  >
-                    <div className={styles.imageWrapper}>
-                      <img
-                        src={`${staticUrl}/${listing.imageUrl}`}
-                        alt={`${listing.carMake} ${listing.model}`}
-                        className={styles.cardImage}
-                      />
+                {results.map((result) => {
+                  const data = result.data;
+                  return (
+                    <div key={data._id} className={styles.listingCard} onClick={() => navigate(`/car/${data._id}`)}>
+                      <div className={styles.imageWrapper}>
+                        {/* For Car documents, use imageUrl; for Listing documents, use the first image in the images array. */}
+                        <img
+                          src={`${staticUrl}/${result.type === 'car' ? data.imageUrl : data.images[0]}`}
+                          alt={result.type === 'car'
+                            ? `${data.carMake} ${data.model}`
+                            : data.title}
+                          className={styles.cardImage}
+                        />
+                      </div>
+                      <div className={styles.cardInfo}>
+                        <h3 className={styles.carTitle}>
+                          {result.type === 'car' ? `${data.carMake} ${data.model}` : data.title}
+                        </h3>
+                        <p className={styles.carLocation}>
+                          {data.location ? data.location : data.address}
+                        </p>
+                        <p className={styles.price}>
+                          £{result.type === 'car'
+                            ? parseFloat(data.pricePerDay).toFixed(2)
+                            : parseFloat(data.pricePerDay).toFixed(2)}
+                          /day
+                        </p>
+                      </div>
                     </div>
-                    <div className={styles.cardInfo}>
-                      <h3 className={styles.carTitle}>
-                        {listing.carMake} {listing.model}
-                      </h3>
-                      <p className={styles.carLocation}>{listing.location}</p>
-                      <p className={styles.price}>
-                        £{parseFloat(listing.pricePerDay).toFixed(2)}/day
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </>
           )}
@@ -376,14 +334,21 @@ export default function SearchResultsPage() {
         <div className={styles.mapContainer}>
           {isLoaded && (
             <GoogleMap mapContainerStyle={mapContainerStyle} center={mapCenter} zoom={mapZoom}>
-              {listings.map((listing) => (
-                <Marker
-                  key={listing._id}
-                  position={{ lat: listing.latitude, lng: listing.longitude }}
-                  title={`${listing.carMake} ${listing.model}`}
-                  onClick={() => navigate(`/car/${listing._id}`)}
-                />
-              ))}
+              {results.map((result) => {
+                const data = result.data;
+                // Only render markers if we have valid coordinates.
+                if (!data.latitude || !data.longitude) return null;
+                return (
+                  <Marker
+                    key={data._id}
+                    position={{ lat: data.latitude, lng: data.longitude }}
+                    title={result.type === 'car'
+                      ? `${data.carMake} ${data.model}`
+                      : data.title}
+                    onClick={() => navigate(`/car/${data._id}`)}
+                  />
+                );
+              })}
             </GoogleMap>
           )}
         </div>

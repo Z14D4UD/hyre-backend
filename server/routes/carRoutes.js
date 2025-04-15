@@ -1,4 +1,3 @@
-// server/routes/carRoutes.js
 const express = require('express');
 const router = express.Router();
 const { 
@@ -17,10 +16,10 @@ router.post('/upload', authMiddleware, upload.single('image'), uploadCar);
 // 2) GET /api/cars – Retrieve all cars
 router.get('/', getCars);
 
-// 3) GET /api/cars/search – Search for cars
+// 3) GET /api/cars/search – Search for cars (Car collection only)
 router.get('/search', searchCars);
 
-// 4) GET /api/cars/searchAll – search across both Cars and Listings
+// 4) GET /api/cars/searchAll – Search across both Cars and Listings
 router.get('/searchAll', searchAll);
 
 // 5) GET /api/cars/:id – Retrieve a single car by its ID
