@@ -4,15 +4,11 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { GoogleMap, Marker, useJsApiLoader } from '@react-google-maps/api';
 
-// Side menu components
 import SideMenu from '../components/SideMenu';
 import SideMenuCustomer from '../components/SideMenuCustomer';
 import SideMenuBusiness from '../components/SideMenuBusiness';
 import SideMenuAffiliate from '../components/SideMenuAffiliate';
-
-// Our custom PlaceAutocomplete component
 import PlaceAutocomplete from '../components/PlaceAutocomplete';
-
 import styles from '../styles/SearchResultsPage.module.css';
 import heroImage from '../assets/lambo.jpg';
 
@@ -76,7 +72,7 @@ export default function SearchResultsPage() {
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
   const staticUrl = backendUrl.replace('/api', '');
 
-  // Use the "searchAll" endpoint to get merged results
+  // Call the /searchAll endpoint.
   const fetchResults = async (query) => {
     setLoading(true);
     try {
@@ -91,11 +87,13 @@ export default function SearchResultsPage() {
           fromTime,
           untilDate,
           untilTime,
+          // Optionally, pass a radius parameter for location filtering:
+          radius: 50
         },
       });
       setResults(res.data);
     } catch (err) {
-      console.error('Error fetching listings:', err);
+      console.error('Error fetching results:', err);
       alert('Failed to fetch listings.');
     } finally {
       setLoading(false);
@@ -136,17 +134,23 @@ export default function SearchResultsPage() {
     setSearchQuery(prediction.description);
   };
 
-  // Choose which side menu component to render.
+  // Choose which side menu to display.
   const token = localStorage.getItem('token') || '';
   const accountType = (localStorage.getItem('accountType') || '').toLowerCase();
   let sideMenuComponent = <SideMenu isOpen={sideMenuOpen} toggleMenu={() => setSideMenuOpen(false)} />;
   if (token) {
     if (accountType === 'business') {
-      sideMenuComponent = (<SideMenuBusiness isOpen={sideMenuOpen} toggleMenu={() => setSideMenuOpen(false)} closeMenu={() => setSideMenuOpen(false)} />);
+      sideMenuComponent = (
+        <SideMenuBusiness isOpen={sideMenuOpen} toggleMenu={() => setSideMenuOpen(false)} closeMenu={() => setSideMenuOpen(false)} />
+      );
     } else if (accountType === 'affiliate') {
-      sideMenuComponent = (<SideMenuAffiliate isOpen={sideMenuOpen} toggleMenu={() => setSideMenuOpen(false)} closeMenu={() => setSideMenuOpen(false)} />);
+      sideMenuComponent = (
+        <SideMenuAffiliate isOpen={sideMenuOpen} toggleMenu={() => setSideMenuOpen(false)} closeMenu={() => setSideMenuOpen(false)} />
+      );
     } else {
-      sideMenuComponent = (<SideMenuCustomer isOpen={sideMenuOpen} toggleMenu={() => setSideMenuOpen(false)} closeMenu={() => setSideMenuOpen(false)} />);
+      sideMenuComponent = (
+        <SideMenuCustomer isOpen={sideMenuOpen} toggleMenu={() => setSideMenuOpen(false)} closeMenu={() => setSideMenuOpen(false)} />
+      );
     }
   }
 
@@ -182,7 +186,7 @@ export default function SearchResultsPage() {
             </div>
           </div>
 
-          {/* SECOND ROW: Additional Filters and Search Button */}
+          {/* SECOND ROW: Filters and Search */}
           <div className={styles.hyreBottomRow}>
             <div className={styles.filterInline}>
               <label>Price £0-£20,000 (Current: £{price})</label>
@@ -290,7 +294,11 @@ export default function SearchResultsPage() {
                 {results.map((result) => {
                   const data = result.data;
                   return (
-                    <div key={data._id} className={styles.listingCard} onClick={() => navigate(`/details/${data._id}`)}>
+                    <div
+                      key={data._id}
+                      className={styles.listingCard}
+                      onClick={() => navigate(`/details/${data._id}`)}
+                    >
                       <div className={styles.imageWrapper}>
                         {result.type === 'car' ? (
                           <img
@@ -314,10 +322,10 @@ export default function SearchResultsPage() {
                           {data.location ? data.location : data.address}
                         </p>
                         <p className={styles.price}>
-                          £{result.type === 'car' 
+                          £{result.type === 'car'
                             ? parseFloat(data.pricePerDay).toFixed(2)
-                            : parseFloat(data.pricePerDay).toFixed(2)
-                          }/day
+                            : parseFloat(data.pricePerDay).toFixed(2)}
+                          /day
                         </p>
                       </div>
                     </div>
@@ -334,15 +342,18 @@ export default function SearchResultsPage() {
             <GoogleMap mapContainerStyle={mapContainerStyle} center={mapCenter} zoom={mapZoom}>
               {results.map((result) => {
                 const data = result.data;
-                // Render marker only if coordinates exist.
+                // Render marker only if valid numeric coordinates exist.
                 if (!data.latitude || !data.longitude) return null;
                 return (
                   <Marker
                     key={data._id}
-                    position={{ lat: data.latitude, lng: data.longitude }}
-                    title={result.type === 'car'
-                      ? `${data.carMake} ${data.model}`
-                      : data.title}
+                    position={{ lat: Number(data.latitude), lng: Number(data.longitude) }}
+                    title={result.type === 'car' ? `${data.carMake} ${data.model}` : data.title}
+                    // Use a custom icon for better visibility
+                    icon={{
+                      url: '/marker-icon.png', // ensure this file exists in your public folder
+                      scaledSize: new window.google.maps.Size(40, 40)
+                    }}
                     onClick={() => navigate(`/details/${data._id}`)}
                   />
                 );
@@ -355,8 +366,7 @@ export default function SearchResultsPage() {
       {/* SIDE MENU */}
       {sideMenuOpen && (
         (() => {
-          if (!token)
-            return <SideMenu isOpen={sideMenuOpen} toggleMenu={() => setSideMenuOpen(false)} />;
+          if (!token) return <SideMenu isOpen={sideMenuOpen} toggleMenu={() => setSideMenuOpen(false)} />;
           if (accountType === 'business') {
             return (
               <SideMenuBusiness
