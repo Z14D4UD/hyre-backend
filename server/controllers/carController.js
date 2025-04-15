@@ -1,5 +1,4 @@
 // server/controllers/carController.js
-
 const Car = require('../models/Car');
 const Business = require('../models/Business');
 
@@ -16,9 +15,8 @@ exports.uploadCar = async (req, res) => {
     year,
     mileage,
     features,
-    // The following are ignored for logic, but stored if your model has them:
-    availableFrom,
-    availableTo
+    availableFrom, // expected as a date string (e.g. "2025-03-25")
+    availableTo    // expected as a date string (e.g. "2025-03-27")
   } = req.body;
 
   // Get the authenticated business's ID from req.business
@@ -29,6 +27,7 @@ exports.uploadCar = async (req, res) => {
 
   try {
     // Create a new Car document using the provided fields.
+    // Make sure your Car model contains "availableFrom" and "availableTo" if you want to use date filters later.
     const car = new Car({
       business: businessId,
       carMake,
@@ -42,14 +41,13 @@ exports.uploadCar = async (req, res) => {
       year,
       mileage,
       features: features ? features.split(',').map(s => s.trim()) : [],
-      // If your Car model has fields for date availability, you can store them:
       availableFrom: availableFrom ? new Date(availableFrom) : undefined,
       availableTo: availableTo ? new Date(availableTo) : undefined
     });
 
     await car.save();
 
-    // Optionally, add points to the Business (if your Business model supports "points")
+    // Optionally, add points to the Business (if supported in your Business model)
     await Business.findByIdAndUpdate(businessId, { $inc: { points: 10 } });
 
     res.status(201).json({ car });
@@ -59,7 +57,7 @@ exports.uploadCar = async (req, res) => {
   }
 };
 
-// Retrieve all cars (no filters)
+// Retrieve all cars
 exports.getCars = async (req, res) => {
   try {
     const cars = await Car.find({}).populate('business', 'name email');
@@ -70,11 +68,8 @@ exports.getCars = async (req, res) => {
   }
 };
 
-// Search for cars using:
-//  - fuzzy matching on location or address
-//  - bounding box filter if lat/lng/radius
-//  - optional filters: price (<=), make (regex), year (exact match), vehicleType (regex on model?), etc.
-//  - *ignoring any date overlap logic*, so listings appear even if the user's chosen dates do not overlap
+// Search for cars using full-text search for fuzzy matching, plus additional filters.
+// This function uses MongoDB's text search, so you must create a text index on the Car model.
 exports.searchCars = async (req, res) => {
   try {
     const {
@@ -83,29 +78,27 @@ exports.searchCars = async (req, res) => {
       lat,
       lng,
       radius,
-      fromDate,
-      untilDate,   // We won't filter by date—just ignoring it
+      fromDate,    // not currently used in filtering
+      untilDate,   // not currently used in filtering
       price,
       vehicleType,
       year
     } = req.query;
+    
+    let filter = {};
 
-    const filter = {};
-
-    // 1) Fuzzy match location or address
     if (query) {
-      filter.$or = [
-        { location: { $regex: query, $options: 'i' } },
-        { address: { $regex: query, $options: 'i' } }
-      ];
+      // Use text search for broad matching.
+      // Ensure you have created a text index on: location, address, carMake, and model.
+      filter.$text = { $search: query };
     }
 
-    // 2) Make filter (regex on carMake)
     if (make) {
+      // Further narrow by carMake using a regex match.
       filter.carMake = { $regex: make, $options: 'i' };
     }
 
-    // 3) If lat, lng, and radius are present, do bounding box
+    // Optional: If lat, lng, and radius are provided, create a bounding box filter.
     if (lat && lng && radius) {
       const latNum = parseFloat(lat);
       const lngNum = parseFloat(lng);
@@ -114,29 +107,22 @@ exports.searchCars = async (req, res) => {
       filter.longitude = { $gte: lngNum - rad, $lte: lngNum + rad };
     }
 
-    // 4) Price filter: show listings with pricePerDay <= user price
     if (price) {
       filter.pricePerDay = { $lte: parseFloat(price) };
     }
 
-    // 5) Year filter: exact match
     if (year) {
       filter.year = parseInt(year, 10);
     }
 
-    // 6) Vehicle type filter?
-    //  If your Car model does not have a `vehicleType` field, you have 2 options:
-    //   A) Add `vehicleType` to your CarSchema
-    //   B) Hack: match it in `model` or `features`. Example if your business might store "Sedan" in features:
-    // For demonstration, let's assume we store "Sedan", "SUV" in the Car's `model` or `features`.
     if (vehicleType) {
-      // If your model field is actually named carType or something else, change accordingly.
-      // For now, let's assume we do a fuzzy match on `model`.
-      filter.model = { $regex: vehicleType, $options: 'i' };
+      // Assuming you have a field for vehicleType.
+      // If not, you might use a regex on model or a dedicated field.
+      filter.vehicleType = { $regex: vehicleType, $options: 'i' };
     }
 
-    // We IGNORE fromDate/untilDate filters => removing date overlap logic
-    // This way, the listing appears regardless of user’s chosen date range
+    // OPTIONAL: Date filtering logic is omitted here so that listings appear regardless of chosen dates.
+    // You could add date overlap logic here if needed.
 
     const cars = await Car.find(filter).populate('business', 'name email');
     res.json(cars);
