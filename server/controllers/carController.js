@@ -45,7 +45,6 @@ exports.uploadCar = async (req, res) => {
 
     await car.save();
     await Business.findByIdAndUpdate(businessId, { $inc: { points: 10 } });
-
     res.status(201).json({ car });
   } catch (error) {
     console.error('Error uploading car:', error);
@@ -68,8 +67,8 @@ exports.getCars = async (req, res) => {
 
 /**
  * Search for cars (from the Car collection) using fuzzy matching on location and address.
- * This endpoint applies additional filters (make, price, year, vehicleType).
- * Date filtering is omitted since the Car model date fields may be less consistently populated.
+ * This endpoint applies additional filters for make, price, year, and vehicle type.
+ * Date filtering is omitted for Cars.
  */
 exports.searchCars = async (req, res) => {
   try {
@@ -92,7 +91,8 @@ exports.searchCars = async (req, res) => {
       filter.latitude = { $gte: latNum - rad, $lte: latNum + rad };
       filter.longitude = { $gte: lngNum - rad, $lte: lngNum + rad };
     }
-    if (price) {
+    // Only add the price filter if price > 0.
+    if (price && parseFloat(price) > 0) {
       filter.pricePerDay = { $lte: parseFloat(price) };
     }
     if (year) {
@@ -101,7 +101,7 @@ exports.searchCars = async (req, res) => {
     if (vehicleType) {
       filter.model = { $regex: vehicleType, $options: 'i' };
     }
-
+    
     console.log('Car Search Filter:', filter);
     const cars = await Car.find(filter).populate('business', 'name email');
     res.json(cars);
@@ -113,11 +113,9 @@ exports.searchCars = async (req, res) => {
 
 /**
  * Search across both the Car and Listing collections.
- * This endpoint uses full-text search for both collections (requiring text indexes)
- * and applies additional filters. For Listings, it also applies date overlap filtering.
- * 
- * Date Overlap (Listings): A listing's availableFrom must be <= requested untilDate
- * and availableTo must be >= requested fromDate.
+ * For the Car collection, this uses full-text search (requires text index) if a query is provided.
+ * For the Listing collection, it also uses full-text search on address and title,
+ * and applies date overlap filtering.
  */
 exports.searchAll = async (req, res) => {
   try {
@@ -126,7 +124,7 @@ exports.searchAll = async (req, res) => {
     // Build filter for the Car collection.
     let carFilter = {};
     if (query && query.trim() !== "") {
-      // Use text search (requires text index) on Car.
+      // Use full-text search on Car (requires text index)
       carFilter.$text = { $search: query };
     }
     if (make) {
@@ -139,7 +137,7 @@ exports.searchAll = async (req, res) => {
       carFilter.latitude = { $gte: latNum - rad, $lte: latNum + rad };
       carFilter.longitude = { $gte: lngNum - rad, $lte: lngNum + rad };
     }
-    if (price) {
+    if (price && parseFloat(price) > 0) {
       carFilter.pricePerDay = { $lte: parseFloat(price) };
     }
     if (year) {
@@ -148,18 +146,18 @@ exports.searchAll = async (req, res) => {
     if (vehicleType) {
       carFilter.model = { $regex: vehicleType, $options: 'i' };
     }
-    // Date filtering for Cars is omitted.
+    // Date filtering for Car is omitted.
     
     // Build filter for the Listing collection.
     let listingFilter = {};
     if (query && query.trim() !== "") {
-      // Use text search on Listing (requires text index).
+      // Use full-text search on Listing (requires text index)
       listingFilter.$text = { $search: query };
     }
     if (make) {
       listingFilter.make = { $regex: make, $options: 'i' };
     }
-    if (price) {
+    if (price && parseFloat(price) > 0) {
       listingFilter.pricePerDay = { $lte: parseFloat(price) };
     }
     if (year) {
@@ -168,7 +166,7 @@ exports.searchAll = async (req, res) => {
     if (vehicleType) {
       listingFilter.carType = { $regex: vehicleType, $options: 'i' };
     }
-    // Apply date overlap filtering for Listings if both fromDate and untilDate are provided.
+    // Apply date overlap filtering for Listings.
     if (fromDate && untilDate && fromDate.trim() !== "" && untilDate.trim() !== "") {
       const searchFrom = new Date(fromDate);
       const searchUntil = new Date(untilDate);
@@ -180,14 +178,11 @@ exports.searchAll = async (req, res) => {
     
     console.log('Car Filter:', carFilter);
     console.log('Listing Filter:', listingFilter);
-    
-    // Execute both queries concurrently.
     const [cars, listings] = await Promise.all([
       Car.find(carFilter).populate('business', 'name email'),
       Listing.find(listingFilter)
     ]);
     
-    // Merge and tag results.
     const results = [
       ...cars.map(item => ({ type: 'car', data: item })),
       ...listings.map(item => ({ type: 'listing', data: item }))
