@@ -14,7 +14,9 @@ exports.uploadCar = async (req, res) => {
     description,
     year,
     mileage,
-    features  // expects a comma-separated string
+    features,
+    availableFrom, // NEW: expected as a date string (e.g. "2025-03-25")
+    availableTo    // NEW: expected as a date string (e.g. "2025-03-27")
   } = req.body;
 
   // Get the authenticated business's ID from req.business
@@ -25,12 +27,12 @@ exports.uploadCar = async (req, res) => {
 
   try {
     // Create a new Car document using the provided fields.
+    // IMPORTANT: Ensure that your Car model has availableFrom and availableTo fields for date filtering.
     const car = new Car({
       business: businessId,
       carMake,
       model,
       location,
-      // Ensure we store numeric coordinates
       latitude: parseFloat(latitude),
       longitude: parseFloat(longitude),
       pricePerDay,
@@ -38,7 +40,10 @@ exports.uploadCar = async (req, res) => {
       description,
       year,
       mileage,
-      features: features ? features.split(',').map(s => s.trim()) : []
+      features: features ? features.split(',').map(s => s.trim()) : [],
+      // Convert dates to Date objects; if not provided, they can be left undefined
+      availableFrom: availableFrom ? new Date(availableFrom) : undefined,
+      availableTo: availableTo ? new Date(availableTo) : undefined
     });
 
     await car.save();
@@ -64,15 +69,16 @@ exports.getCars = async (req, res) => {
   }
 };
 
-// Search for cars using fuzzy matching on both location and address fields
+// Search for cars using fuzzy matching on both location and address fields,
+// plus date availability filtering (overlap) if fromDate and untilDate are provided.
 exports.searchCars = async (req, res) => {
   try {
-    // Extract query parameters from the request
-    const { query, make, lat, lng, radius } = req.query;
+    // Extract query parameters
+    const { query, make, lat, lng, radius, fromDate, untilDate } = req.query;
     let filter = {};
 
     if (query) {
-      // Use a case-insensitive regex search on both 'location' and 'address' fields
+      // Fuzzy match: search both "location" and "address" fields (case-insensitive)
       filter.$or = [
         { location: { $regex: query, $options: 'i' } },
         { address: { $regex: query, $options: 'i' } }
@@ -80,17 +86,28 @@ exports.searchCars = async (req, res) => {
     }
 
     if (make) {
-      // Use regex for carMake as well
+      // Fuzzy match on carMake
       filter.carMake = { $regex: make, $options: 'i' };
     }
 
-    // Optional: If lat, lng, and radius (in degrees) are provided, create a bounding box filter.
+    // If lat, lng, and radius are provided, create a rudimentary bounding box filter
     if (lat && lng && radius) {
       const latNum = parseFloat(lat);
       const lngNum = parseFloat(lng);
       const rad = parseFloat(radius);
       filter.latitude = { $gte: latNum - rad, $lte: latNum + rad };
       filter.longitude = { $gte: lngNum - rad, $lte: lngNum + rad };
+    }
+
+    // Date overlap filtering:
+    // We want to return a car if its available range overlaps the requested range.
+    // Overlap condition: listing.availableFrom <= requested.until AND listing.availableTo >= requested.from
+    if (fromDate && untilDate) {
+      const searchFrom = new Date(fromDate);
+      const searchUntil = new Date(untilDate);
+      // For this filter to work, your Car model must have "availableFrom" and "availableTo" fields.
+      filter.availableFrom = { $lte: searchUntil };
+      filter.availableTo = { $gte: searchFrom };
     }
 
     const cars = await Car.find(filter).populate('business', 'name email');
