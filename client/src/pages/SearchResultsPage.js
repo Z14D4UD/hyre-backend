@@ -2,12 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-import {
-  GoogleMap,
-  Marker,
-  InfoWindow, // <-- We import InfoWindow from google-maps-react
-  useJsApiLoader
-} from '@react-google-maps/api';
+import { GoogleMap, Marker, InfoWindow, useJsApiLoader } from '@react-google-maps/api';
 
 import SideMenu from '../components/SideMenu';
 import SideMenuCustomer from '../components/SideMenuCustomer';
@@ -34,6 +29,7 @@ async function geocodeAddress(address) {
           lng: results[0].geometry.location.lng(),
         });
       } else {
+        // Reject with the status so it can be handled later.
         reject(status);
       }
     });
@@ -44,7 +40,7 @@ export default function SearchResultsPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // Query params for location
+  // Get initial location and optional lat/lng from URL parameters
   const initialLocation = searchParams.get('location') || '';
   const latParam = searchParams.get('lat');
   const lngParam = searchParams.get('lng');
@@ -54,12 +50,12 @@ export default function SearchResultsPage() {
   const [mapCenter, setMapCenter] = useState(
     latParam && lngParam
       ? { lat: parseFloat(latParam), lng: parseFloat(lngParam) }
-      : { lat: 51.5074, lng: -0.1278 } // Default is London
+      : { lat: 51.5074, lng: -0.1278 } // Default to London
   );
   const [mapZoom, setMapZoom] = useState(11);
   const [loading, setLoading] = useState(false);
 
-  // Additional filter states
+  // Filter states
   const [fromDate, setFromDate] = useState('');
   const [fromTime, setFromTime] = useState('');
   const [untilDate, setUntilDate] = useState('');
@@ -69,21 +65,18 @@ export default function SearchResultsPage() {
   const [make, setMake] = useState('');
   const [year, setYear] = useState('');
 
-  // Side menu toggling
   const [sideMenuOpen, setSideMenuOpen] = useState(false);
-
-  // State for InfoWindow
   const [activeMarkerId, setActiveMarkerId] = useState(null);
 
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
-    libraries: ['places']
+    libraries: ['places'],
   });
 
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
   const staticUrl = backendUrl.replace('/api', '');
 
-  // Fetch merged results from your /cars/searchAll endpoint
+  // Fetch merged results (Cars and Listings) using your /searchAll endpoint.
   const fetchResults = async (query) => {
     setLoading(true);
     try {
@@ -98,7 +91,7 @@ export default function SearchResultsPage() {
           fromTime,
           untilDate,
           untilTime,
-          radius: 50 // default radius
+          radius: 50, // default radius in km
         },
       });
       setResults(res.data);
@@ -110,7 +103,7 @@ export default function SearchResultsPage() {
     }
   };
 
-  // On mount or changes
+  // On initial mount or if URL query changes:
   useEffect(() => {
     if ((!latParam || !lngParam) && initialLocation && isLoaded && window.google) {
       geocodeAddress(initialLocation)
@@ -118,7 +111,13 @@ export default function SearchResultsPage() {
           setMapCenter(coords);
           setMapZoom(11);
         })
-        .catch((err) => console.error('Geocode error:', err));
+        .catch((err) => {
+          console.error('Geocode error:', err);
+          // Fallback if geocoding fails (e.g., ZERO_RESULTS)
+          alert(`Could not find location "${initialLocation}". Showing default location.`);
+          setMapCenter({ lat: 51.5074, lng: -0.1278 }); // London fallback
+          setMapZoom(10);
+        });
     } else if (latParam && lngParam) {
       setMapZoom(11);
     }
@@ -136,17 +135,19 @@ export default function SearchResultsPage() {
         }
       } catch (err) {
         console.error('Geocode error:', err);
+        if (err === 'ZERO_RESULTS') {
+          alert(`No results found for "${searchQuery}".`);
+        }
       }
     }
     fetchResults(searchQuery);
   };
 
-  // Called by PlaceAutocomplete
   const handlePlaceSelect = (prediction) => {
     setSearchQuery(prediction.description);
   };
 
-  // Decide which side menu to show
+  // Side menu decision based on auth status
   const token = localStorage.getItem('token') || '';
   const accountType = (localStorage.getItem('accountType') || '').toLowerCase();
   let sideMenuComponent = <SideMenu isOpen={sideMenuOpen} toggleMenu={() => setSideMenuOpen(false)} />;
@@ -178,65 +179,53 @@ export default function SearchResultsPage() {
     }
   }
 
-  // For debugging
+  // Debug logs
   console.log('Current results:', results);
   console.log('Map center:', mapCenter);
 
-  // Closes the InfoWindow
+  // Functions to handle InfoWindow display
   const handleCloseInfoWindow = () => {
     setActiveMarkerId(null);
   };
 
-  // Called when user clicks a Marker
   const handleMarkerClick = (id) => {
-    if (id === activeMarkerId) {
-      // If already clicked, close it
-      setActiveMarkerId(null);
-    } else {
-      setActiveMarkerId(id);
-    }
+    setActiveMarkerId((prevId) => (prevId === id ? null : id));
   };
 
-  // Render snippet in the InfoWindow
-  // The user can click inside the snippet to navigate to /details/:id
+  // Render content for the InfoWindow (price, image, title, location, etc.)
   const renderInfoWindowContent = (data, resultType) => {
-    const { _id, pricePerDay, carMake, model, title, location, address, images, imageUrl } = data;
-
+    const {
+      _id,
+      pricePerDay,
+      carMake,
+      model,
+      title,
+      location,
+      address,
+      images,
+      imageUrl
+    } = data;
     const finalLocation = location || address || 'No location';
-    const finalTitle = (resultType === 'car')
+    const finalTitle = resultType === 'car'
       ? `${carMake} ${model}`
       : title || 'Untitled';
-    const finalImage = (resultType === 'car')
+    const finalImage = resultType === 'car'
       ? imageUrl
       : (images && images.length > 0 ? images[0] : '/placeholder.jpg');
-
-    const handleInfoClick = () => {
-      // Navigate to details page
-      navigate(`/details/${_id}`);
-    };
-
     return (
-      <div
-        style={{
-          width: '200px',
-          cursor: 'pointer'
-        }}
-        onClick={handleInfoClick}
-      >
+      <div style={{ width: '220px', cursor: 'pointer' }} onClick={() => navigate(`/details/${_id}`)}>
         <img
           src={`${staticUrl}/${finalImage}`}
           alt={finalTitle}
           style={{
             width: '100%',
-            height: '100px',
+            height: '120px',
             objectFit: 'cover',
             borderRadius: '4px'
           }}
         />
         <h4 style={{ margin: '8px 0', fontSize: '1rem' }}>{finalTitle}</h4>
-        <p style={{ margin: 0, fontSize: '0.85rem', color: '#666' }}>
-          {finalLocation}
-        </p>
+        <p style={{ margin: 0, fontSize: '0.85rem', color: '#666' }}>{finalLocation}</p>
         <p style={{ margin: '4px 0', fontWeight: 'bold' }}>
           £{parseFloat(pricePerDay).toFixed(2)}/day
         </p>
@@ -249,13 +238,11 @@ export default function SearchResultsPage() {
       {/* HEADER */}
       <header className={styles.header}>
         <div className={styles.logo} onClick={() => navigate('/')}>Hyre</div>
-        <button className={styles.menuIcon} onClick={() => setSideMenuOpen(!sideMenuOpen)}>
-          ☰
-        </button>
+        <button className={styles.menuIcon} onClick={() => setSideMenuOpen(!sideMenuOpen)}>☰</button>
       </header>
 
-      {/* HERO / FILTERS */}
       <div className={styles.mainContent}>
+        {/* HERO SECTION */}
         <section className={styles.heroSection} style={{ backgroundImage: `url(${heroImage})` }}>
           <div className={styles.heroOverlay} />
           <div className={styles.hyreTopRow}>
@@ -267,29 +254,13 @@ export default function SearchResultsPage() {
             />
             <div className={styles.hyreDateTime}>
               <label>From:</label>
-              <input
-                type="date"
-                value={fromDate}
-                onChange={(e) => setFromDate(e.target.value)}
-              />
-              <input
-                type="time"
-                value={fromTime}
-                onChange={(e) => setFromTime(e.target.value)}
-              />
+              <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+              <input type="time" value={fromTime} onChange={(e) => setFromTime(e.target.value)} />
             </div>
             <div className={styles.hyreDateTime}>
               <label>Until:</label>
-              <input
-                type="date"
-                value={untilDate}
-                onChange={(e) => setUntilDate(e.target.value)}
-              />
-              <input
-                type="time"
-                value={untilTime}
-                onChange={(e) => setUntilTime(e.target.value)}
-              />
+              <input type="date" value={untilDate} onChange={(e) => setUntilDate(e.target.value)} />
+              <input type="time" value={untilTime} onChange={(e) => setUntilTime(e.target.value)} />
             </div>
           </div>
 
@@ -317,11 +288,7 @@ export default function SearchResultsPage() {
             </div>
             <div className={styles.filterInline}>
               <label>Type:</label>
-              <select
-                value={vehicleType}
-                onChange={(e) => setVehicleType(e.target.value)}
-                className={styles.selectInput}
-              >
+              <select value={vehicleType} onChange={(e) => setVehicleType(e.target.value)} className={styles.selectInput}>
                 <option value="">All</option>
                 <option value="Sedan">Sedan</option>
                 <option value="SUV">SUV</option>
@@ -339,11 +306,7 @@ export default function SearchResultsPage() {
             </div>
             <div className={styles.filterInline}>
               <label>Make:</label>
-              <select
-                value={make}
-                onChange={(e) => setMake(e.target.value)}
-                className={styles.selectInput}
-              >
+              <select value={make} onChange={(e) => setMake(e.target.value)} className={styles.selectInput}>
                 <option value="">All</option>
                 <option value="Toyota">Toyota</option>
                 <option value="Honda">Honda</option>
@@ -366,11 +329,7 @@ export default function SearchResultsPage() {
             </div>
             <div className={styles.filterInline}>
               <label>Year:</label>
-              <select
-                value={year}
-                onChange={(e) => setYear(e.target.value)}
-                className={styles.selectInput}
-              >
+              <select value={year} onChange={(e) => setYear(e.target.value)} className={styles.selectInput}>
                 <option value="">All</option>
                 {Array.from({ length: 2025 - 1950 + 1 }, (_, i) => 2025 - i).map((yr) => (
                   <option key={yr} value={yr}>{yr}</option>
@@ -378,15 +337,12 @@ export default function SearchResultsPage() {
               </select>
             </div>
             <div className={styles.filterInline}>
-              <button className={styles.searchBtn} onClick={handleSearch}>
-                Search
-              </button>
+              <button className={styles.searchBtn} onClick={handleSearch}>Search</button>
             </div>
           </div>
         </section>
       </div>
 
-      {/* If loadError */}
       {loadError && (
         <div style={{ color: 'red', margin: '1rem 0' }}>
           Error loading Google Maps. (Check your API key or billing)
@@ -394,7 +350,7 @@ export default function SearchResultsPage() {
       )}
 
       <div className={styles.searchPageColumns}>
-        {/* LISTINGS SECTION */}
+        {/* LISTINGS COLUMN */}
         <div className={styles.resultsContainer}>
           {loading ? (
             <p>Loading listings...</p>
@@ -404,7 +360,7 @@ export default function SearchResultsPage() {
             <>
               <div className={styles.listingsHeader}>
                 <h2>
-                  {results.length}+ cars available
+                  {results.length}+ cars available 
                   <span className={styles.subHeader}> • Sorted by relevance</span>
                 </h2>
                 <p className={styles.subText}>
@@ -467,21 +423,21 @@ export default function SearchResultsPage() {
               mapContainerStyle={mapContainerStyle}
               center={mapCenter}
               zoom={mapZoom}
-              onClick={() => setActiveMarkerId(null)} // close infowindow if map is clicked
+              onClick={() => setActiveMarkerId(null)}
             >
               {results.map((result) => {
                 const data = result.data;
                 if (!data.latitude || !data.longitude) return null;
-
-                // Label: shows the price as "£##"
                 const markerLabel = data.priceLabel
                   ? data.priceLabel
                   : `£${parseFloat(data.pricePerDay).toFixed(0)}`;
-
                 return (
                   <Marker
                     key={data._id}
-                    position={{ lat: Number(data.latitude), lng: Number(data.longitude) }}
+                    position={{
+                      lat: Number(data.latitude),
+                      lng: Number(data.longitude)
+                    }}
                     label={{
                       text: markerLabel,
                       color: "#fff",
@@ -495,7 +451,6 @@ export default function SearchResultsPage() {
                     }}
                     onClick={() => handleMarkerClick(data._id)}
                   >
-                    {/* InfoWindow only renders if this marker is "activeMarkerId" */}
                     {activeMarkerId === data._id && (
                       <InfoWindow onCloseClick={handleCloseInfoWindow}>
                         {renderInfoWindowContent(data, result.type)}
@@ -512,9 +467,8 @@ export default function SearchResultsPage() {
       {/* SIDE MENU */}
       {sideMenuOpen && (
         (() => {
-          if (!token) {
+          if (!token)
             return <SideMenu isOpen={sideMenuOpen} toggleMenu={() => setSideMenuOpen(false)} />;
-          }
           if (accountType === 'business') {
             return (
               <SideMenuBusiness

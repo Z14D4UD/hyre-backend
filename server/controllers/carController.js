@@ -4,9 +4,11 @@ const Listing = require('../models/Listing');
 const Business = require('../models/Business');
 const NodeGeocoder = require('node-geocoder');
 
+// Use the server-side API key variable.
+// Make sure to add GOOGLE_MAPS_API_KEY to your server's .env file.
 const geocoderOptions = {
   provider: 'google',
-  apiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
+  apiKey: process.env.GOOGLE_MAPS_API_KEY, 
   formatter: null
 };
 const geocoder = NodeGeocoder(geocoderOptions);
@@ -26,8 +28,8 @@ exports.uploadCar = async (req, res) => {
     year,
     mileage,
     features,
-    availableFrom, // expected as a date string e.g. "2025-03-25"
-    availableTo    // expected as a date string e.g. "2025-03-27"
+    availableFrom, // expected as a date string, e.g. "2025-03-25"
+    availableTo    // expected as a date string, e.g. "2025-03-27"
   } = req.body;
 
   const businessId = req.business.id;
@@ -99,7 +101,8 @@ exports.searchCars = async (req, res) => {
       filter.latitude = { $gte: latNum - rad, $lte: latNum + rad };
       filter.longitude = { $gte: lngNum - rad, $lte: lngNum + rad };
     }
-    if (price && parseFloat(price) > 0) {
+    // Only add the price filter if price is greater than 0.
+    if (price !== undefined && parseFloat(price) > 0) {
       filter.pricePerDay = { $lte: parseFloat(price) };
     }
     if (year && year.trim() !== "") {
@@ -123,13 +126,13 @@ exports.searchCars = async (req, res) => {
  * For Cars:
  *   - If a location query is provided, use full‑text search ($text) on indexed fields.
  *   - Additional filters (make, price, year, vehicleType) are applied.
- *   - If lat/lng are provided, a bounding box filter is applied.
+ *   - If lat/lng are provided, apply a bounding box filter.
  * For Listings:
  *   - Use full‑text search on address and title.
  *   - Additional filters (make, price, year, vehicleType) are applied.
  *   - Date overlap filtering is applied if fromDate and untilDate are provided.
- *   - If latitude/longitude are missing, the address is geocoded.
- * Also, add a "priceLabel" field (e.g., "£1000") for front‑end marker labeling.
+ *   - If latitude/longitude are missing, geocode the address.
+ * Also, add a "priceLabel" field for marker labeling.
  */
 exports.searchAll = async (req, res) => {
   try {
@@ -138,6 +141,7 @@ exports.searchAll = async (req, res) => {
     // Build filter for Car collection.
     let carFilter = {};
     if (query && query.trim() !== "") {
+      // Use full-text search on Car (requires text index).
       carFilter.$text = { $search: query };
     }
     if (make && make.trim() !== "") {
@@ -147,11 +151,11 @@ exports.searchAll = async (req, res) => {
       const latNum = parseFloat(lat);
       const lngNum = parseFloat(lng);
       const rad = parseFloat(radius) || 50; // default radius 50 km
-      const degRadius = rad / 111; // approximate conversion
+      const degRadius = rad / 111; // approximate conversion from km to degrees
       carFilter.latitude = { $gte: latNum - degRadius, $lte: latNum + degRadius };
       carFilter.longitude = { $gte: lngNum - degRadius, $lte: lngNum + degRadius };
     }
-    if (price && price.toString().trim() !== "" && parseFloat(price) > 0) {
+    if (price !== undefined && price.toString().trim() !== "" && parseFloat(price) > 0) {
       carFilter.pricePerDay = { $lte: parseFloat(price) };
     }
     if (year && year.trim() !== "") {
@@ -169,7 +173,7 @@ exports.searchAll = async (req, res) => {
     if (make && make.trim() !== "") {
       listingFilter.make = { $regex: make, $options: 'i' };
     }
-    if (price && price.toString().trim() !== "" && parseFloat(price) > 0) {
+    if (price !== undefined && price.toString().trim() !== "" && parseFloat(price) > 0) {
       listingFilter.pricePerDay = { $lte: parseFloat(price) };
     }
     if (year && year.trim() !== "") {
@@ -182,6 +186,7 @@ exports.searchAll = async (req, res) => {
       const searchFrom = new Date(fromDate);
       const searchUntil = new Date(untilDate);
       if (!isNaN(searchFrom.valueOf()) && !isNaN(searchUntil.valueOf())) {
+        // Overlap condition: listing.availableFrom <= searchUntil AND listing.availableTo >= searchFrom
         listingFilter.availableFrom = { $lte: searchUntil };
         listingFilter.availableTo = { $gte: searchFrom };
       }
@@ -191,13 +196,13 @@ exports.searchAll = async (req, res) => {
     console.log('Car Filter:', util.inspect(carFilter, { depth: null }));
     console.log('Listing Filter:', util.inspect(listingFilter, { depth: null }));
     
-    // Execute queries concurrently.
+    // Execute both queries concurrently.
     const [cars, listings] = await Promise.all([
       Car.find(carFilter).populate('business', 'name email'),
       Listing.find(listingFilter)
     ]);
     
-    // For Cars, if latitude/longitude are missing, attempt to geocode using the "location" field.
+    // For each Car, if latitude/longitude are missing, attempt to geocode using "location".
     const geocodedCars = await Promise.all(
       cars.map(async (carDoc) => {
         let car = carDoc.toObject();
@@ -213,16 +218,12 @@ exports.searchAll = async (req, res) => {
           }
         }
         // Set priceLabel for marker display.
-        if (car.pricePerDay) {
-          car.priceLabel = `£${parseFloat(car.pricePerDay).toFixed(0)}`;
-        } else {
-          car.priceLabel = '£0';
-        }
+        car.priceLabel = car.pricePerDay ? `£${parseFloat(car.pricePerDay).toFixed(0)}` : '£0';
         return car;
       })
     );
 
-    // For Listings, if latitude/longitude are missing, attempt to geocode using the "address" field.
+    // For each Listing, if latitude/longitude are missing, attempt to geocode using "address".
     const geocodedListings = await Promise.all(
       listings.map(async (listingDoc) => {
         let listing = listingDoc.toObject();
@@ -237,11 +238,7 @@ exports.searchAll = async (req, res) => {
             console.error('Geocoding error for Listing', listing._id, err);
           }
         }
-        if (listing.pricePerDay) {
-          listing.priceLabel = `£${parseFloat(listing.pricePerDay).toFixed(0)}`;
-        } else {
-          listing.priceLabel = '£0';
-        }
+        listing.priceLabel = listing.pricePerDay ? `£${parseFloat(listing.pricePerDay).toFixed(0)}` : '£0';
         return listing;
       })
     );
