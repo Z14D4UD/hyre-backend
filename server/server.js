@@ -1,8 +1,8 @@
-// server.js
 const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
 const passport = require('passport');
+const path = require('path');
 require('dotenv').config();
 const connectDB = require('./config/db');
 const http = require('http');
@@ -15,38 +15,44 @@ const invoiceRoutes = require('./routes/invoiceRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const customerRoutes = require('./routes/customerRoutes');
 const carRoutes = require('./routes/carRoutes');
-const businessRoutes = require('./routes/businessRoutes');  // Only declare once
+const businessRoutes = require('./routes/businessRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const affiliateRoutes = require('./routes/affiliateRoutes');
 const accountRoutes = require('./routes/accountRoutes');
 const supportRoutes = require('./routes/supportRoutes');
-const reviewRoutes = require ('./routes/reviewRoutes');
+const reviewRoutes = require('./routes/reviewRoutes');
 const withdrawalRoutes = require('./routes/withdrawalRoutes');
 const connectBankRoutes = require('./routes/connectBankRoutes');
 const remindersRoutes = require('./routes/remindersRoutes');
 
-
-
-
 const app = express();
 const server = http.createServer(app);
 
+// Connect to MongoDB
 connectDB();
 
+// CORS whitelist
 const allowedOrigins = [
   'http://localhost:3000',
   'https://hyreuk.com',
 ];
 
-app.use(express.json());
+// Middlewares\app.use(express.json());
 app.use(cors({ origin: allowedOrigins, credentials: true }));
-app.use('/uploads', express.static('uploads'));
 
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'secretKey',
-  resave: false,
-  saveUninitialized: false,
-}));
+// Serve uploaded files from `server/uploads` directory
+app.use(
+  '/uploads',
+  express.static(path.join(__dirname, 'uploads'))
+);
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || 'secretKey',
+    resave: false,
+    saveUninitialized: false,
+  })
+);
 
 app.use(passport.initialize());
 app.use(passport.session());
@@ -69,9 +75,7 @@ app.use('/api/withdrawals', withdrawalRoutes);
 app.use('/api/connect-bank', connectBankRoutes);
 app.use('/api/reminders', remindersRoutes);
 
-
-
-
+// Socket.IO setup
 const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
@@ -94,5 +98,6 @@ io.on('connection', (socket) => {
   });
 });
 
+// Start server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
