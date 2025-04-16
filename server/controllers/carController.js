@@ -12,24 +12,130 @@ const geocoderOptions = {
 const geocoder = NodeGeocoder(geocoderOptions);
 
 /**
+ * Upload a new car listing to the Car collection.
+ */
+exports.uploadCar = async (req, res) => {
+  const {
+    carMake,
+    model,
+    location,
+    latitude,
+    longitude,
+    pricePerDay,
+    description,
+    year,
+    mileage,
+    features,
+    availableFrom, // expected as a date string e.g. "2025-03-25"
+    availableTo    // expected as a date string e.g. "2025-03-27"
+  } = req.body;
+
+  const businessId = req.business.id;
+  const imageUrl = req.file ? req.file.path.replace(/\\/g, '/') : '';
+
+  try {
+    const car = new Car({
+      business: businessId,
+      carMake,
+      model,
+      location,
+      latitude: parseFloat(latitude),
+      longitude: parseFloat(longitude),
+      pricePerDay,
+      imageUrl,
+      description,
+      year,
+      mileage,
+      features: features ? features.split(',').map(s => s.trim()) : [],
+      availableFrom: availableFrom ? new Date(availableFrom) : undefined,
+      availableTo: availableTo ? new Date(availableTo) : undefined
+    });
+
+    await car.save();
+    await Business.findByIdAndUpdate(businessId, { $inc: { points: 10 } });
+    res.status(201).json({ car });
+  } catch (error) {
+    console.error('Error uploading car:', error);
+    res.status(500).json({ message: 'Server error while uploading car.' });
+  }
+};
+
+/**
+ * Retrieve all cars from the Car collection.
+ */
+exports.getCars = async (req, res) => {
+  try {
+    const cars = await Car.find({}).populate('business', 'name email');
+    res.json(cars);
+  } catch (error) {
+    console.error('Error fetching cars:', error);
+    res.status(500).json({ message: 'Server error while retrieving cars.' });
+  }
+};
+
+/**
+ * Search for cars using fuzzy matching on location and address.
+ * Additional filters for make, price, year, and vehicleType are applied.
+ * Date filtering is omitted for Cars.
+ */
+exports.searchCars = async (req, res) => {
+  try {
+    const { query, make, lat, lng, radius, price, vehicleType, year } = req.query;
+    let filter = {};
+
+    if (query && query.trim() !== "") {
+      filter.$or = [
+        { location: { $regex: query, $options: 'i' } },
+        { address: { $regex: query, $options: 'i' } }
+      ];
+    }
+    if (make && make.trim() !== "") {
+      filter.carMake = { $regex: make, $options: 'i' };
+    }
+    if (lat && lng && radius) {
+      const latNum = parseFloat(lat);
+      const lngNum = parseFloat(lng);
+      const rad = parseFloat(radius);
+      filter.latitude = { $gte: latNum - rad, $lte: latNum + rad };
+      filter.longitude = { $gte: lngNum - rad, $lte: lngNum + rad };
+    }
+    if (price && parseFloat(price) > 0) {
+      filter.pricePerDay = { $lte: parseFloat(price) };
+    }
+    if (year && year.trim() !== "") {
+      filter.year = parseInt(year, 10);
+    }
+    if (vehicleType && vehicleType.trim() !== "") {
+      filter.model = { $regex: vehicleType, $options: 'i' };
+    }
+
+    console.log('Car Search Filter:', require('util').inspect(filter, { depth: null }));
+    const cars = await Car.find(filter).populate('business', 'name email');
+    res.json(cars);
+  } catch (error) {
+    console.error('Error searching cars:', error);
+    res.status(500).json({ message: 'Server error while searching for cars.' });
+  }
+};
+
+/**
  * Search across both the Car and Listing collections.
- * 
  * For Cars:
- *   - If a location query is provided, use full-text search ($text) on indexed fields.
- *   - Apply additional filters (make, price, year, vehicleType). Date filtering is omitted.
- *   - Additionally, if lat/lng are provided, a bounding box filter is applied.
- * 
+ *   - If a location query is provided, use full‑text search ($text) on indexed fields.
+ *   - Additional filters (make, price, year, vehicleType) are applied.
+ *   - If lat/lng are provided, a bounding box filter is applied.
  * For Listings:
- *   - Use full-text search on address/title.
- *   - Apply additional filters (make, price, year, vehicleType).
- *   - If fromDate and untilDate are provided, perform date overlap filtering.
- *   - If latitude/longitude are missing, geocode the address.
+ *   - Use full‑text search on address and title.
+ *   - Additional filters (make, price, year, vehicleType) are applied.
+ *   - Date overlap filtering is applied if fromDate and untilDate are provided.
+ *   - If latitude/longitude are missing, the address is geocoded.
+ * Also, add a "priceLabel" field (e.g., "£1000") for front‑end marker labeling.
  */
 exports.searchAll = async (req, res) => {
   try {
     const { query, make, lat, lng, radius, fromDate, untilDate, price, vehicleType, year } = req.query;
     
-    // Build filter for the Car collection.
+    // Build filter for Car collection.
     let carFilter = {};
     if (query && query.trim() !== "") {
       carFilter.$text = { $search: query };
@@ -37,18 +143,15 @@ exports.searchAll = async (req, res) => {
     if (make && make.trim() !== "") {
       carFilter.carMake = { $regex: make, $options: 'i' };
     }
-    // If lat/lng are provided, use a bounding box filter.
     if (lat && lng) {
       const latNum = parseFloat(lat);
       const lngNum = parseFloat(lng);
-      // Use the provided radius in km or default to 50 km
-      const rad = parseFloat(radius) || 50;
-      // Approximate degrees for given km (1 degree ~111 km)
-      const degRadius = rad / 111;
+      const rad = parseFloat(radius) || 50; // default radius 50 km
+      const degRadius = rad / 111; // approximate conversion
       carFilter.latitude = { $gte: latNum - degRadius, $lte: latNum + degRadius };
       carFilter.longitude = { $gte: lngNum - degRadius, $lte: lngNum + degRadius };
     }
-    if (price && parseFloat(price) > 0) {
+    if (price && price.toString().trim() !== "" && parseFloat(price) > 0) {
       carFilter.pricePerDay = { $lte: parseFloat(price) };
     }
     if (year && year.trim() !== "") {
@@ -58,7 +161,7 @@ exports.searchAll = async (req, res) => {
       carFilter.model = { $regex: vehicleType, $options: 'i' };
     }
     
-    // Build filter for the Listing collection.
+    // Build filter for Listing collection.
     let listingFilter = {};
     if (query && query.trim() !== "") {
       listingFilter.$text = { $search: query };
@@ -66,7 +169,7 @@ exports.searchAll = async (req, res) => {
     if (make && make.trim() !== "") {
       listingFilter.make = { $regex: make, $options: 'i' };
     }
-    if (price && parseFloat(price) > 0) {
+    if (price && price.toString().trim() !== "" && parseFloat(price) > 0) {
       listingFilter.pricePerDay = { $lte: parseFloat(price) };
     }
     if (year && year.trim() !== "") {
@@ -75,7 +178,6 @@ exports.searchAll = async (req, res) => {
     if (vehicleType && vehicleType.trim() !== "") {
       listingFilter.carType = { $regex: vehicleType, $options: 'i' };
     }
-    // Date filtering (only for listings) if both fromDate and untilDate are provided.
     if (fromDate && fromDate.trim() !== "" && untilDate && untilDate.trim() !== "") {
       const searchFrom = new Date(fromDate);
       const searchUntil = new Date(untilDate);
@@ -84,46 +186,70 @@ exports.searchAll = async (req, res) => {
         listingFilter.availableTo = { $gte: searchFrom };
       }
     }
-    
-    // OPTIONAL: If lat/lng provided, you can further narrow listings by location
-    // using a simple bounding box (for simplicity, omitted if you wish only text filtering).
-    
+
     const util = require('util');
     console.log('Car Filter:', util.inspect(carFilter, { depth: null }));
     console.log('Listing Filter:', util.inspect(listingFilter, { depth: null }));
     
-    // Execute both queries concurrently.
+    // Execute queries concurrently.
     const [cars, listings] = await Promise.all([
       Car.find(carFilter).populate('business', 'name email'),
       Listing.find(listingFilter)
     ]);
     
-    // For each listing, if latitude/longitude are missing, attempt to geocode the address.
+    // For Cars, if latitude/longitude are missing, attempt to geocode using the "location" field.
+    const geocodedCars = await Promise.all(
+      cars.map(async (carDoc) => {
+        let car = carDoc.toObject();
+        if ((!car.latitude || !car.longitude) && car.location) {
+          try {
+            const geoRes = await geocoder.geocode(car.location);
+            if (geoRes && geoRes.length > 0) {
+              car.latitude = geoRes[0].latitude;
+              car.longitude = geoRes[0].longitude;
+            }
+          } catch (err) {
+            console.error('Geocoding error for Car', car._id, err);
+          }
+        }
+        // Set priceLabel for marker display.
+        if (car.pricePerDay) {
+          car.priceLabel = `£${parseFloat(car.pricePerDay).toFixed(0)}`;
+        } else {
+          car.priceLabel = '£0';
+        }
+        return car;
+      })
+    );
+
+    // For Listings, if latitude/longitude are missing, attempt to geocode using the "address" field.
     const geocodedListings = await Promise.all(
-      listings.map(async (listing) => {
-        // Check for numeric latitude and longitude.
-        if (!listing.latitude || !listing.longitude) {
+      listings.map(async (listingDoc) => {
+        let listing = listingDoc.toObject();
+        if ((!listing.latitude || !listing.longitude) && listing.address) {
           try {
             const geoRes = await geocoder.geocode(listing.address);
             if (geoRes && geoRes.length > 0) {
-              listing = listing.toObject();
               listing.latitude = geoRes[0].latitude;
               listing.longitude = geoRes[0].longitude;
             }
           } catch (err) {
-            console.error('Geocoding error for listing', listing._id, err);
+            console.error('Geocoding error for Listing', listing._id, err);
           }
+        }
+        if (listing.pricePerDay) {
+          listing.priceLabel = `£${parseFloat(listing.pricePerDay).toFixed(0)}`;
+        } else {
+          listing.priceLabel = '£0';
         }
         return listing;
       })
     );
-    
-    // Merge results from both queries.
-    const results = [
-      ...cars.map(item => ({ type: 'car', data: item })),
-      ...geocodedListings.map(item => ({ type: 'listing', data: item }))
-    ];
-    
+
+    const finalCars = geocodedCars.map(car => ({ type: 'car', data: car }));
+    const finalListings = geocodedListings.map(lst => ({ type: 'listing', data: lst }));
+
+    const results = [...finalCars, ...finalListings];
     res.json(results);
   } catch (error) {
     console.error('Error searching cars and listings:', error);

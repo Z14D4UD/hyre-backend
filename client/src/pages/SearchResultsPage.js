@@ -2,13 +2,19 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-import { GoogleMap, Marker, useJsApiLoader } from '@react-google-maps/api';
+import {
+  GoogleMap,
+  Marker,
+  InfoWindow, // <-- We import InfoWindow from google-maps-react
+  useJsApiLoader
+} from '@react-google-maps/api';
 
 import SideMenu from '../components/SideMenu';
 import SideMenuCustomer from '../components/SideMenuCustomer';
 import SideMenuBusiness from '../components/SideMenuBusiness';
 import SideMenuAffiliate from '../components/SideMenuAffiliate';
 import PlaceAutocomplete from '../components/PlaceAutocomplete';
+
 import styles from '../styles/SearchResultsPage.module.css';
 import heroImage from '../assets/lambo.jpg';
 
@@ -38,6 +44,7 @@ export default function SearchResultsPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
+  // Query params for location
   const initialLocation = searchParams.get('location') || '';
   const latParam = searchParams.get('lat');
   const lngParam = searchParams.get('lng');
@@ -47,12 +54,12 @@ export default function SearchResultsPage() {
   const [mapCenter, setMapCenter] = useState(
     latParam && lngParam
       ? { lat: parseFloat(latParam), lng: parseFloat(lngParam) }
-      : { lat: 51.5074, lng: -0.1278 }
+      : { lat: 51.5074, lng: -0.1278 } // Default is London
   );
-  const [mapZoom, setMapZoom] = useState(12);
+  const [mapZoom, setMapZoom] = useState(11);
   const [loading, setLoading] = useState(false);
 
-  // Extra filters
+  // Additional filter states
   const [fromDate, setFromDate] = useState('');
   const [fromTime, setFromTime] = useState('');
   const [untilDate, setUntilDate] = useState('');
@@ -62,17 +69,21 @@ export default function SearchResultsPage() {
   const [make, setMake] = useState('');
   const [year, setYear] = useState('');
 
+  // Side menu toggling
   const [sideMenuOpen, setSideMenuOpen] = useState(false);
+
+  // State for InfoWindow
+  const [activeMarkerId, setActiveMarkerId] = useState(null);
 
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
-    libraries: ['places'],
+    libraries: ['places']
   });
 
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
   const staticUrl = backendUrl.replace('/api', '');
 
-  // Call the /searchAll endpoint.
+  // Fetch merged results from your /cars/searchAll endpoint
   const fetchResults = async (query) => {
     setLoading(true);
     try {
@@ -87,8 +98,7 @@ export default function SearchResultsPage() {
           fromTime,
           untilDate,
           untilTime,
-          // Optionally, pass a radius parameter for location filtering:
-          radius: 50
+          radius: 50 // default radius
         },
       });
       setResults(res.data);
@@ -100,16 +110,17 @@ export default function SearchResultsPage() {
     }
   };
 
+  // On mount or changes
   useEffect(() => {
     if ((!latParam || !lngParam) && initialLocation && isLoaded && window.google) {
       geocodeAddress(initialLocation)
         .then((coords) => {
           setMapCenter(coords);
-          setMapZoom(14);
+          setMapZoom(11);
         })
         .catch((err) => console.error('Geocode error:', err));
     } else if (latParam && lngParam) {
-      setMapZoom(14);
+      setMapZoom(11);
     }
     fetchResults(initialLocation);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -121,7 +132,7 @@ export default function SearchResultsPage() {
         const coords = await geocodeAddress(searchQuery);
         if (coords) {
           setMapCenter(coords);
-          setMapZoom(14);
+          setMapZoom(11);
         }
       } catch (err) {
         console.error('Geocode error:', err);
@@ -130,43 +141,123 @@ export default function SearchResultsPage() {
     fetchResults(searchQuery);
   };
 
+  // Called by PlaceAutocomplete
   const handlePlaceSelect = (prediction) => {
     setSearchQuery(prediction.description);
   };
 
-  // Choose which side menu to display.
+  // Decide which side menu to show
   const token = localStorage.getItem('token') || '';
   const accountType = (localStorage.getItem('accountType') || '').toLowerCase();
   let sideMenuComponent = <SideMenu isOpen={sideMenuOpen} toggleMenu={() => setSideMenuOpen(false)} />;
   if (token) {
     if (accountType === 'business') {
       sideMenuComponent = (
-        <SideMenuBusiness isOpen={sideMenuOpen} toggleMenu={() => setSideMenuOpen(false)} closeMenu={() => setSideMenuOpen(false)} />
+        <SideMenuBusiness
+          isOpen={sideMenuOpen}
+          toggleMenu={() => setSideMenuOpen(false)}
+          closeMenu={() => setSideMenuOpen(false)}
+        />
       );
     } else if (accountType === 'affiliate') {
       sideMenuComponent = (
-        <SideMenuAffiliate isOpen={sideMenuOpen} toggleMenu={() => setSideMenuOpen(false)} closeMenu={() => setSideMenuOpen(false)} />
+        <SideMenuAffiliate
+          isOpen={sideMenuOpen}
+          toggleMenu={() => setSideMenuOpen(false)}
+          closeMenu={() => setSideMenuOpen(false)}
+        />
       );
     } else {
       sideMenuComponent = (
-        <SideMenuCustomer isOpen={sideMenuOpen} toggleMenu={() => setSideMenuOpen(false)} closeMenu={() => setSideMenuOpen(false)} />
+        <SideMenuCustomer
+          isOpen={sideMenuOpen}
+          toggleMenu={() => setSideMenuOpen(false)}
+          closeMenu={() => setSideMenuOpen(false)}
+        />
       );
     }
   }
+
+  // For debugging
+  console.log('Current results:', results);
+  console.log('Map center:', mapCenter);
+
+  // Closes the InfoWindow
+  const handleCloseInfoWindow = () => {
+    setActiveMarkerId(null);
+  };
+
+  // Called when user clicks a Marker
+  const handleMarkerClick = (id) => {
+    if (id === activeMarkerId) {
+      // If already clicked, close it
+      setActiveMarkerId(null);
+    } else {
+      setActiveMarkerId(id);
+    }
+  };
+
+  // Render snippet in the InfoWindow
+  // The user can click inside the snippet to navigate to /details/:id
+  const renderInfoWindowContent = (data, resultType) => {
+    const { _id, pricePerDay, carMake, model, title, location, address, images, imageUrl } = data;
+
+    const finalLocation = location || address || 'No location';
+    const finalTitle = (resultType === 'car')
+      ? `${carMake} ${model}`
+      : title || 'Untitled';
+    const finalImage = (resultType === 'car')
+      ? imageUrl
+      : (images && images.length > 0 ? images[0] : '/placeholder.jpg');
+
+    const handleInfoClick = () => {
+      // Navigate to details page
+      navigate(`/details/${_id}`);
+    };
+
+    return (
+      <div
+        style={{
+          width: '200px',
+          cursor: 'pointer'
+        }}
+        onClick={handleInfoClick}
+      >
+        <img
+          src={`${staticUrl}/${finalImage}`}
+          alt={finalTitle}
+          style={{
+            width: '100%',
+            height: '100px',
+            objectFit: 'cover',
+            borderRadius: '4px'
+          }}
+        />
+        <h4 style={{ margin: '8px 0', fontSize: '1rem' }}>{finalTitle}</h4>
+        <p style={{ margin: 0, fontSize: '0.85rem', color: '#666' }}>
+          {finalLocation}
+        </p>
+        <p style={{ margin: '4px 0', fontWeight: 'bold' }}>
+          £{parseFloat(pricePerDay).toFixed(2)}/day
+        </p>
+      </div>
+    );
+  };
 
   return (
     <div className={styles.container}>
       {/* HEADER */}
       <header className={styles.header}>
         <div className={styles.logo} onClick={() => navigate('/')}>Hyre</div>
-        <button className={styles.menuIcon} onClick={() => setSideMenuOpen(!sideMenuOpen)}>☰</button>
+        <button className={styles.menuIcon} onClick={() => setSideMenuOpen(!sideMenuOpen)}>
+          ☰
+        </button>
       </header>
 
+      {/* HERO / FILTERS */}
       <div className={styles.mainContent}>
-        {/* HERO SECTION */}
         <section className={styles.heroSection} style={{ backgroundImage: `url(${heroImage})` }}>
           <div className={styles.heroOverlay} />
-          {/* FIRST ROW: Location and Date/Time */}
           <div className={styles.hyreTopRow}>
             <PlaceAutocomplete
               value={searchQuery}
@@ -176,17 +267,32 @@ export default function SearchResultsPage() {
             />
             <div className={styles.hyreDateTime}>
               <label>From:</label>
-              <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
-              <input type="time" value={fromTime} onChange={(e) => setFromTime(e.target.value)} />
+              <input
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+              />
+              <input
+                type="time"
+                value={fromTime}
+                onChange={(e) => setFromTime(e.target.value)}
+              />
             </div>
             <div className={styles.hyreDateTime}>
               <label>Until:</label>
-              <input type="date" value={untilDate} onChange={(e) => setUntilDate(e.target.value)} />
-              <input type="time" value={untilTime} onChange={(e) => setUntilTime(e.target.value)} />
+              <input
+                type="date"
+                value={untilDate}
+                onChange={(e) => setUntilDate(e.target.value)}
+              />
+              <input
+                type="time"
+                value={untilTime}
+                onChange={(e) => setUntilTime(e.target.value)}
+              />
             </div>
           </div>
 
-          {/* SECOND ROW: Filters and Search */}
           <div className={styles.hyreBottomRow}>
             <div className={styles.filterInline}>
               <label>Price £0-£20,000 (Current: £{price})</label>
@@ -211,7 +317,11 @@ export default function SearchResultsPage() {
             </div>
             <div className={styles.filterInline}>
               <label>Type:</label>
-              <select value={vehicleType} onChange={(e) => setVehicleType(e.target.value)} className={styles.selectInput}>
+              <select
+                value={vehicleType}
+                onChange={(e) => setVehicleType(e.target.value)}
+                className={styles.selectInput}
+              >
                 <option value="">All</option>
                 <option value="Sedan">Sedan</option>
                 <option value="SUV">SUV</option>
@@ -229,7 +339,11 @@ export default function SearchResultsPage() {
             </div>
             <div className={styles.filterInline}>
               <label>Make:</label>
-              <select value={make} onChange={(e) => setMake(e.target.value)} className={styles.selectInput}>
+              <select
+                value={make}
+                onChange={(e) => setMake(e.target.value)}
+                className={styles.selectInput}
+              >
                 <option value="">All</option>
                 <option value="Toyota">Toyota</option>
                 <option value="Honda">Honda</option>
@@ -252,7 +366,11 @@ export default function SearchResultsPage() {
             </div>
             <div className={styles.filterInline}>
               <label>Year:</label>
-              <select value={year} onChange={(e) => setYear(e.target.value)} className={styles.selectInput}>
+              <select
+                value={year}
+                onChange={(e) => setYear(e.target.value)}
+                className={styles.selectInput}
+              >
                 <option value="">All</option>
                 {Array.from({ length: 2025 - 1950 + 1 }, (_, i) => 2025 - i).map((yr) => (
                   <option key={yr} value={yr}>{yr}</option>
@@ -260,12 +378,15 @@ export default function SearchResultsPage() {
               </select>
             </div>
             <div className={styles.filterInline}>
-              <button className={styles.searchBtn} onClick={handleSearch}>Search</button>
+              <button className={styles.searchBtn} onClick={handleSearch}>
+                Search
+              </button>
             </div>
           </div>
         </section>
       </div>
 
+      {/* If loadError */}
       {loadError && (
         <div style={{ color: 'red', margin: '1rem 0' }}>
           Error loading Google Maps. (Check your API key or billing)
@@ -273,7 +394,7 @@ export default function SearchResultsPage() {
       )}
 
       <div className={styles.searchPageColumns}>
-        {/* LISTINGS COLUMN */}
+        {/* LISTINGS SECTION */}
         <div className={styles.resultsContainer}>
           {loading ? (
             <p>Loading listings...</p>
@@ -283,7 +404,7 @@ export default function SearchResultsPage() {
             <>
               <div className={styles.listingsHeader}>
                 <h2>
-                  {results.length}+ cars available 
+                  {results.length}+ cars available
                   <span className={styles.subHeader}> • Sorted by relevance</span>
                 </h2>
                 <p className={styles.subText}>
@@ -308,7 +429,11 @@ export default function SearchResultsPage() {
                           />
                         ) : (
                           <img
-                            src={data.images && data.images.length > 0 ? `${staticUrl}/${data.images[0]}` : '/placeholder.jpg'}
+                            src={
+                              data.images && data.images.length > 0
+                                ? `${staticUrl}/${data.images[0]}`
+                                : '/placeholder.jpg'
+                            }
                             alt={data.title}
                             className={styles.cardImage}
                           />
@@ -316,16 +441,15 @@ export default function SearchResultsPage() {
                       </div>
                       <div className={styles.cardInfo}>
                         <h3 className={styles.carTitle}>
-                          {result.type === 'car' ? `${data.carMake} ${data.model}` : data.title}
+                          {result.type === 'car'
+                            ? `${data.carMake} ${data.model}`
+                            : data.title}
                         </h3>
                         <p className={styles.carLocation}>
                           {data.location ? data.location : data.address}
                         </p>
                         <p className={styles.price}>
-                          £{result.type === 'car'
-                            ? parseFloat(data.pricePerDay).toFixed(2)
-                            : parseFloat(data.pricePerDay).toFixed(2)}
-                          /day
+                          £{parseFloat(data.pricePerDay).toFixed(2)}/day
                         </p>
                       </div>
                     </div>
@@ -339,23 +463,45 @@ export default function SearchResultsPage() {
         {/* MAP COLUMN */}
         <div className={styles.mapContainer}>
           {isLoaded && (
-            <GoogleMap mapContainerStyle={mapContainerStyle} center={mapCenter} zoom={mapZoom}>
+            <GoogleMap
+              mapContainerStyle={mapContainerStyle}
+              center={mapCenter}
+              zoom={mapZoom}
+              onClick={() => setActiveMarkerId(null)} // close infowindow if map is clicked
+            >
               {results.map((result) => {
                 const data = result.data;
-                // Render marker only if valid numeric coordinates exist.
                 if (!data.latitude || !data.longitude) return null;
+
+                // Label: shows the price as "£##"
+                const markerLabel = data.priceLabel
+                  ? data.priceLabel
+                  : `£${parseFloat(data.pricePerDay).toFixed(0)}`;
+
                 return (
                   <Marker
                     key={data._id}
                     position={{ lat: Number(data.latitude), lng: Number(data.longitude) }}
-                    title={result.type === 'car' ? `${data.carMake} ${data.model}` : data.title}
-                    // Use a custom icon for better visibility
-                    icon={{
-                      url: '/marker-icon.png', // ensure this file exists in your public folder
-                      scaledSize: new window.google.maps.Size(40, 40)
+                    label={{
+                      text: markerLabel,
+                      color: "#fff",
+                      fontSize: "12px",
+                      fontWeight: "bold"
                     }}
-                    onClick={() => navigate(`/details/${data._id}`)}
-                  />
+                    icon={{
+                      url: '/marker-icon.png',
+                      scaledSize: new window.google.maps.Size(40, 40),
+                      labelOrigin: new window.google.maps.Point(20, 15)
+                    }}
+                    onClick={() => handleMarkerClick(data._id)}
+                  >
+                    {/* InfoWindow only renders if this marker is "activeMarkerId" */}
+                    {activeMarkerId === data._id && (
+                      <InfoWindow onCloseClick={handleCloseInfoWindow}>
+                        {renderInfoWindowContent(data, result.type)}
+                      </InfoWindow>
+                    )}
+                  </Marker>
                 );
               })}
             </GoogleMap>
@@ -366,7 +512,9 @@ export default function SearchResultsPage() {
       {/* SIDE MENU */}
       {sideMenuOpen && (
         (() => {
-          if (!token) return <SideMenu isOpen={sideMenuOpen} toggleMenu={() => setSideMenuOpen(false)} />;
+          if (!token) {
+            return <SideMenu isOpen={sideMenuOpen} toggleMenu={() => setSideMenuOpen(false)} />;
+          }
           if (accountType === 'business') {
             return (
               <SideMenuBusiness
