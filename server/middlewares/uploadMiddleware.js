@@ -1,21 +1,19 @@
 // server/middlewares/uploadMiddleware.js
 const multer = require('multer');
-const path = require('path');
+const path   = require('path');
 
-// Make sure the uploads folder exists in your project root.
+// write into server/uploads
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => { 
-    cb(null, path.join(__dirname, '../../uploads')); 
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, '..', 'uploads'));
   },
-  filename: (req, file, cb) => { 
+  filename: (req, file, cb) => {
     cb(null, Date.now() + '-' + file.originalname);
   }
 });
 
 const fileFilter = (req, file, cb) => {
-  if (file.mimetype.startsWith('image/')) cb(null, true);
-  else cb(new Error('Only image files are allowed!'), false);
+  cb(null, file.mimetype.startsWith('image/'));
 };
 
-const upload = multer({ storage, fileFilter });
-module.exports = upload;
+module.exports = multer({ storage, fileFilter });
