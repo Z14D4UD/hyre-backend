@@ -2,7 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-import { GoogleMap, Marker, InfoWindow, useJsApiLoader } from '@react-google-maps/api';
+import {
+  GoogleMap,
+  Marker,
+  InfoWindow,
+  useJsApiLoader
+} from '@react-google-maps/api';
 
 import SideMenu from '../components/SideMenu';
 import SideMenuCustomer from '../components/SideMenuCustomer';
@@ -18,6 +23,7 @@ const mapContainerStyle = {
   height: '100%',
 };
 
+// Basic geocoding (for Home -> SearchResults transition)
 async function geocodeAddress(address) {
   if (!window.google) return null;
   const geocoder = new window.google.maps.Geocoder();
@@ -29,7 +35,6 @@ async function geocodeAddress(address) {
           lng: results[0].geometry.location.lng(),
         });
       } else {
-        // Reject with the status so it can be handled later.
         reject(status);
       }
     });
@@ -40,7 +45,7 @@ export default function SearchResultsPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // Get initial location and optional lat/lng from URL parameters
+  // Get location and coordinates from query string.
   const initialLocation = searchParams.get('location') || '';
   const latParam = searchParams.get('lat');
   const lngParam = searchParams.get('lng');
@@ -50,12 +55,14 @@ export default function SearchResultsPage() {
   const [mapCenter, setMapCenter] = useState(
     latParam && lngParam
       ? { lat: parseFloat(latParam), lng: parseFloat(lngParam) }
-      : { lat: 51.5074, lng: -0.1278 } // Default to London
+      : { lat: 51.5074, lng: -0.1278 }
   );
+  // Use a zoom level suitable for a city (e.g., 11)
   const [mapZoom, setMapZoom] = useState(11);
   const [loading, setLoading] = useState(false);
+  const [activeMarkerId, setActiveMarkerId] = useState(null);
 
-  // Filter states
+  // Additional filter states – you can extend these as needed.
   const [fromDate, setFromDate] = useState('');
   const [fromTime, setFromTime] = useState('');
   const [untilDate, setUntilDate] = useState('');
@@ -66,17 +73,17 @@ export default function SearchResultsPage() {
   const [year, setYear] = useState('');
 
   const [sideMenuOpen, setSideMenuOpen] = useState(false);
-  const [activeMarkerId, setActiveMarkerId] = useState(null);
 
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
     libraries: ['places'],
   });
 
+  // Derive your static base URL by removing "/api" from the backend URL.
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
-  const staticUrl = backendUrl.replace('/api', '');
+  const staticUrl = backendUrl.replace(/\/api$/, '');
 
-  // Fetch merged results (Cars and Listings) using your /searchAll endpoint.
+  // Use your /cars/searchAll endpoint to get both Cars and Listings.
   const fetchResults = async (query) => {
     setLoading(true);
     try {
@@ -91,7 +98,7 @@ export default function SearchResultsPage() {
           fromTime,
           untilDate,
           untilTime,
-          radius: 50, // default radius in km
+          radius: 50, // Use 50 km radius by default.
         },
       });
       setResults(res.data);
@@ -103,7 +110,6 @@ export default function SearchResultsPage() {
     }
   };
 
-  // On initial mount or if URL query changes:
   useEffect(() => {
     if ((!latParam || !lngParam) && initialLocation && isLoaded && window.google) {
       geocodeAddress(initialLocation)
@@ -113,9 +119,7 @@ export default function SearchResultsPage() {
         })
         .catch((err) => {
           console.error('Geocode error:', err);
-          // Fallback if geocoding fails (e.g., ZERO_RESULTS)
-          alert(`Could not find location "${initialLocation}". Showing default location.`);
-          setMapCenter({ lat: 51.5074, lng: -0.1278 }); // London fallback
+          setMapCenter({ lat: 51.5074, lng: -0.1278 });
           setMapZoom(10);
         });
     } else if (latParam && lngParam) {
@@ -135,9 +139,6 @@ export default function SearchResultsPage() {
         }
       } catch (err) {
         console.error('Geocode error:', err);
-        if (err === 'ZERO_RESULTS') {
-          alert(`No results found for "${searchQuery}".`);
-        }
       }
     }
     fetchResults(searchQuery);
@@ -147,43 +148,21 @@ export default function SearchResultsPage() {
     setSearchQuery(prediction.description);
   };
 
-  // Side menu decision based on auth status
+  // Choose side menu based on authentication.
   const token = localStorage.getItem('token') || '';
   const accountType = (localStorage.getItem('accountType') || '').toLowerCase();
   let sideMenuComponent = <SideMenu isOpen={sideMenuOpen} toggleMenu={() => setSideMenuOpen(false)} />;
   if (token) {
     if (accountType === 'business') {
-      sideMenuComponent = (
-        <SideMenuBusiness
-          isOpen={sideMenuOpen}
-          toggleMenu={() => setSideMenuOpen(false)}
-          closeMenu={() => setSideMenuOpen(false)}
-        />
-      );
+      sideMenuComponent = <SideMenuBusiness isOpen={sideMenuOpen} toggleMenu={() => setSideMenuOpen(false)} closeMenu={() => setSideMenuOpen(false)} />;
     } else if (accountType === 'affiliate') {
-      sideMenuComponent = (
-        <SideMenuAffiliate
-          isOpen={sideMenuOpen}
-          toggleMenu={() => setSideMenuOpen(false)}
-          closeMenu={() => setSideMenuOpen(false)}
-        />
-      );
+      sideMenuComponent = <SideMenuAffiliate isOpen={sideMenuOpen} toggleMenu={() => setSideMenuOpen(false)} closeMenu={() => setSideMenuOpen(false)} />;
     } else {
-      sideMenuComponent = (
-        <SideMenuCustomer
-          isOpen={sideMenuOpen}
-          toggleMenu={() => setSideMenuOpen(false)}
-          closeMenu={() => setSideMenuOpen(false)}
-        />
-      );
+      sideMenuComponent = <SideMenuCustomer isOpen={sideMenuOpen} toggleMenu={() => setSideMenuOpen(false)} closeMenu={() => setSideMenuOpen(false)} />;
     }
   }
 
-  // Debug logs
-  console.log('Current results:', results);
-  console.log('Map center:', mapCenter);
-
-  // Functions to handle InfoWindow display
+  // Marker click handlers for InfoWindow.
   const handleCloseInfoWindow = () => {
     setActiveMarkerId(null);
   };
@@ -192,7 +171,7 @@ export default function SearchResultsPage() {
     setActiveMarkerId((prevId) => (prevId === id ? null : id));
   };
 
-  // Render content for the InfoWindow (price, image, title, location, etc.)
+  // Render content for InfoWindow.
   const renderInfoWindowContent = (data, resultType) => {
     const {
       _id,
@@ -205,13 +184,14 @@ export default function SearchResultsPage() {
       images,
       imageUrl
     } = data;
-    const finalLocation = location || address || 'No location';
     const finalTitle = resultType === 'car'
       ? `${carMake} ${model}`
       : title || 'Untitled';
+    const finalLocation = location || address || 'No location';
     const finalImage = resultType === 'car'
       ? imageUrl
       : (images && images.length > 0 ? images[0] : '/placeholder.jpg');
+    
     return (
       <div style={{ width: '220px', cursor: 'pointer' }} onClick={() => navigate(`/details/${_id}`)}>
         <img
@@ -233,6 +213,9 @@ export default function SearchResultsPage() {
     );
   };
 
+  console.log('Current results:', results);
+  console.log('Map center:', mapCenter);
+
   return (
     <div className={styles.container}>
       {/* HEADER */}
@@ -241,8 +224,8 @@ export default function SearchResultsPage() {
         <button className={styles.menuIcon} onClick={() => setSideMenuOpen(!sideMenuOpen)}>☰</button>
       </header>
 
+      {/* MAIN CONTENT / HERO */}
       <div className={styles.mainContent}>
-        {/* HERO SECTION */}
         <section className={styles.heroSection} style={{ backgroundImage: `url(${heroImage})` }}>
           <div className={styles.heroOverlay} />
           <div className={styles.hyreTopRow}>
@@ -263,7 +246,6 @@ export default function SearchResultsPage() {
               <input type="time" value={untilTime} onChange={(e) => setUntilTime(e.target.value)} />
             </div>
           </div>
-
           <div className={styles.hyreBottomRow}>
             <div className={styles.filterInline}>
               <label>Price £0-£20,000 (Current: £{price})</label>
@@ -288,7 +270,11 @@ export default function SearchResultsPage() {
             </div>
             <div className={styles.filterInline}>
               <label>Type:</label>
-              <select value={vehicleType} onChange={(e) => setVehicleType(e.target.value)} className={styles.selectInput}>
+              <select
+                value={vehicleType}
+                onChange={(e) => setVehicleType(e.target.value)}
+                className={styles.selectInput}
+              >
                 <option value="">All</option>
                 <option value="Sedan">Sedan</option>
                 <option value="SUV">SUV</option>
@@ -306,7 +292,11 @@ export default function SearchResultsPage() {
             </div>
             <div className={styles.filterInline}>
               <label>Make:</label>
-              <select value={make} onChange={(e) => setMake(e.target.value)} className={styles.selectInput}>
+              <select
+                value={make}
+                onChange={(e) => setMake(e.target.value)}
+                className={styles.selectInput}
+              >
                 <option value="">All</option>
                 <option value="Toyota">Toyota</option>
                 <option value="Honda">Honda</option>
@@ -329,7 +319,11 @@ export default function SearchResultsPage() {
             </div>
             <div className={styles.filterInline}>
               <label>Year:</label>
-              <select value={year} onChange={(e) => setYear(e.target.value)} className={styles.selectInput}>
+              <select
+                value={year}
+                onChange={(e) => setYear(e.target.value)}
+                className={styles.selectInput}
+              >
                 <option value="">All</option>
                 {Array.from({ length: 2025 - 1950 + 1 }, (_, i) => 2025 - i).map((yr) => (
                   <option key={yr} value={yr}>{yr}</option>
@@ -360,7 +354,7 @@ export default function SearchResultsPage() {
             <>
               <div className={styles.listingsHeader}>
                 <h2>
-                  {results.length}+ cars available 
+                  {results.length}+ cars available
                   <span className={styles.subHeader}> • Sorted by relevance</span>
                 </h2>
                 <p className={styles.subText}>
@@ -385,11 +379,7 @@ export default function SearchResultsPage() {
                           />
                         ) : (
                           <img
-                            src={
-                              data.images && data.images.length > 0
-                                ? `${staticUrl}/${data.images[0]}`
-                                : '/placeholder.jpg'
-                            }
+                            src={data.images && data.images.length > 0 ? `${staticUrl}/${data.images[0]}` : '/placeholder.jpg'}
                             alt={data.title}
                             className={styles.cardImage}
                           />
@@ -397,9 +387,7 @@ export default function SearchResultsPage() {
                       </div>
                       <div className={styles.cardInfo}>
                         <h3 className={styles.carTitle}>
-                          {result.type === 'car'
-                            ? `${data.carMake} ${data.model}`
-                            : data.title}
+                          {result.type === 'car' ? `${data.carMake} ${data.model}` : data.title}
                         </h3>
                         <p className={styles.carLocation}>
                           {data.location ? data.location : data.address}
@@ -428,26 +416,22 @@ export default function SearchResultsPage() {
               {results.map((result) => {
                 const data = result.data;
                 if (!data.latitude || !data.longitude) return null;
-                const markerLabel = data.priceLabel
-                  ? data.priceLabel
-                  : `£${parseFloat(data.pricePerDay).toFixed(0)}`;
                 return (
                   <Marker
                     key={data._id}
-                    position={{
-                      lat: Number(data.latitude),
-                      lng: Number(data.longitude)
-                    }}
+                    position={{ lat: Number(data.latitude), lng: Number(data.longitude) }}
                     label={{
-                      text: markerLabel,
+                      text: data.priceLabel || `£${parseFloat(data.pricePerDay).toFixed(0)}`,
                       color: "#fff",
                       fontSize: "12px",
                       fontWeight: "bold"
                     }}
                     icon={{
-                      url: '/marker-icon.png',
-                      scaledSize: new window.google.maps.Size(40, 40),
-                      labelOrigin: new window.google.maps.Point(20, 15)
+                      path: window.google.maps.SymbolPath.CIRCLE,
+                      fillColor: "#000",
+                      fillOpacity: 1,
+                      strokeWeight: 0,
+                      scale: 20,
                     }}
                     onClick={() => handleMarkerClick(data._id)}
                   >
@@ -467,32 +451,19 @@ export default function SearchResultsPage() {
       {/* SIDE MENU */}
       {sideMenuOpen && (
         (() => {
-          if (!token)
-            return <SideMenu isOpen={sideMenuOpen} toggleMenu={() => setSideMenuOpen(false)} />;
+          if (!token) return <SideMenu isOpen={sideMenuOpen} toggleMenu={() => setSideMenuOpen(false)} />;
           if (accountType === 'business') {
             return (
-              <SideMenuBusiness
-                isOpen={sideMenuOpen}
-                toggleMenu={() => setSideMenuOpen(false)}
-                closeMenu={() => setSideMenuOpen(false)}
-              />
+              <SideMenuBusiness isOpen={sideMenuOpen} toggleMenu={() => setSideMenuOpen(false)} closeMenu={() => setSideMenuOpen(false)} />
             );
           }
           if (accountType === 'affiliate') {
             return (
-              <SideMenuAffiliate
-                isOpen={sideMenuOpen}
-                toggleMenu={() => setSideMenuOpen(false)}
-                closeMenu={() => setSideMenuOpen(false)}
-              />
+              <SideMenuAffiliate isOpen={sideMenuOpen} toggleMenu={() => setSideMenuOpen(false)} closeMenu={() => setSideMenuOpen(false)} />
             );
           }
           return (
-            <SideMenuCustomer
-              isOpen={sideMenuOpen}
-              toggleMenu={() => setSideMenuOpen(false)}
-              closeMenu={() => setSideMenuOpen(false)}
-            />
+            <SideMenuCustomer isOpen={sideMenuOpen} toggleMenu={() => setSideMenuOpen(false)} closeMenu={() => setSideMenuOpen(false)} />
           );
         })()
       )}

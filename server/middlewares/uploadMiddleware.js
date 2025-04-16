@@ -1,9 +1,15 @@
 // server/middlewares/uploadMiddleware.js
 const multer = require('multer');
+const path = require('path');
 
+// Make sure the uploads folder exists in your project root.
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => { cb(null, 'uploads/'); },
-  filename: (req, file, cb) => { cb(null, Date.now() + '-' + file.originalname); }
+  destination: (req, file, cb) => { 
+    cb(null, path.join(__dirname, '../../uploads')); 
+  },
+  filename: (req, file, cb) => { 
+    cb(null, Date.now() + '-' + file.originalname);
+  }
 });
 
 const fileFilter = (req, file, cb) => {
