@@ -50,11 +50,10 @@ app.options('*', cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 4) Serve uploaded images (now points at project_root/uploads, matching Multer)
-app.use(
-  '/uploads',
-  express.static(path.join(__dirname, '..', 'uploads'))
-);
+// 4) Serve uploaded images from <project_root>/server/uploads
+const uploadsDir = path.join(__dirname, 'uploads');
+app.use('/uploads',     express.static(uploadsDir));
+app.use('/api/uploads', express.static(uploadsDir));
 
 // 5) Sessions + Passport
 app.use(session({

@@ -2,10 +2,10 @@
 const multer = require('multer');
 const path  = require('path');
 
-// Store into <project_root>/uploads
+// Store into <project_root>/server/uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, '..', 'uploads'));
+    cb(null, path.join(__dirname, 'uploads'));
   },
   filename: (req, file, cb) => {
     cb(null, `${Date.now()}-${file.originalname}`);
