@@ -234,6 +234,27 @@
   background: #319ade;
 }
 
+.removeImageBtn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(0,0,0,0.6);
+  border: none;
+  color: #fff;
+  font-size: 1rem;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.uploadMessage {
+  color: #2a7f2a;
+  margin-bottom: 1rem;
+  font-weight: 500;
+}
+
 @media (max-width: 768px) {
   .formRow {
     flex-direction: column;

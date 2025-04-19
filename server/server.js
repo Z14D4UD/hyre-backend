@@ -41,20 +41,19 @@ app.use(cors({
   origin: allowedOrigins,
   credentials: true
 }));
-// enable pre‑flight on all routes
 app.options('*', cors({
   origin: allowedOrigins,
   credentials: true
 }));
 
 // 3) Body parsers
-app.use(express.json());                     // <— was commented out before
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 4) Serve uploaded images
+// 4) Serve uploaded images (now points at project_root/uploads, matching Multer)
 app.use(
   '/uploads',
-  express.static(path.join(__dirname, 'uploads'))
+  express.static(path.join(__dirname, '..', 'uploads'))
 );
 
 // 5) Sessions + Passport
