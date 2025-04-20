@@ -1,221 +1,185 @@
 // server/controllers/carController.js
-const Car = require('../models/Car');
-const Listing = require('../models/Listing');
-const Business = require('../models/Business');
-const NodeGeocoder = require('node-geocoder');
-const path = require('path');  // ← added
+const path          = require('path');
+const Car           = require('../models/Car');
+const Listing       = require('../models/Listing');
+const Business      = require('../models/Business');
+const NodeGeocoder  = require('node-geocoder');
 
-// Use the server-side API key variable.
-// Make sure to add GOOGLE_MAPS_API_KEY to your server's .env file.
-const geocoderOptions = {
-  provider: 'google',
-  apiKey: process.env.GOOGLE_MAPS_API_KEY,
+// ────────────────────────────  GEO  ──────────────────────────────
+const geocoder = NodeGeocoder({
+  provider : 'google',
+  apiKey   : process.env.GOOGLE_MAPS_API_KEY,
   formatter: null
-};
-const geocoder = NodeGeocoder(geocoderOptions);
+});
 
-/**
- * Upload a new car listing to the Car collection.
- */
+// ───────────────────────── UPLOAD CAR ────────────────────────────
 exports.uploadCar = async (req, res) => {
   const {
-    carMake,
-    model,
-    location,
-    latitude,
-    longitude,
-    pricePerDay,
-    description,
-    year,
-    mileage,
-    features,
-    availableFrom, // expected as a date string, e.g. "2025-03-25"
-    availableTo    // expected as a date string, e.g. "2025-03-27"
+    carMake, model, location, latitude, longitude,
+    pricePerDay, description, year, mileage, features,
+    availableFrom, availableTo
   } = req.body;
 
   const businessId = req.business.id;
-  // store only "uploads/<filename>" so images persist across deploys
+  // store only uploads/<filename>  →  keeps paths valid after re‑deploys
   const imageUrl = req.file
     ? 'uploads/' + path.basename(req.file.path).replace(/\\/g, '/')
     : '';
 
   try {
     const car = new Car({
-      business: businessId,
+      business   : businessId,
       carMake,
       model,
       location,
-      latitude: parseFloat(latitude),
-      longitude: parseFloat(longitude),
+      latitude   : parseFloat(latitude),
+      longitude  : parseFloat(longitude),
       pricePerDay,
       imageUrl,
       description,
       year,
       mileage,
-      features: features
-        ? features.split(',').map(s => s.trim())
-        : [],
+      features   : features ? features.split(',').map(s => s.trim()) : [],
       availableFrom: availableFrom ? new Date(availableFrom) : undefined,
-      availableTo:   availableTo   ? new Date(availableTo)   : undefined
+      availableTo  : availableTo   ? new Date(availableTo)   : undefined
     });
 
     await car.save();
     await Business.findByIdAndUpdate(businessId, { $inc: { points: 10 } });
+
     res.status(201).json({ car });
-  } catch (error) {
-    console.error('Error uploading car:', error);
+  } catch (err) {
+    console.error('Error uploading car:', err);
     res.status(500).json({ message: 'Server error while uploading car.' });
   }
 };
 
-// (the rest of the file remains unchanged)
+// ─────────────────────── GET ALL CARS ────────────────────────────
+exports.getCars = async (_req, res) => {
+  try {
+    const cars = await Car.find({}).populate('business', 'name email');
+    res.json(cars);
+  } catch (err) {
+    console.error('Error fetching cars:', err);
+    res.status(500).json({ message: 'Server error while retrieving cars.' });
+  }
+};
 
+// ─────────────── SINGLE‑COLLECTION CAR SEARCH ────────────────────
+const searchCars = async (req, res) => {
+  try {
+    const { query, make, lat, lng, radius, price, vehicleType, year } = req.query;
+    const filter = {};
 
-/**
- * Search across both the Car and Listing collections.
- * For Cars:
- *   - If a location query is provided, use full‑text search ($text) on indexed fields.
- *   - Additional filters (make, price, year, vehicleType) are applied.
- *   - If lat/lng are provided, apply a bounding box filter.
- * For Listings:
- *   - Use full‑text search on address and title.
- *   - Additional filters (make, price, year, vehicleType) are applied.
- *   - Date overlap filtering is applied if fromDate and untilDate are provided.
- *   - If latitude/longitude are missing, geocode the address.
- * Also, add a "priceLabel" field for marker labeling.
- */
+    if (query?.trim()) {
+      filter.$or = [
+        { location: { $regex: query, $options: 'i' } },
+        { address : { $regex: query, $options: 'i' } }
+      ];
+    }
+    if (make?.trim())          filter.carMake = { $regex: make, $options: 'i' };
+    if (lat && lng && radius) {
+      const latN = parseFloat(lat);
+      const lngN = parseFloat(lng);
+      const r    = parseFloat(radius);
+      filter.latitude  = { $gte: latN - r, $lte: latN + r };
+      filter.longitude = { $gte: lngN - r, $lte: lngN + r };
+    }
+    if (price && parseFloat(price) > 0)
+      filter.pricePerDay = { $lte: parseFloat(price) };
+    if (year?.trim())          filter.year = parseInt(year, 10);
+    if (vehicleType?.trim())   filter.model = { $regex: vehicleType, $options: 'i' };
+
+    const cars = await Car.find(filter).populate('business', 'name email');
+    res.json(cars);
+  } catch (err) {
+    console.error('Error searching cars:', err);
+    res.status(500).json({ message: 'Server error while searching for cars.' });
+  }
+};
+exports.searchCars = searchCars;   // <--  **THIS WAS MISSING**
+
+// ───────────────────── SEARCH CARS + LISTINGS ────────────────────
 exports.searchAll = async (req, res) => {
   try {
-    const { query, make, lat, lng, radius, fromDate, untilDate, price, vehicleType, year } = req.query;
-    
-    // Build filter for Car collection.
-    let carFilter = {};
-    if (query && query.trim() !== "") {
-      // Use full-text search on Car (requires text index).
-      carFilter.$text = { $search: query };
-    }
-    if (make && make.trim() !== "") {
-      carFilter.carMake = { $regex: make, $options: 'i' };
-    }
+    const { query, make, lat, lng, radius, fromDate, untilDate,
+            price, vehicleType, year } = req.query;
+
+    /* ---------- build Car filter ---------- */
+    const carFilter = {};
+    if (query?.trim())          carFilter.$text = { $search: query };
+    if (make?.trim())           carFilter.carMake = { $regex: make, $options: 'i' };
     if (lat && lng) {
-      const latNum = parseFloat(lat);
-      const lngNum = parseFloat(lng);
-      const rad = parseFloat(radius) || 50; // default radius 50 km
-      const degRadius = rad / 111; // approximate conversion from km to degrees
-      carFilter.latitude = { $gte: latNum - degRadius, $lte: latNum + degRadius };
-      carFilter.longitude = { $gte: lngNum - degRadius, $lte: lngNum + degRadius };
+      const latN = parseFloat(lat);
+      const lngN = parseFloat(lng);
+      const rDeg = (parseFloat(radius) || 50) / 111; // km→deg
+      carFilter.latitude  = { $gte: latN - rDeg, $lte: latN + rDeg };
+      carFilter.longitude = { $gte: lngN - rDeg, $lte: lngN + rDeg };
     }
-    if (price !== undefined && price.toString().trim() !== "" && parseFloat(price) > 0) {
+    if (price && parseFloat(price) > 0)
       carFilter.pricePerDay = { $lte: parseFloat(price) };
-    }
-    if (year && year.trim() !== "") {
-      carFilter.year = parseInt(year, 10);
-    }
-    if (vehicleType && vehicleType.trim() !== "") {
-      carFilter.model = { $regex: vehicleType, $options: 'i' };
-    }
-    
-    // Build filter for Listing collection.
-    let listingFilter = {};
-    if (query && query.trim() !== "") {
-      listingFilter.$text = { $search: query };
-    }
-    if (make && make.trim() !== "") {
-      listingFilter.make = { $regex: make, $options: 'i' };
-    }
-    if (price !== undefined && price.toString().trim() !== "" && parseFloat(price) > 0) {
+    if (year?.trim())          carFilter.year = parseInt(year, 10);
+    if (vehicleType?.trim())   carFilter.model = { $regex: vehicleType, $options: 'i' };
+
+    /* ---------- build Listing filter ---------- */
+    const listingFilter = {};
+    if (query?.trim())         listingFilter.$text = { $search: query };
+    if (make?.trim())          listingFilter.make = { $regex: make, $options: 'i' };
+    if (price && parseFloat(price) > 0)
       listingFilter.pricePerDay = { $lte: parseFloat(price) };
-    }
-    if (year && year.trim() !== "") {
-      listingFilter.year = parseInt(year, 10);
-    }
-    if (vehicleType && vehicleType.trim() !== "") {
-      listingFilter.carType = { $regex: vehicleType, $options: 'i' };
-    }
-    if (fromDate && fromDate.trim() !== "" && untilDate && untilDate.trim() !== "") {
-      const searchFrom = new Date(fromDate);
-      const searchUntil = new Date(untilDate);
-      if (!isNaN(searchFrom.valueOf()) && !isNaN(searchUntil.valueOf())) {
-        // Overlap condition: listing.availableFrom <= searchUntil AND listing.availableTo >= searchFrom
-        listingFilter.availableFrom = { $lte: searchUntil };
-        listingFilter.availableTo = { $gte: searchFrom };
-      }
+    if (year?.trim())          listingFilter.year = parseInt(year, 10);
+    if (vehicleType?.trim())   listingFilter.carType = { $regex: vehicleType, $options: 'i' };
+    if (fromDate?.trim() && untilDate?.trim()) {
+      const sFrom  = new Date(fromDate);
+      const sUntil = new Date(untilDate);
+      listingFilter.availableFrom = { $lte: sUntil };
+      listingFilter.availableTo   = { $gte: sFrom  };
     }
 
-    const util = require('util');
-    console.log('Car Filter:', util.inspect(carFilter, { depth: null }));
-    console.log('Listing Filter:', util.inspect(listingFilter, { depth: null }));
-    
-    // Execute both queries concurrently.
+    /* ---------- query DB ---------- */
     const [cars, listings] = await Promise.all([
       Car.find(carFilter).populate('business', 'name email'),
       Listing.find(listingFilter)
     ]);
-    
-    // For each Car, if latitude/longitude are missing, attempt to geocode using "location".
-    const geocodedCars = await Promise.all(
-      cars.map(async (carDoc) => {
-        let car = carDoc.toObject();
-        if ((!car.latitude || !car.longitude) && car.location) {
-          try {
-            const geoRes = await geocoder.geocode(car.location);
-            if (geoRes && geoRes.length > 0) {
-              car.latitude = geoRes[0].latitude;
-              car.longitude = geoRes[0].longitude;
-            }
-          } catch (err) {
-            console.error('Geocoding error for Car', car._id, err);
+
+    /* ---------- geocode missing coords & add priceLabel ---------- */
+    const geocodeIfMissing = async (obj, addrField) => {
+      if ((!obj.latitude || !obj.longitude) && obj[addrField]) {
+        try {
+          const geo = await geocoder.geocode(obj[addrField]);
+          if (geo?.length) {
+            obj.latitude  = geo[0].latitude;
+            obj.longitude = geo[0].longitude;
           }
+        } catch (e) {
+          console.error('Geocode error:', e);
         }
-        // Set priceLabel for marker display.
-        car.priceLabel = car.pricePerDay ? `£${parseFloat(car.pricePerDay).toFixed(0)}` : '£0';
-        return car;
-      })
-    );
+      }
+      obj.priceLabel = obj.pricePerDay ? `£${parseFloat(obj.pricePerDay).toFixed(0)}` : '£0';
+      return obj;
+    };
 
-    // For each Listing, if latitude/longitude are missing, attempt to geocode using "address".
-    const geocodedListings = await Promise.all(
-      listings.map(async (listingDoc) => {
-        let listing = listingDoc.toObject();
-        if ((!listing.latitude || !listing.longitude) && listing.address) {
-          try {
-            const geoRes = await geocoder.geocode(listing.address);
-            if (geoRes && geoRes.length > 0) {
-              listing.latitude = geoRes[0].latitude;
-              listing.longitude = geoRes[0].longitude;
-            }
-          } catch (err) {
-            console.error('Geocoding error for Listing', listing._id, err);
-          }
-        }
-        listing.priceLabel = listing.pricePerDay ? `£${parseFloat(listing.pricePerDay).toFixed(0)}` : '£0';
-        return listing;
-      })
-    );
+    const finalCars      = await Promise.all(cars.map(c  => geocodeIfMissing(c.toObject(),  'location')));
+    const finalListings  = await Promise.all(listings.map(l => geocodeIfMissing(l.toObject(),'address')));
 
-    const finalCars = geocodedCars.map(car => ({ type: 'car', data: car }));
-    const finalListings = geocodedListings.map(lst => ({ type: 'listing', data: lst }));
-
-    const results = [...finalCars, ...finalListings];
-    res.json(results);
-  } catch (error) {
-    console.error('Error searching cars and listings:', error);
+    res.json([
+      ...finalCars.map(c  => ({ type: 'car',     data: c })),
+      ...finalListings.map(l => ({ type: 'listing', data: l }))
+    ]);
+  } catch (err) {
+    console.error('Error searching cars and listings:', err);
     res.status(500).json({ message: 'Server error while searching.' });
   }
 };
 
-/**
- * Retrieve a single car by its ID.
- */
+// ─────────────────────── SINGLE CAR BY ID ────────────────────────
 exports.getCarById = async (req, res) => {
   try {
     const car = await Car.findById(req.params.id).populate('business', 'name email');
-    if (!car) {
-      return res.status(404).json({ message: 'Car not found.' });
-    }
+    if (!car) return res.status(404).json({ message: 'Car not found.' });
     res.json(car);
-  } catch (error) {
-    console.error('Error fetching car by ID:', error);
+  } catch (err) {
+    console.error('Error fetching car by ID:', err);
     res.status(500).json({ message: 'Server error while retrieving the car.' });
   }
 };
