@@ -5,41 +5,14 @@ const auth    = require('../middlewares/authMiddleware');
 const upload  = require('../middlewares/uploadMiddleware');
 const ctl     = require('../controllers/listingController');
 
-// Create
-router.post(
-  '/listings',
-  auth,
-  upload.array('images'),
-  ctl.createListing
-);
+/* ──── public read ──── */
+router.get('/public/:id', ctl.getListingById);
 
-// List all for this business
-router.get(
-  '/listings',
-  auth,
-  ctl.getBusinessListings
-);
-
-// Get one by ID
-router.get(
-  '/listings/:id',
-  auth,
-  ctl.getListingById
-);
-
-// Update
-router.put(
-  '/listings/:id',
-  auth,
-  upload.array('images'),
-  ctl.updateListing
-);
-
-// Delete
-router.delete(
-  '/listings/:id',
-  auth,
-  ctl.deleteListing
-);
+/* ──── authenticated CRUD ──── */
+router.post('/listings',           auth, upload.array('images'), ctl.createListing);
+router.get ('/listings',           auth,                         ctl.getBusinessListings);
+router.get ('/listings/:id',       auth,                         ctl.getListingById);
+router.put ('/listings/:id',       auth, upload.array('images'), ctl.updateListing);
+router.delete('/listings/:id',     auth,                         ctl.deleteListing);
 
 module.exports = router;
