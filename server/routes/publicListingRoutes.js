@@ -1,9 +1,10 @@
-//  server/routes/publicListingRoutes.js
-const express  = require('express');
-const router   = express.Router();
-const ctl      = require('../controllers/listingController');
+// server/routes/publicListingRoutes.js
+const express = require('express');
+const router  = express.Router();
 
-// Public – no auth middleware here
-router.get('/:id', ctl.getListingPublic);
+const { getListingPublic } = require('../controllers/listingController');
+
+//  GET /api/listings/:id   ← no auth, everyone can read
+router.get('/:id', getListingPublic);
 
 module.exports = router;
