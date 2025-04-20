@@ -4,7 +4,10 @@ const path    = require('path');
 
 // helper: strip absolute path → store only "uploads/xxx.jpg"
 function relPaths(files) {
-  return files.map(f => path.join('uploads', path.basename(f.path)));
+  return files.map(f =>
+    // use forward‑slashes and only the uploads/<filename> portion
+    'uploads/' + path.basename(f.path).replace(/\\/g, '/')
+  );
 }
 
 // Create a new listing
@@ -58,6 +61,8 @@ exports.createListing = async (req, res) => {
     res.status(500).json({ msg: 'Server error creating listing' });
   }
 };
+
+
 
 // Get all listings for the logged-in business
 exports.getBusinessListings = async (req, res) => {

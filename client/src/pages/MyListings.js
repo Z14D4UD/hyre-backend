@@ -27,77 +27,68 @@ export default function MyListings() {
 
   // Listings state
   const [listings, setListings] = useState([]);
-  
-  // We'll derive the base URL for images by removing '/api' if present.
-  const backendUrl = process.env.REACT_APP_BACKEND_URL; // e.g., "https://hyre-backend.onrender.com/api"
-  const baseUrl = backendUrl.replace('/api', ''); // now "https://hyre-backend.onrender.com"
 
+  // Build API and static bases from BACKEND_URL
+  const rawBackend = process.env.REACT_APP_BACKEND_URL || '';
+  const apiBase = rawBackend.endsWith('/api')
+    ? rawBackend
+    : rawBackend.replace(/\/$/, '') + '/api';
+  const staticBase = rawBackend.replace(/\/api$/, '');
+
+  // Fetch
   useEffect(() => {
     axios
-      .get(`${backendUrl}/business/listings`, {
+      .get(`${apiBase}/business/listings`, {
         headers: { Authorization: `Bearer ${token}` },
       })
-      .then((res) => {
-        setListings(res.data);
-      })
-      .catch((err) => {
+      .then(res => setListings(res.data))
+      .catch(err => {
         console.error('Error fetching listings:', err);
         alert('Failed to fetch listings.');
       });
-  }, [backendUrl, token]);
+  }, [apiBase, token]);
 
-  // Filter listings based on search and filters
-  const filteredListings = listings.filter((item) => {
-    const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCarType = carTypeFilter ? item.carType === carTypeFilter : true;
-    const matchesStatus = statusFilter ? item.status === statusFilter : true;
-    return matchesSearch && matchesCarType && matchesStatus;
+  // Filter logic
+  const filtered = listings.filter(item => {
+    const q = searchQuery.toLowerCase();
+    return (
+      item.title.toLowerCase().includes(q) &&
+      (carTypeFilter ? item.carType === carTypeFilter : true) &&
+      (statusFilter ? item.status === statusFilter : true)
+    );
   });
 
-  // Pagination (only show if necessary)
+  // Pagination
   const pageSize = 10;
-  const totalPages = Math.ceil(filteredListings.length / pageSize);
+  const totalPages = Math.ceil(filtered.length / pageSize);
   const [currentPage, setCurrentPage] = useState(1);
-  const displayedListings = filteredListings.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const shown = filtered.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
-  const handleSelect = (listingId) => {
-    alert(`Selected listing ID: ${listingId}`);
-  };
-
-  const handleEdit = (listingId) => {
-    navigate(`/edit-listing/${listingId}`);
-  };
-
-  const handleDelete = (listingId) => {
+  const handleDelete = id => {
     if (!window.confirm('Are you sure you want to delete this listing?')) return;
     axios
-      .delete(`${backendUrl}/business/listings/${listingId}`, {
+      .delete(`${apiBase}/business/listings/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then(() => {
-        alert('Listing deleted successfully.');
-        setListings(listings.filter((item) => item._id !== listingId));
+        setListings(lst => lst.filter(l => l._id !== id));
+        alert('Deleted successfully.');
       })
-      .catch((err) => {
+      .catch(err => {
         console.error('Error deleting listing:', err);
         alert('Failed to delete listing.');
       });
-  };
-
-  const handleAddUnit = () => {
-    navigate('/add-listing');
   };
 
   return (
     <div className={styles.myListingsContainer}>
       {/* Header */}
       <header className={styles.header}>
-        <div className={styles.logo} onClick={() => navigate('/')}>
-          Hyre
-        </div>
-        <button className={styles.menuIcon} onClick={toggleMenu}>
-          ☰
-        </button>
+        <div className={styles.logo} onClick={() => navigate('/')}>Hyre</div>
+        <button className={styles.menuIcon} onClick={toggleMenu}>☰</button>
       </header>
 
       {/* Side Menu */}
@@ -113,12 +104,12 @@ export default function MyListings() {
             className={styles.searchBox}
             placeholder="Search listing title..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={e => setSearchQuery(e.target.value)}
           />
           <select
             className={styles.filterDropdown}
             value={carTypeFilter}
-            onChange={(e) => setCarTypeFilter(e.target.value)}
+            onChange={e => setCarTypeFilter(e.target.value)}
           >
             <option value="">Car Type</option>
             <option value="SUV">SUV</option>
@@ -135,60 +126,60 @@ export default function MyListings() {
           <select
             className={styles.filterDropdown}
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            onChange={e => setStatusFilter(e.target.value)}
           >
             <option value="">Status</option>
             <option value="Available">Available</option>
             <option value="Booked">Booked</option>
             <option value="Maintenance">Maintenance</option>
           </select>
-          <button className={styles.addUnitButton} onClick={handleAddUnit}>
+          <button className={styles.addUnitButton} onClick={() => navigate('/add-listing')}>
             Add Unit
           </button>
         </div>
 
-        {/* Listings Table */}
+        {/* Listings */}
         <div className={styles.listingsTable}>
-          {displayedListings.length === 0 ? (
+          {shown.length === 0 ? (
             <p>No listings found.</p>
           ) : (
-            displayedListings.map((listing) => {
-              // Use the baseUrl to build the correct image URL.
-              const firstImage = listing.images && listing.images.length > 0
-                ? `${baseUrl}/${listing.images[0]}`
-                : '/default-car.jpg'; // Use a default image if none provided
-
+            shown.map(l => {
+              const imgSrc = l.images && l.images.length
+                ? `${staticBase}/${l.images[0]}`
+                : '/default-car.jpg';
               return (
-                <div className={styles.listingRow} key={listing._id}>
-                  {/* Car Image */}
+                <div className={styles.listingRow} key={l._id}>
                   <div className={styles.listingImage}>
-                    <img src={firstImage} alt={listing.title} />
+                    <img src={imgSrc} alt={l.title} />
                   </div>
-
-                  {/* Listing Details */}
                   <div className={styles.listingDetails}>
-                    <h3 className={styles.listingName}>{listing.title}</h3>
+                    <h3 className={styles.listingName}>{l.title}</h3>
                     <div className={styles.listingBadges}>
-                      {listing.carType && <span className={styles.badge}>{listing.carType}</span>}
-                      {listing.transmission && <span className={styles.badge}>{listing.transmission}</span>}
-                      {listing.status && <span className={styles.badge}>{listing.status}</span>}
+                      {l.carType && <span className={styles.badge}>{l.carType}</span>}
+                      {l.transmission && <span className={styles.badge}>{l.transmission}</span>}
+                      {l.status && <span className={styles.badge}>{l.status}</span>}
                     </div>
                   </div>
-
-                  {/* Price */}
                   <div className={styles.listingPrice}>
-                    <p>${listing.pricePerDay}/day</p>
+                    <p>£{l.pricePerDay}/day</p>
                   </div>
-
-                  {/* Actions */}
                   <div className={styles.listingActions}>
-                    <button className={styles.selectBtn} onClick={() => handleSelect(listing._id)}>
+                    <button
+                      className={styles.selectBtn}
+                      onClick={() => alert(`Selected ${l._id}`)}
+                    >
                       Select
                     </button>
-                    <button className={styles.editBtn} onClick={() => handleEdit(listing._id)}>
+                    <button
+                      className={styles.editBtn}
+                      onClick={() => navigate(`/edit-listing/${l._id}`)}
+                    >
                       Edit
                     </button>
-                    <button className={styles.deleteBtn} onClick={() => handleDelete(listing._id)}>
+                    <button
+                      className={styles.deleteBtn}
+                      onClick={() => handleDelete(l._id)}
+                    >
                       Delete
                     </button>
                   </div>
@@ -198,33 +189,18 @@ export default function MyListings() {
           )}
         </div>
 
-        {/* Pagination: Only render if more than one page */}
+        {/* Pagination */}
         {totalPages > 1 && (
           <div className={styles.pagination}>
-            <p>Results per page</p>
-            <select
-              className={styles.pageSizeSelect}
-              onChange={(e) => {
-                // Adjust page size if needed and reset current page
-                // For now, we keep it simple:
-                setCurrentPage(1);
-              }}
-            >
-              <option>10</option>
-              <option>20</option>
-              <option>30</option>
-            </select>
-            <div className={styles.pageButtons}>
-              {Array.from({ length: totalPages }, (_, index) => (
-                <button
-                  key={index}
-                  className={`${styles.pageBtn} ${currentPage === index + 1 ? styles.activePage : ''}`}
-                  onClick={() => setCurrentPage(index + 1)}
-                >
-                  {index + 1}
-                </button>
-              ))}
-            </div>
+            {Array.from({ length: totalPages }, (_, i) => (
+              <button
+                key={i}
+                className={currentPage === i + 1 ? styles.activePage : ''}
+                onClick={() => setCurrentPage(i + 1)}
+              >
+                {i + 1}
+              </button>
+            ))}
           </div>
         )}
       </div>

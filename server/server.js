@@ -17,6 +17,7 @@ const chatRoutes        = require('./routes/chatRoutes');
 const customerRoutes    = require('./routes/customerRoutes');
 const carRoutes         = require('./routes/carRoutes');
 const businessRoutes    = require('./routes/businessRoutes');
+const listingRoutes     = require('./routes/listingRoutes');   // ← your listings
 const paymentRoutes     = require('./routes/paymentRoutes');
 const affiliateRoutes   = require('./routes/affiliateRoutes');
 const accountRoutes     = require('./routes/accountRoutes');
@@ -50,7 +51,7 @@ app.options('*', cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 4) Serve uploaded images from <project_root>/server/uploads
+// 4) Serve uploaded images from server/uploads
 const uploadsDir = path.join(__dirname, 'uploads');
 app.use('/uploads',     express.static(uploadsDir));
 app.use('/api/uploads', express.static(uploadsDir));
@@ -66,21 +67,23 @@ app.use(passport.session());
 require('./config/passport')(passport);
 
 // 6) Mount your API routes
-app.use('/api/auth',        authRoutes);
-app.use('/api/bookings',    bookingRoutes);
-app.use('/api/invoices',    invoiceRoutes);
-app.use('/api/chat',        chatRoutes);
-app.use('/api/customer',    customerRoutes);
-app.use('/api/cars',        carRoutes);
-app.use('/api/business',    businessRoutes);
-app.use('/api/payments',    paymentRoutes);
-app.use('/api/affiliate',   affiliateRoutes);
-app.use('/api/account',     accountRoutes);
-app.use('/api/support',     supportRoutes);
-app.use('/api',             reviewRoutes);
-app.use('/api/withdrawals', withdrawalRoutes);
-app.use('/api/connect-bank',connectBankRoutes);
-app.use('/api/reminders',   remindersRoutes);
+app.use('/api/auth',          authRoutes);
+app.use('/api/bookings',      bookingRoutes);
+app.use('/api/invoices',      invoiceRoutes);
+app.use('/api/chat',          chatRoutes);
+app.use('/api/customer',      customerRoutes);
+app.use('/api/cars',          carRoutes);
+app.use('/api/business',      businessRoutes);
+// ◀︎ Listings now live here:
+app.use('/api/business/listings', listingRoutes);
+app.use('/api/payments',      paymentRoutes);
+app.use('/api/affiliate',     affiliateRoutes);
+app.use('/api/account',       accountRoutes);
+app.use('/api/support',       supportRoutes);
+app.use('/api',               reviewRoutes);
+app.use('/api/withdrawals',   withdrawalRoutes);
+app.use('/api/connect-bank',  connectBankRoutes);
+app.use('/api/reminders',     remindersRoutes);
 
 // 7) Socket.IO (unchanged)
 const io = new Server(server, {

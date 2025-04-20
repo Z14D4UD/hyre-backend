@@ -28,6 +28,7 @@ import EditListing from './pages/EditListing';
 import BusinessBookings from './pages/BusinessBookings';
 import BusinessMessagesPage from './pages/BusinessMessagesPage';
 import ConnectBank from './pages/ConnectBank';
+import CarDetailsPage from './pages/CarDetailsPage';
 
 
 
@@ -68,6 +69,8 @@ function App() {
         <Route path="/bookings/business" element={<BusinessBookings />} />
         <Route path="/messages/business" element={<BusinessMessagesPage />} />
         <Route path="/connect-bank" element={<ConnectBank />} />
+        <Route path="/details/:id" element={<CarDetailsPage />} />
+
 
 
 
