@@ -2,7 +2,7 @@
 /* eslint‑disable no‑console */
 const path    = require('path');
 const Listing = require('../models/Listing');
-const Review  = require('../models/Review'); // ★ make sure this model exists and is exported
+const Review  = require('../models/Review');
 
 /* ───────────────────────── helpers ───────────────────────── */
 const relPaths = (files = []) =>
@@ -53,7 +53,7 @@ exports.createListing = async (req, res) => {
 
     res.status(201).json(listing);
   } catch (err) {
-    console.error('CREATE listing err:', err);
+    console.error('CREATE listing err:', err);
     res.status(500).json({ msg: 'Server error creating listing' });
   }
 };
@@ -65,7 +65,7 @@ exports.getBusinessListings = async (req, res) => {
     const listings = await Listing.find({ business: req.business.id });
     res.json(listings);
   } catch (err) {
-    console.error('FETCH business listings err:', err);
+    console.error('FETCH business listings err:', err);
     res.status(500).json({ msg: 'Server error fetching listings' });
   }
 };
@@ -83,26 +83,29 @@ exports.getListingById = async (req, res) => {
 };
 
 /* ───────────────────────── PUBLIC READ‑ONLY ────────────────
-   Used by the customer details page – returns host info & reviews */
+   GET /api/listings/public/:id
+   Returns listing + host info + reviews array for that listing
+*/
 exports.getListingPublic = async (req, res) => {
   try {
-    // Pull the listing and populate the host’s avatar, name, createdAt, rating, etc.
+    // 1) fetch listing + host minimal info
     const listing = await Listing
       .findById(req.params.id)
-      .populate('business', 'name createdAt avatar rating')
+      .populate('business', 'name createdAt avatarUrl')
       .lean();
-
     if (!listing) return res.status(404).json({ msg: 'Not found' });
 
-    // Load all reviews for that listing
-    const reviews = await Review.find({ listing: listing._id })
+    // 2) fetch reviews for this listing
+    const reviews = await Review
+      .find({ listing: listing._id })
+      .populate('client', 'name avatarUrl')
       .sort({ createdAt: -1 })
       .lean();
 
-    // Merge into one object
+    // 3) respond
     res.json({ ...listing, reviews });
   } catch (err) {
-    console.error('PUBLIC listing err:', err);
+    console.error('PUBLIC listing err:', err);
     res.status(500).json({ msg: 'Server error' });
   }
 };
@@ -145,10 +148,7 @@ exports.updateListing = async (req, res) => {
       seatCovers:     req.body.seatCovers === 'true',
       dashCam:        req.body.dashCam === 'true',
     };
-
-    if (req.files && req.files.length) {
-      update.images = relPaths(req.files);
-    }
+    if (req.files && req.files.length) update.images = relPaths(req.files);
 
     const updated = await Listing.findByIdAndUpdate(
       req.params.id,
@@ -156,10 +156,9 @@ exports.updateListing = async (req, res) => {
       { new: true }
     );
     if (!updated) return res.status(404).json({ msg: 'Not found' });
-
     res.json(updated);
   } catch (err) {
-    console.error('UPDATE listing err:', err);
+    console.error('UPDATE listing err:', err);
     res.status(500).json({ msg: 'Server error updating listing' });
   }
 };
@@ -171,7 +170,7 @@ exports.deleteListing = async (req, res) => {
     if (!del) return res.status(404).json({ msg: 'Not found' });
     res.json({ msg: 'Listing deleted successfully' });
   } catch (err) {
-    console.error('DELETE listing err:', err);
+    console.error('DELETE listing err:', err);
     res.status(500).json({ msg: 'Server error deleting listing' });
   }
 };

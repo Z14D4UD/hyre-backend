@@ -1,11 +1,10 @@
 // client/src/pages/SearchResultsPage.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import {
   GoogleMap,
-  Marker,
-  InfoWindow,
+  Marker as GMarker,
   useJsApiLoader,
 } from '@react-google-maps/api';
 
@@ -13,14 +12,30 @@ import SideMenu from '../components/SideMenu';
 import SideMenuCustomer from '../components/SideMenuCustomer';
 import SideMenuBusiness from '../components/SideMenuBusiness';
 import SideMenuAffiliate from '../components/SideMenuAffiliate';
+
 import PlaceAutocomplete from '../components/PlaceAutocomplete';
 
 import styles from '../styles/SearchResultsPage.module.css';
 import heroImage from '../assets/lambo.jpg';
 
 const mapContainerStyle = { width: '100%', height: '100%' };
+// Earth radius in km
+const EARTH_RADIUS_KM = 6371;
 
-/* ---------- helpers ---------- */
+/** Haversine distance between two lat/lng points */
+function distanceKm(lat1, lng1, lat2, lng2) {
+  const toRad = (deg) => (deg * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) *
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLng / 2) ** 2;
+  return EARTH_RADIUS_KM * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// Geocode an address string to { lat, lng }
 async function geocodeAddress(address) {
   if (!window.google) return null;
   const geocoder = new window.google.maps.Geocoder();
@@ -37,123 +52,99 @@ async function geocodeAddress(address) {
     });
   });
 }
-/* ---------- component ---------- */
+
 export default function SearchResultsPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  /* ----------- state ----------- */
-  const DEFAULT_CITY = 'London';
+  // URL params
   const initialLocation = searchParams.get('location') || '';
-  const latParam = searchParams.get('lat');
-  const lngParam = searchParams.get('lng');
+  const latParam = parseFloat(searchParams.get('lat'));
+  const lngParam = parseFloat(searchParams.get('lng'));
 
-  const [searchQuery, setSearchQuery] = useState(
-    initialLocation.trim() || DEFAULT_CITY
-  );
-  const [results, setResults] = useState([]);
+  // Main state
+  const [searchQuery, setSearchQuery] = useState(initialLocation);
+  const [allResults, setAllResults] = useState([]); // raw from API
   const [mapCenter, setMapCenter] = useState(
-    latParam && lngParam
-      ? { lat: parseFloat(latParam), lng: parseFloat(lngParam) }
-      : { lat: 51.5074, lng: -0.1278 }
+    !isNaN(latParam) && !isNaN(lngParam)
+      ? { lat: latParam, lng: lngParam }
+      : { lat: 51.5074, lng: -0.1278 } // London
   );
-  const [mapZoom, setMapZoom] = useState(11);
+  const [mapZoom, setMapZoom] = useState(12);
   const [loading, setLoading] = useState(false);
-  const [activeMarkerId, setActiveMarkerId] = useState(null);
 
-  /* filters */
-  const [fromDate, setFromDate] = useState('');
-  const [fromTime, setFromTime] = useState('');
-  const [untilDate, setUntilDate] = useState('');
-  const [untilTime, setUntilTime] = useState('');
+  // Filters
   const [price, setPrice] = useState(0);
   const [vehicleType, setVehicleType] = useState('');
   const [make, setMake] = useState('');
   const [year, setYear] = useState('');
+  const [fromDate, setFromDate] = useState('');
+  const [fromTime, setFromTime] = useState('');
+  const [untilDate, setUntilDate] = useState('');
+  const [untilTime, setUntilTime] = useState('');
 
+  // Side menu
   const [sideMenuOpen, setSideMenuOpen] = useState(false);
+  const token = localStorage.getItem('token') || '';
+  const accountType = (localStorage.getItem('accountType') || '').toLowerCase();
 
-  /* google maps loader */
+  // Google Maps loader
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
     libraries: ['places'],
   });
 
-  const backendUrl = process.env.REACT_APP_BACKEND_URL;
-  const staticUrl = backendUrl.replace(/\/api$/, '');
+  const API_ROOT = process.env.REACT_APP_BACKEND_URL;
+  const STATIC_ROOT = API_ROOT.replace(/\/api$/, '');
 
-  /* --------------- api --------------- */
-  const fetchResults = async (query) => {
+  // Fetch raw results once (no client filtering yet)
+  const fetchResults = async (loc) => {
     setLoading(true);
     try {
-      const res = await axios.get(`${backendUrl}/cars/searchAll`, {
-        params: {
-          query,
-          price,
-          vehicleType,
-          make,
-          year,
-          fromDate,
-          fromTime,
-          untilDate,
-          untilTime,
-          radius: 50,
-        },
+      const res = await axios.get(`${API_ROOT}/cars/searchAll`, {
+        params: { query: loc },
       });
-
-      const cityToMatch = (query && query.trim()) || DEFAULT_CITY;
-      const filtered = res.data.filter((result) => {
-        const addr = (
-          result.data.address ||
-          result.data.location ||
-          ''
-        ).toLowerCase();
-        return addr.includes(cityToMatch.toLowerCase());
-      });
-
-      setResults(filtered);
-    } catch (err) {
-      console.error('Error fetching results:', err);
+      setAllResults(res.data || []);
+    } catch (e) {
+      console.error('Fetch error', e);
       alert('Failed to fetch listings.');
     } finally {
       setLoading(false);
     }
   };
 
-  /* ----------- effects ----------- */
+  // On mount or initialLocation change:
   useEffect(() => {
-    if (
-      (!latParam || !lngParam) &&
-      initialLocation &&
-      isLoaded &&
-      window.google
-    ) {
+    // If no lat/lng from URL, geocode the location text
+    if (!(!isNaN(latParam) && !isNaN(lngParam)) && initialLocation && isLoaded) {
       geocodeAddress(initialLocation)
         .then((coords) => {
           setMapCenter(coords);
-          setMapZoom(11);
+          setMapZoom(14);
         })
-        .catch((err) => {
-          console.error('Geocode error:', err);
-          setMapCenter({ lat: 51.5074, lng: -0.1278 });
-          setMapZoom(10);
-        });
+        .catch((e) => console.error('Geocode failed', e));
+    } else if (!isNaN(latParam) && !isNaN(lngParam)) {
+      setMapZoom(14);
     }
-    fetchResults(initialLocation.trim());
+    fetchResults(initialLocation);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialLocation, latParam, lngParam, isLoaded]);
 
-  /* ------------- handlers ------------- */
+  // When user hits the Search button
   const handleSearch = async () => {
-    if (searchQuery && isLoaded && window.google) {
+    if (searchQuery && isLoaded) {
       try {
         const coords = await geocodeAddress(searchQuery);
-        if (coords) {
-          setMapCenter(coords);
-          setMapZoom(11);
-        }
-      } catch (err) {
-        console.error('Geocode error:', err);
+        setMapCenter(coords);
+        setMapZoom(14);
+        // update URL (optional)
+        const q = new URLSearchParams();
+        q.set('location', searchQuery);
+        q.set('lat', coords.lat);
+        q.set('lng', coords.lng);
+        navigate({ search: q.toString() }, { replace: true });
+      } catch (e) {
+        console.error('Geocode failed', e);
       }
     }
     fetchResults(searchQuery);
@@ -163,22 +154,45 @@ export default function SearchResultsPage() {
     setSearchQuery(prediction.description);
   };
 
-  const handleMarkerClick = (id) =>
-    setActiveMarkerId((prev) => (prev === id ? null : id));
-  const handleCloseInfoWindow = () => setActiveMarkerId(null);
+  // Apply all filters **client‑side**:
+  const filteredResults = useMemo(() => {
+    return allResults.filter((res) => {
+      const d = res.data;
+      // 1) Must have coordinates
+      if (!d.latitude || !d.longitude) return false;
+      // 2) Distance ≤ 20 km
+      const km = distanceKm(
+        mapCenter.lat,
+        mapCenter.lng,
+        d.latitude,
+        d.longitude
+      );
+      if (km > 20) return false;
+      // 3) Price filter
+      if (price > 0 && parseFloat(d.pricePerDay) > price) return false;
+      // 4) Vehicle type
+      if (vehicleType && d.carType !== vehicleType) return false;
+      // 5) Make
+      if (make && d.make !== make) return false;
+      // 6) Year
+      if (year && d.year.toString() !== year) return false;
+      // 7) TODO: date/time availability filtering if you have that data
+      return true;
+    });
+  }, [
+    allResults,
+    mapCenter,
+    price,
+    vehicleType,
+    make,
+    year,
+  ]);
 
-  /* -------------- side‑menu pick -------------- */
-  const token = localStorage.getItem('token') || '';
-  const accountType = (localStorage.getItem('accountType') || '').toLowerCase();
-  let sideMenuComponent = (
-    <SideMenu
-      isOpen={sideMenuOpen}
-      toggleMenu={() => setSideMenuOpen(false)}
-    />
-  );
+  // Side‑menu component
+  let Side = <SideMenu isOpen={sideMenuOpen} toggleMenu={() => setSideMenuOpen(false)} />;
   if (token) {
     if (accountType === 'business') {
-      sideMenuComponent = (
+      Side = (
         <SideMenuBusiness
           isOpen={sideMenuOpen}
           toggleMenu={() => setSideMenuOpen(false)}
@@ -186,7 +200,7 @@ export default function SearchResultsPage() {
         />
       );
     } else if (accountType === 'affiliate') {
-      sideMenuComponent = (
+      Side = (
         <SideMenuAffiliate
           isOpen={sideMenuOpen}
           toggleMenu={() => setSideMenuOpen(false)}
@@ -194,7 +208,7 @@ export default function SearchResultsPage() {
         />
       );
     } else {
-      sideMenuComponent = (
+      Side = (
         <SideMenuCustomer
           isOpen={sideMenuOpen}
           toggleMenu={() => setSideMenuOpen(false)}
@@ -204,149 +218,209 @@ export default function SearchResultsPage() {
     }
   }
 
-  /* ------------- info‑window ------------- */
-  const renderInfoWindowContent = (data, resultType) => {
-    const {
-      _id,
-      pricePerDay,
-      carMake,
-      model,
-      title,
-      location,
-      address,
-      images,
-      imageUrl,
-    } = data;
-
-    const finalTitle =
-      resultType === 'car' ? `${carMake} ${model}` : title || 'Untitled';
-    const finalLocation = location || address || 'No location';
-    const finalImage =
-      resultType === 'car'
-        ? imageUrl
-        : images && images.length > 0
-        ? images[0]
-        : '/placeholder.jpg';
-
-    const detailsPath = `/details/${resultType}/${_id}`;
-
-    return (
-      <div
-        style={{ width: '220px', cursor: 'pointer' }}
-        onClick={() => navigate(detailsPath)}
-      >
-        <img
-          src={`${staticUrl}/${finalImage}`}
-          alt={finalTitle}
-          style={{
-            width: '100%',
-            height: '120px',
-            objectFit: 'cover',
-            borderRadius: '4px',
-          }}
-        />
-        <h4 style={{ margin: '8px 0', fontSize: '1rem' }}>{finalTitle}</h4>
-        <p style={{ margin: 0, fontSize: '0.85rem', color: '#666' }}>
-          {finalLocation}
-        </p>
-        <p style={{ margin: '4px 0', fontWeight: 'bold' }}>
-          £{parseFloat(pricePerDay).toFixed(2)}/day
-        </p>
-      </div>
-    );
-  };
-
-  /* -------------- render -------------- */
   return (
     <div className={styles.container}>
       {/* HEADER */}
       <header className={styles.header}>
-        <div className={styles.logo} onClick={() => navigate('/')}>
-          Hyre
-        </div>
+        <div className={styles.logo} onClick={() => navigate('/')}>Hyre</div>
         <button
           className={styles.menuIcon}
-          onClick={() => setSideMenuOpen(!sideMenuOpen)}
+          onClick={() => setSideMenuOpen((o) => !o)}
         >
           ☰
         </button>
       </header>
 
-      {/* HERO */}
-      {/* (content unchanged – truncated for brevity) */}
-      {/* ... keep the entire hero / filters section you already have ... */}
+      {Side}
 
+      {/* HERO */}
+      <section
+        className={styles.heroSection}
+        style={{ backgroundImage: `url(${heroImage})` }}
+      >
+        <div className={styles.heroOverlay} />
+        <div className={styles.hyreTopRow}>
+          <PlaceAutocomplete
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onPlaceSelect={handlePlaceSelect}
+            placeholder="Where to?"
+          />
+          <div className={styles.hyreDateTime}>
+            <label>From:</label>
+            <input
+              type="date"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+            />
+            <input
+              type="time"
+              value={fromTime}
+              onChange={(e) => setFromTime(e.target.value)}
+            />
+          </div>
+          <div className={styles.hyreDateTime}>
+            <label>Until:</label>
+            <input
+              type="date"
+              value={untilDate}
+              onChange={(e) => setUntilDate(e.target.value)}
+            />
+            <input
+              type="time"
+              value={untilTime}
+              onChange={(e) => setUntilTime(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className={styles.hyreBottomRow}>
+          <div className={styles.filterInline}>
+            <label>Max Price: £{price || 'Any'}</label>
+            <input
+              type="range"
+              min="0"
+              max="20000"
+              step="100"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              className={styles.rangeInput}
+            />
+            <input
+              type="number"
+              min="0"
+              max="20000"
+              step="100"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              className={styles.numberInput}
+            />
+          </div>
+          <div className={styles.filterInline}>
+            <label>Type:</label>
+            <select
+              value={vehicleType}
+              onChange={(e) => setVehicleType(e.target.value)}
+            >
+              <option value="">All</option>
+              <option>Sedan</option>
+              <option>SUV</option>
+              <option>Hatchback</option>
+              <option>Coupe</option>
+              <option>Convertible</option>
+              <option>Pickup truck</option>
+              <option>Minivan</option>
+              <option>Motorcycle</option>
+              <option>Truck</option>
+              <option>Wagon</option>
+              <option>Van</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div className={styles.filterInline}>
+            <label>Make:</label>
+            <select value={make} onChange={(e) => setMake(e.target.value)}>
+              <option value="">All</option>
+              <option>Toyota</option>
+              <option>Honda</option>
+              <option>Ford</option>
+              <option>BMW</option>
+              <option>Audi</option>
+              <option>Mercedes-Benz</option>
+              <option>Chevrolet</option>
+              <option>Nissan</option>
+              <option>Volkswagen</option>
+              <option>Kia</option>
+              <option>Hyundai</option>
+              <option>Subaru</option>
+              <option>Mazda</option>
+              <option>Dodge</option>
+              <option>Jeep</option>
+              <option>Lexus</option>
+              <option>Acura</option>
+            </select>
+          </div>
+          <div className={styles.filterInline}>
+            <label>Year:</label>
+            <select value={year} onChange={(e) => setYear(e.target.value)}>
+              <option value="">All</option>
+              {Array.from({ length: 2025 - 1950 + 1 }, (_, i) => 2025 - i).map(
+                (yr) => (
+                  <option key={yr} value={yr.toString()}>
+                    {yr}
+                  </option>
+                )
+              )}
+            </select>
+          </div>
+          <div className={styles.filterInline}>
+            <button className={styles.searchBtn} onClick={handleSearch}>
+              Search
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* errors */}
       {loadError && (
-        <div style={{ color: 'red', margin: '1rem 0' }}>
-          Error loading Google Maps. (Check your API key or billing)
+        <div style={{ color: 'red', margin: '1rem' }}>
+          Error loading Google Maps.
         </div>
       )}
 
-      {/* RESULTS + MAP */}
       <div className={styles.searchPageColumns}>
-        {/* LIST */}
+        {/* LISTINGS */}
         <div className={styles.resultsContainer}>
           {loading ? (
-            <p>Loading listings...</p>
-          ) : results.length === 0 ? (
+            <p>Loading listings…</p>
+          ) : filteredResults.length === 0 ? (
             <p>No listings found for “{searchQuery}”.</p>
           ) : (
             <>
               <div className={styles.listingsHeader}>
                 <h2>
-                  {results.length}+ cars available
-                  <span className={styles.subHeader}> • Sorted by relevance</span>
+                  {filteredResults.length} cars available
+                  <span className={styles.subHeader}> • Within 20 km</span>
                 </h2>
                 <p className={styles.subText}>
-                  These cars are located in and around {searchQuery}.
+                  Around <strong>{searchQuery || 'London'}</strong>.
                 </p>
               </div>
-
               <div className={styles.listingsGrid}>
-                {results.map((result) => {
-                  const data = result.data;
-                  const detailsPath = `/details/${result.type}/${data._id}`;
-
-                  return (
-                    <div
-                      key={data._id}
-                      className={styles.listingCard}
-                      onClick={() => navigate(detailsPath)}
-                    >
-                      <div className={styles.imageWrapper}>
-                        <img
-                          src={
-                            result.type === 'car'
-                              ? `${staticUrl}/${data.imageUrl}`
-                              : data.images?.[0]
-                              ? `${staticUrl}/${data.images[0]}`
-                              : '/placeholder.jpg'
-                          }
-                          alt={
-                            result.type === 'car'
-                              ? `${data.carMake} ${data.model}`
-                              : data.title
-                          }
-                          className={styles.cardImage}
-                        />
-                      </div>
-
-                      <div className={styles.cardInfo}>
-                        <h3 className={styles.carTitle}>
-                          {result.type === 'car'
-                            ? `${data.carMake} ${data.model}`
-                            : data.title}
-                        </h3>
-                        <p className={styles.carLocation}>
-                          {data.location || data.address}
-                        </p>
-                        <p className={styles.price}>
-                          £{parseFloat(data.pricePerDay).toFixed(2)}/day
-                        </p>
-                      </div>
+                {filteredResults.map(({ type, data }) => (
+                  <div
+                    key={data._id}
+                    className={styles.listingCard}
+                    onClick={() => navigate(`/details/listing/${data._id}`)}
+                  >
+                    <div className={styles.imageWrapper}>
+                      <img
+                        src={
+                          type === 'car'
+                            ? `${STATIC_ROOT}/${data.imageUrl}`
+                            : data.images?.[0]
+                            ? `${STATIC_ROOT}/${data.images[0]}`
+                            : '/placeholder.jpg'
+                        }
+                        alt={type === 'car' ? `${data.carMake}` : data.title}
+                        className={styles.cardImage}
+                      />
                     </div>
-                  );
-                })}
+                    <div className={styles.cardInfo}>
+                      <h3 className={styles.carTitle}>
+                        {type === 'car'
+                          ? `${data.carMake} ${data.model}`
+                          : data.title}
+                      </h3>
+                      <p className={styles.carLocation}>
+                        {data.location || data.address}
+                      </p>
+                      <p className={styles.price}>
+                        £{parseFloat(data.pricePerDay).toFixed(2)}/day
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </>
           )}
@@ -359,48 +433,23 @@ export default function SearchResultsPage() {
               mapContainerStyle={mapContainerStyle}
               center={mapCenter}
               zoom={mapZoom}
-              onClick={handleCloseInfoWindow}
             >
-              {results.map((result) => {
-                const data = result.data;
-                if (!data.latitude || !data.longitude) return null;
-                return (
-                  <Marker
+              {filteredResults.map(({ data }) =>
+                data.latitude && data.longitude ? (
+                  <GMarker
                     key={data._id}
                     position={{
-                      lat: Number(data.latitude),
-                      lng: Number(data.longitude),
+                      lat: data.latitude,
+                      lng: data.longitude,
                     }}
-                    label={{
-                      text: `£${parseFloat(data.pricePerDay).toFixed(0)}`,
-                      color: '#fff',
-                      fontSize: '12px',
-                      fontWeight: 'bold',
-                    }}
-                    icon={{
-                      path: window.google.maps.SymbolPath.CIRCLE,
-                      fillColor: '#000',
-                      fillOpacity: 1,
-                      strokeWeight: 0,
-                      scale: 20,
-                    }}
-                    onClick={() => handleMarkerClick(data._id)}
-                  >
-                    {activeMarkerId === data._id && (
-                      <InfoWindow onCloseClick={handleCloseInfoWindow}>
-                        {renderInfoWindowContent(data, result.type)}
-                      </InfoWindow>
-                    )}
-                  </Marker>
-                );
-              })}
+                    onClick={() => navigate(`/details/listing/${data._id}`)}
+                  />
+                ) : null
+              )}
             </GoogleMap>
           )}
         </div>
       </div>
-
-      {/* SIDE MENU */}
-      {sideMenuOpen && sideMenuComponent}
     </div>
   );
 }
