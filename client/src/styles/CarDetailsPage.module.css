@@ -1,81 +1,66 @@
-.page{
-    max-width:1200px;
-    margin:0 auto;
-    padding:1rem 1.2rem 3rem;
-    font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-  }
-  .loading{padding:3rem 0;text-align:center;font-size:1.1rem}
-  
-  /* ─── gallery ─────────────────────────────────────────── */
-  .gallery{display:flex;gap:.75rem;margin-bottom:1.2rem}
-  .mainImage{flex:3}
-  .mainImage img{
-    width:100%;height:420px;object-fit:cover;border-radius:8px
-  }
-  .sideImages{
-    flex:1;display:grid;grid-template-columns:1fr 1fr;gap:.75rem
-  }
-  .sideImages img{
-    width:100%;height:calc(210px - .375rem);object-fit:cover;
-    border-radius:6px;cursor:pointer;opacity:.85;transition:.2s
-  }
-  .activeThumb{opacity:1;outline:2px solid #38b6ff}
-  
-  /* ─── layout ──────────────────────────────────────────── */
-  .content{display:flex;gap:2rem}
-  .details{flex:2;min-width:0}
-  .sidebar{flex:1;min-width:260px;position:sticky;top:80px;align-self:flex-start}
-  
-  /* ─── details area ─────────────────────────────────────── */
-  .details h1{font-size:2.1rem;margin:.2rem 0 .6rem;font-weight:700}
-  .meta{margin-bottom:1rem;color:#666;font-size:.95rem}
-  .rating{font-weight:600;margin-right:.5rem}
-  .badge{
-    display:inline-block;background:#f1f1f1;padding:.25rem .55rem;
-    border-radius:4px;margin-right:.35rem;margin-top:.3rem
-  }
-  
-  .hostedBy{display:flex;align-items:center;gap:.6rem;margin:1.4rem 0}
-  .hostedBy img{width:56px;height:56px;border-radius:50%;object-fit:cover}
-  
-  .section{margin:2rem 0}
-  .featureList{
-    list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:.5rem
-  }
-  .featureList li{
-    background:#fafafa;border:1px solid #eee;border-radius:4px;
-    padding:.35rem .7rem;font-size:.88rem
-  }
-  
-  /* ─── sidebar box ─────────────────────────────────────── */
-  .priceBox{
-    background:#fff;border:1px solid #ddd;border-radius:8px;
-    padding:1.2rem;box-shadow:0 2px 6px rgba(0,0,0,.04)
-  }
-  .price{
-    font-size:1.6rem;font-weight:700;margin-bottom:.8rem
-  }
-  .price small{font-size:.75rem;font-weight:500;color:#555}
-  
-  /* booking form */
-  .bookingForm label{font-weight:600;display:block;margin:.9rem 0 .25rem}
-  .bookingForm input[type=text]{width:100%;padding:.5rem;border:1px solid #ccc;border-radius:4px}
-  .bookBtn{
-    width:100%;margin-top:1rem;padding:.75rem 0;background:#38b6ff;
-    color:#fff;border:none;border-radius:6px;font-size:1.05rem;cursor:pointer
-  }
-  .bookBtn:hover{background:#319ade}
-  .error{color:#c00;font-size:.9rem;margin-top:.5rem}
-  
-  /* ─── responsive ───────────────────────────────────────── */
-  @media (max-width:900px){
-    .content{flex-direction:column}
-    .sidebar{position:static;width:100%;margin-top:2rem}
-  }
-  @media (max-width:600px){
-    .gallery{flex-direction:column}
-    .sideImages{grid-template-columns:repeat(4,1fr);gap:.4rem}
-    .sideImages img{height:68px}
-    .mainImage img{height:260px}
-  }
-  
+/* ───────── General layout ───────── */
+.page{max-width:1200px;margin:0 auto;padding:1rem 1.2rem 3rem;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+.loading{padding:3rem 0;text-align:center;font-size:1.1rem}
+
+/* ───────── Header (matches Home / Search) ───────── */
+.header{position:fixed;top:0;left:0;right:0;height:64px;background:#fff;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between;padding:0 1rem;z-index:1000}
+.logo{font-size:1.6rem;font-weight:700;cursor:pointer}
+.menuIcon{background:none;border:none;font-size:1.6rem;cursor:pointer}
+.page{padding-top:80px}          /* make room for fixed header */
+
+/* ───────── Gallery ───────── */
+.gallery{display:flex;gap:.75rem;margin-bottom:1.2rem}
+.mainImage{flex:3}
+.mainImage img{width:100%;height:420px;object-fit:cover;border-radius:8px}
+.sideImages{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.sideImages img{width:100%;height:calc(210px - .375rem);object-fit:cover;border-radius:6px;cursor:pointer;opacity:.85;transition:.2s}
+.activeThumb{opacity:1;outline:2px solid #38b6ff}
+
+/* ───────── Columns ───────── */
+.content{display:flex;gap:2rem}
+.details{flex:2;min-width:0}
+.sidebar{flex:1;min-width:270px;position:sticky;top:96px;align-self:flex-start}
+
+/* ───────── Details column ───────── */
+.details h1{font-size:2.1rem;margin:.2rem 0 .6rem;font-weight:700}
+.meta{margin-bottom:1rem;color:#666;font-size:.95rem}
+.rating{font-weight:600;margin-right:.5rem}
+
+.hostedBy{display:flex;align-items:center;gap:.6rem;margin:1.4rem 0}
+.hostedBy img{width:56px;height:56px;border-radius:50%;object-fit:cover}
+
+.section{margin:2rem 0}
+
+/* reviews */
+.review{display:flex;gap:.7rem;margin:1rem 0}
+.review img{width:40px;height:40px;border-radius:50%;object-fit:cover}
+.stars{color:#6236ff;font-size:1.1rem;line-height:1}
+
+/* ───────── Sidebar (price / booking box) ───────── */
+.priceBox{background:#fff;border:1px solid #ddd;border-radius:8px;padding:1.2rem;box-shadow:0 2px 6px rgba(0,0,0,.04)}
+.price{font-size:1.6rem;font-weight:700}
+.price small{font-size:.75rem;font-weight:500;color:#555;margin-left:.15rem}
+.feeLink{display:inline-block;margin-top:.2rem;font-size:.85rem;color:#666;text-decoration:none}
+
+.label{font-weight:600;margin:.9rem 0 .25rem;display:block}
+.textInput{width:100%;padding:.5rem;border:1px solid #ccc;border-radius:4px}
+
+.row{display:flex;gap:.5rem}
+.dateInput,.timeInput{flex:1;padding:.5rem;border:1px solid #ccc;border-radius:4px;font:inherit}
+
+.manualCheck{display:block;margin-top:1rem;font-size:.85rem}
+.bookBtn{width:100%;margin-top:1.4rem;padding:.75rem 0;background:#6236ff;color:#fff;border:none;border-radius:6px;font-size:1rem;cursor:pointer}
+.bookBtn:hover{background:#4d28d4}
+.error{color:#c00;font-size:.9rem;margin-top:.5rem}
+
+/* ───────── responsive tweaks ───────── */
+@media (max-width:900px){
+  .content{flex-direction:column}
+  .sidebar{position:static;width:100%;margin-top:2rem}
+}
+@media (max-width:600px){
+  .gallery{flex-direction:column}
+  .sideImages{grid-template-columns:repeat(4,1fr);gap:.4rem}
+  .sideImages img{height:68px}
+  .mainImage img{height:260px}
+}
