@@ -84,8 +84,7 @@ exports.getListingById = async (req, res) => {
 
 /* ───────────────────────── PUBLIC READ‑ONLY ────────────────
    GET /api/listings/public/:id
-   Returns listing + host info + reviews array for that listing
-*/
+   Returns listing + host info + reviews */
 exports.getListingPublic = async (req, res) => {
   try {
     // 1) fetch listing + host minimal info
@@ -95,7 +94,7 @@ exports.getListingPublic = async (req, res) => {
       .lean();
     if (!listing) return res.status(404).json({ msg: 'Not found' });
 
-    // 2) fetch reviews for this listing
+    // 2) fetch reviews for this listing (with client name + avatarUrl)
     const reviews = await Review
       .find({ listing: listing._id })
       .populate('client', 'name avatarUrl')
