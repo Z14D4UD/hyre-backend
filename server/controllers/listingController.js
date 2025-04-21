@@ -1,7 +1,8 @@
+// server/controllers/listingController.js
 /* eslint‑disable no‑console */
-const path      = require('path');
-const Listing   = require('../models/Listing');
-const Review    = require('../models/Review');      // ★ ← make sure this model exists
+const path    = require('path');
+const Listing = require('../models/Listing');
+const Review  = require('../models/Review'); // ★ make sure this model exists and is exported
 
 /* ───────────────────────── helpers ───────────────────────── */
 const relPaths = (files = []) =>
@@ -30,7 +31,6 @@ exports.createListing = async (req, res) => {
       address:       req.body.address,
       availableFrom: req.body.availableFrom ? new Date(req.body.availableFrom) : null,
       availableTo:   req.body.availableTo   ? new Date(req.body.availableTo)   : null,
-      /* feature flags (boolean) */
       gps:            req.body.gps === 'true',
       bluetooth:      req.body.bluetooth === 'true',
       heatedSeats:    req.body.heatedSeats === 'true',
@@ -48,7 +48,6 @@ exports.createListing = async (req, res) => {
       smokeFree:      req.body.smokeFree === 'true',
       seatCovers:     req.body.seatCovers === 'true',
       dashCam:        req.body.dashCam === 'true',
-      /* images */
       images:         relPaths(req.files),
     });
 
@@ -59,7 +58,7 @@ exports.createListing = async (req, res) => {
   }
 };
 
-/* ───────────────────────── READ (BUSINESS DASHBOARD) ─────── */
+/* ───────────────────────── READ (BUSINESS) ───────────────── */
 exports.getBusinessListings = async (req, res) => {
   try {
     if (!req.business) return res.status(403).json({ msg: 'Forbidden' });
@@ -71,7 +70,7 @@ exports.getBusinessListings = async (req, res) => {
   }
 };
 
-/* single listing for BUSINESS edit page (requires auth) */
+/* ───────────────────────── READ ONE (AUTHENTICATED) ─────── */
 exports.getListingById = async (req, res) => {
   try {
     const listing = await Listing.findById(req.params.id);
@@ -87,6 +86,7 @@ exports.getListingById = async (req, res) => {
    Used by the customer details page – returns host info & reviews */
 exports.getListingPublic = async (req, res) => {
   try {
+    // Pull the listing and populate the host’s avatar, name, createdAt, rating, etc.
     const listing = await Listing
       .findById(req.params.id)
       .populate('business', 'name createdAt avatar rating')
@@ -94,10 +94,12 @@ exports.getListingPublic = async (req, res) => {
 
     if (!listing) return res.status(404).json({ msg: 'Not found' });
 
+    // Load all reviews for that listing
     const reviews = await Review.find({ listing: listing._id })
       .sort({ createdAt: -1 })
       .lean();
 
+    // Merge into one object
     res.json({ ...listing, reviews });
   } catch (err) {
     console.error('PUBLIC listing err:', err);
@@ -125,7 +127,6 @@ exports.updateListing = async (req, res) => {
       address:       req.body.address,
       availableFrom: req.body.availableFrom ? new Date(req.body.availableFrom) : null,
       availableTo:   req.body.availableTo   ? new Date(req.body.availableTo)   : null,
-      /* boolean flags (same list as above) */
       gps:            req.body.gps === 'true',
       bluetooth:      req.body.bluetooth === 'true',
       heatedSeats:    req.body.heatedSeats === 'true',
@@ -145,13 +146,17 @@ exports.updateListing = async (req, res) => {
       dashCam:        req.body.dashCam === 'true',
     };
 
-    /* replace all images if new ones uploaded */
-    if (req.files && req.files.length) update.images = relPaths(req.files);
+    if (req.files && req.files.length) {
+      update.images = relPaths(req.files);
+    }
 
     const updated = await Listing.findByIdAndUpdate(
-      req.params.id, { $set: update }, { new: true }
+      req.params.id,
+      { $set: update },
+      { new: true }
     );
     if (!updated) return res.status(404).json({ msg: 'Not found' });
+
     res.json(updated);
   } catch (err) {
     console.error('UPDATE listing err:', err);

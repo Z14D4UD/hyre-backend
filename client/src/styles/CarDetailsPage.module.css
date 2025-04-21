@@ -1,66 +1,124 @@
 /* ───────── General layout ───────── */
-.page{max-width:1200px;margin:0 auto;padding:1rem 1.2rem 3rem;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
-.loading{padding:3rem 0;text-align:center;font-size:1.1rem}
-
-/* ───────── Header (matches Home / Search) ───────── */
-.header{position:fixed;top:0;left:0;right:0;height:64px;background:#fff;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between;padding:0 1rem;z-index:1000}
-.logo{font-size:1.6rem;font-weight:700;cursor:pointer}
-.menuIcon{background:none;border:none;font-size:1.6rem;cursor:pointer}
-.page{padding-top:80px}          /* make room for fixed header */
-
-/* ───────── Gallery ───────── */
-.gallery{display:flex;gap:.75rem;margin-bottom:1.2rem}
-.mainImage{flex:3}
-.mainImage img{width:100%;height:420px;object-fit:cover;border-radius:8px}
-.sideImages{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
-.sideImages img{width:100%;height:calc(210px - .375rem);object-fit:cover;border-radius:6px;cursor:pointer;opacity:.85;transition:.2s}
-.activeThumb{opacity:1;outline:2px solid #38b6ff}
-
-/* ───────── Columns ───────── */
-.content{display:flex;gap:2rem}
-.details{flex:2;min-width:0}
-.sidebar{flex:1;min-width:270px;position:sticky;top:96px;align-self:flex-start}
-
-/* ───────── Details column ───────── */
-.details h1{font-size:2.1rem;margin:.2rem 0 .6rem;font-weight:700}
-.meta{margin-bottom:1rem;color:#666;font-size:.95rem}
-.rating{font-weight:600;margin-right:.5rem}
-
-.hostedBy{display:flex;align-items:center;gap:.6rem;margin:1.4rem 0}
-.hostedBy img{width:56px;height:56px;border-radius:50%;object-fit:cover}
-
-.section{margin:2rem 0}
-
-/* reviews */
-.review{display:flex;gap:.7rem;margin:1rem 0}
-.review img{width:40px;height:40px;border-radius:50%;object-fit:cover}
-.stars{color:#6236ff;font-size:1.1rem;line-height:1}
-
-/* ───────── Sidebar (price / booking box) ───────── */
-.priceBox{background:#fff;border:1px solid #ddd;border-radius:8px;padding:1.2rem;box-shadow:0 2px 6px rgba(0,0,0,.04)}
-.price{font-size:1.6rem;font-weight:700}
-.price small{font-size:.75rem;font-weight:500;color:#555;margin-left:.15rem}
-.feeLink{display:inline-block;margin-top:.2rem;font-size:.85rem;color:#666;text-decoration:none}
-
-.label{font-weight:600;margin:.9rem 0 .25rem;display:block}
-.textInput{width:100%;padding:.5rem;border:1px solid #ccc;border-radius:4px}
-
-.row{display:flex;gap:.5rem}
-.dateInput,.timeInput{flex:1;padding:.5rem;border:1px solid #ccc;border-radius:4px;font:inherit}
-
-.manualCheck{display:block;margin-top:1rem;font-size:.85rem}
-.bookBtn{width:100%;margin-top:1.4rem;padding:.75rem 0;background:#6236ff;color:#fff;border:none;border-radius:6px;font-size:1rem;cursor:pointer}
-.bookBtn:hover{background:#4d28d4}
-.error{color:#c00;font-size:.9rem;margin-top:.5rem}
-
-/* ───────── responsive tweaks ───────── */
-@media (max-width:900px){
-  .content{flex-direction:column}
-  .sidebar{position:static;width:100%;margin-top:2rem}
-}
-@media (max-width:600px){
-  .gallery{flex-direction:column}
-  .sideImages{grid-template-columns:repeat(4,1fr);gap:.4rem}
-  .sideImages img{height:68px}
-  .mainImage img{height:260px}
-}
+.page{
+    max-width:1200px;
+    margin:0 auto;
+    padding:1rem 1.2rem 3rem;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  }
+  .loading{padding:3rem 0;text-align:center;font-size:1.1rem}
+  
+  /* ───────── Header ───────── */
+  .header{
+    position:fixed;top:0;left:0;right:0;height:64px;
+    background:#fff;border-bottom:1px solid #eee;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 1rem;z-index:1000
+  }
+  .logo{font-size:1.6rem;font-weight:700;cursor:pointer}
+  .menuIcon{background:none;border:none;font-size:1.6rem;cursor:pointer}
+  .page{padding-top:80px}          /* leave space for fixed header */
+  
+  /* ───────── Gallery (page) ───────── */
+  .gallery{display:flex;gap:.75rem;margin-bottom:1.2rem}
+  .mainImage{flex:3}
+  .mainImage img{width:100%;height:420px;object-fit:cover;border-radius:8px}
+  .sideImages{
+    flex:1;display:grid;grid-template-columns:1fr 1fr;gap:.75rem
+  }
+  .sideImages img{
+    width:100%;height:calc(210px - .375rem);object-fit:cover;
+    border-radius:6px;cursor:pointer;opacity:.85;transition:.2s
+  }
+  .activeThumb{opacity:1;outline:2px solid #38b6ff}
+  
+  /* ───────── Gallery MODAL (full‑screen) ───────── */
+  .modalBackdrop{
+    position:fixed;inset:0;background:rgba(0,0,0,.55);
+    display:flex;align-items:center;justify-content:center;z-index:2000
+  }
+  .modalContent{
+    background:#fff;border-radius:8px;max-width:90%;max-height:90%;overflow:hidden;
+    display:flex;flex-direction:column;padding:1rem 1.5rem
+  }
+  .modalTop{
+    display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem
+  }
+  .closeBtn{background:none;border:none;font-size:1.4rem;cursor:pointer}
+  .modalContent img{max-width:100%;max-height:70vh;object-fit:contain}
+  .modalThumbs{
+    display:flex;gap:.4rem;overflow-x:auto;margin-top:.6rem
+  }
+  .modalThumbs img{
+    height:60px;width:auto;cursor:pointer;opacity:.7;border-radius:4px
+  }
+  .modalActive{opacity:1;outline:2px solid #6236ff}
+  
+  /* ───────── Columns ───────── */
+  .content{display:flex;gap:2rem}
+  .details{flex:2;min-width:0}
+  .sidebar{flex:1;min-width:270px;position:sticky;top:96px;align-self:flex-start}
+  
+  /* ───────── Details column ───────── */
+  .details h1{font-size:2.1rem;margin:.2rem 0 .6rem;font-weight:700}
+  .meta{margin-bottom:1rem;color:#666;font-size:.95rem}
+  .rating{font-weight:600;margin-right:.5rem}
+  
+  .hostedBy{
+    display:flex;align-items:center;gap:.6rem;margin:1.4rem 0
+  }
+  .hostedBy img{width:56px;height:56px;border-radius:50%;object-fit:cover}
+  .placeholderAvatar{
+    width:56px;height:56px;border-radius:50%;background:#eee;
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.2rem
+  }
+  
+  .sectionHd{margin:2rem 0 .6rem;font-size:1.3rem}
+  .section{margin:2rem 0}
+  
+  /* reviews */
+  .review{display:flex;gap:.7rem;margin:1rem 0}
+  .review img,.reviewAvatar{
+    width:40px;height:40px;border-radius:50%;object-fit:cover;
+    background:#ddd;display:flex;align-items:center;justify-content:center;font-weight:600
+  }
+  .stars{color:#6236ff;font-size:1.1rem;line-height:1}
+  
+  /* ───────── Sidebar (price / booking box) ───────── */
+  .priceBox{
+    background:#fff;border:1px solid #ddd;border-radius:8px;
+    padding:1.2rem;box-shadow:0 2px 6px rgba(0,0,0,.04)
+  }
+  .priceRow{display:flex;align-items:flex-end;gap:.25rem}
+  .price{font-size:1.8rem;font-weight:700}
+  .priceUnit{font-size:.9rem;color:#555;margin-bottom:.2rem}
+  .subTotal{margin:.2rem 0;font-size:.9rem;color:#666}
+  .feeLink{display:inline-block;margin-top:.2rem;font-size:.85rem;color:#666;text-decoration:none}
+  
+  .label{font-weight:600;margin:.9rem 0 .25rem;display:block}
+  .textInput{width:100%;padding:.5rem;border:1px solid #ccc;border-radius:4px}
+  
+  .row{display:flex;gap:.5rem}
+  .dateInput,.timeInput{
+    flex:1;padding:.5rem;border:1px solid #ccc;border-radius:4px;font:inherit
+  }
+  
+  .manualCheck{display:block;margin-top:1rem;font-size:.85rem}
+  .bookBtn{
+    width:100%;margin-top:1.4rem;padding:.75rem 0;background:#6236ff;
+    color:#fff;border:none;border-radius:6px;font-size:1rem;cursor:pointer
+  }
+  .bookBtn:hover{background:#4d28d4}
+  .error{color:#c00;font-size:.9rem;margin-top:.5rem}
+  
+  /* ───────── responsive ───────── */
+  @media (max-width:900px){
+    .content{flex-direction:column}
+    .sidebar{position:static;width:100%;margin-top:2rem}
+  }
+  @media (max-width:600px){
+    .gallery{flex-direction:column}
+    .sideImages{grid-template-columns:repeat(4,1fr);gap:.4rem}
+    .sideImages img{height:68px}
+    .mainImage img{height:260px}
+  }
+  

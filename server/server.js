@@ -76,6 +76,8 @@ app.use('/api',               reviewRoutes);     // reviews keep paths
 app.use('/api/withdrawals',   withdrawalRoutes);
 app.use('/api/connect-bank',  connectBankRoutes);
 app.use('/api/reminders',     remindersRoutes);
+app.use('/api/reviews', reviewRoutes);
+
 
 /* ───────────── 7. socket.io ─────── */
 const io = new Server(server, {
