@@ -1,3 +1,4 @@
+// client/src/pages/CarDetailsPage.js
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
@@ -58,8 +59,9 @@ export default function CarDetailsPage() {
   useEffect(() => {
     (async () => {
       try {
-        const API_ROOT = process.env.REACT_APP_BACKEND_URL; // e.g. "https://…/api"
-        const { data } = await axios.get(`${API_ROOT}/listings/public/${id}`);
+        const API_ROOT = process.env.REACT_APP_BACKEND_URL; // e.g. https://hyre-backend.onrender.com/api
+        // ← here we call the correct public route:
+        const { data } = await axios.get(`${API_ROOT}/listings/${id}`);
         setItem(data);
       } catch (err) {
         console.error('Details fetch error:', err);
@@ -149,7 +151,7 @@ export default function CarDetailsPage() {
             </div>
             <img src={`${ROOT}/${leadImg}`} alt="full"/>
             <div className={cls.modalThumbs}>
-              {pictures.map((p,i)=>(  
+              {pictures.map((p,i)=>(
                 <img
                   key={i}
                   src={`${ROOT}/${p}`}
@@ -170,7 +172,7 @@ export default function CarDetailsPage() {
             <img src={`${ROOT}/${leadImg}`} alt="vehicle"/>
           </div>
           <div className={cls.sideImages}>
-            {pictures.slice(0,4).map((p,i)=>(  
+            {pictures.slice(0,4).map((p,i)=>(
               <img
                 key={i}
                 src={`${ROOT}/${p}`}
@@ -212,7 +214,7 @@ export default function CarDetailsPage() {
                   'appleCarPlay','androidAuto','keylessEntry','childSeat','leatherSeats',
                   'tintedWindows','convertible','roofRack','petFriendly','smokeFree',
                   'seatCovers','dashCam'
-                ].filter(f=>item[f]).map(f=>(  
+                ].filter(f=>item[f]).map(f=>(
                   <li key={f}>{f.replace(/([A-Z])/g,' $1')}</li>
                 ))}
               </ul>
@@ -230,7 +232,7 @@ export default function CarDetailsPage() {
             {tripCount>0 && (
               <div className={cls.section}>
                 <h2>Reviews</h2>
-                {revs.map(r=>(  
+                {revs.map(r=>(
                   <div key={r._id} className={cls.review}>
                     <img
                       src={r.client?.avatarUrl ? `${ROOT}/${r.client.avatarUrl}` : '/avatar.svg'}
