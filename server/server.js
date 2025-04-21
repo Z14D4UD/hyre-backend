@@ -1,4 +1,3 @@
-// server/server.js
 /* eslint‑disable no‑console */
 const express  = require('express');
 const cors     = require('cors');
@@ -11,23 +10,23 @@ const { Server }= require('socket.io');
 const connectDB = require('./config/db');
 
 /* ── route bundles ── */
-const authRoutes        = require('./routes/authRoutes');
-const bookingRoutes     = require('./routes/bookingRoutes');
-const invoiceRoutes     = require('./routes/invoiceRoutes');
-const chatRoutes        = require('./routes/chatRoutes');
-const customerRoutes    = require('./routes/customerRoutes');
-const carRoutes         = require('./routes/carRoutes');
-const businessRoutes    = require('./routes/businessRoutes');
-const listingRoutes     = require('./routes/listingRoutes');        // CRUD (auth)
-const publicListing     = require('./routes/publicListingRoutes');  // read‑only
-const paymentRoutes     = require('./routes/paymentRoutes');
-const affiliateRoutes   = require('./routes/affiliateRoutes');
-const accountRoutes     = require('./routes/accountRoutes');
-const supportRoutes     = require('./routes/supportRoutes');
-const reviewRoutes      = require('./routes/reviewRoutes');
-const withdrawalRoutes  = require('./routes/withdrawalRoutes');
-const connectBankRoutes = require('./routes/connectBankRoutes');
-const remindersRoutes   = require('./routes/remindersRoutes');
+const authRoutes          = require('./routes/authRoutes');
+const bookingRoutes       = require('./routes/bookingRoutes');
+const invoiceRoutes       = require('./routes/invoiceRoutes');
+const chatRoutes          = require('./routes/chatRoutes');
+const customerRoutes      = require('./routes/customerRoutes');
+const carRoutes           = require('./routes/carRoutes');
+const businessRoutes      = require('./routes/businessRoutes');
+const listingRoutes       = require('./routes/listingRoutes');        // CRUD (auth)
+const publicListingRoutes = require('./routes/publicListingRoutes');  // read‑only
+const paymentRoutes       = require('./routes/paymentRoutes');
+const affiliateRoutes     = require('./routes/affiliateRoutes');
+const accountRoutes       = require('./routes/accountRoutes');
+const supportRoutes       = require('./routes/supportRoutes');
+const reviewRoutes        = require('./routes/reviewRoutes');
+const withdrawalRoutes    = require('./routes/withdrawalRoutes');
+const connectBankRoutes   = require('./routes/connectBankRoutes');
+const remindersRoutes     = require('./routes/remindersRoutes');
 
 const app    = express();
 const server = http.createServer(app);
@@ -60,20 +59,20 @@ app.use(passport.session());
 require('./config/passport')(passport);
 
 /* ───────────── 6. API routes ────── */
-app.use('/api/auth',      authRoutes);
-app.use('/api/bookings',  bookingRoutes);
-app.use('/api/invoices',  invoiceRoutes);
-app.use('/api/chat',      chatRoutes);
-app.use('/api/customer',  customerRoutes);
-app.use('/api/cars',      carRoutes);
-app.use('/api/business',  businessRoutes);          // generic business
-app.use('/api/business',  listingRoutes);           // CRUD  /listings
-app.use('/api/listings',  publicListing);           // GET   /listings/:id
-app.use('/api/payments',  paymentRoutes);
-app.use('/api/affiliate', affiliateRoutes);
-app.use('/api/account',   accountRoutes);
-app.use('/api/support',   supportRoutes);
-app.use('/api',           reviewRoutes);            // reviews keep paths
+app.use('/api/auth',          authRoutes);
+app.use('/api/bookings',      bookingRoutes);
+app.use('/api/invoices',      invoiceRoutes);
+app.use('/api/chat',          chatRoutes);
+app.use('/api/customer',      customerRoutes);
+app.use('/api/cars',          carRoutes);
+app.use('/api/business',      businessRoutes);   // generic business
+app.use('/api/business',      listingRoutes);    // auth CRUD  (/listings …)
+app.use('/api/listings',      publicListingRoutes); // public GET /api/listings/:id
+app.use('/api/payments',      paymentRoutes);
+app.use('/api/affiliate',     affiliateRoutes);
+app.use('/api/account',       accountRoutes);
+app.use('/api/support',       supportRoutes);
+app.use('/api',               reviewRoutes);     // reviews keep paths
 app.use('/api/withdrawals',   withdrawalRoutes);
 app.use('/api/connect-bank',  connectBankRoutes);
 app.use('/api/reminders',     remindersRoutes);
