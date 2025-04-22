@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import api from '../api'; // axios instance with baseURL + auth
+import api from '../api'; // axios instance w/ baseURL & x-auth-token
 
 import SideMenu           from '../components/SideMenu';
 import SideMenuCustomer   from '../components/SideMenuCustomer';
@@ -20,7 +20,7 @@ export default function CarDetailsPage() {
   const [qs]        = useSearchParams();
   const navigate    = useNavigate();
 
-  // ── side‑menu
+  // ── side‑menu state
   const [menuOpen, setMenuOpen] = useState(false);
   const token  = localStorage.getItem('token') || '';
   const acct   = (localStorage.getItem('accountType') || '').toLowerCase();
@@ -29,11 +29,11 @@ export default function CarDetailsPage() {
 
   let sideMenu = <SideMenu isOpen={menuOpen} toggleMenu={toggle} />;
   if (token && acct === 'customer')
-    sideMenu = <SideMenuCustomer isOpen={menuOpen} toggleMenu={toggle} closeMenu={close} />;
+    sideMenu = <SideMenuCustomer isOpen={menuOpen} toggleMenu={toggle} closeMenu={close}/>;
   if (token && acct === 'business')
-    sideMenu = <SideMenuBusiness isOpen={menuOpen} toggleMenu={toggle} closeMenu={close} />;
+    sideMenu = <SideMenuBusiness isOpen={menuOpen} toggleMenu={toggle} closeMenu={close}/>;
   if (token && acct === 'affiliate')
-    sideMenu = <SideMenuAffiliate isOpen={menuOpen} toggleMenu={toggle} closeMenu={close} />;
+    sideMenu = <SideMenuAffiliate isOpen={menuOpen} toggleMenu={toggle} closeMenu={close}/>;
 
   // ── listing + gallery state
   const [item, setItem]               = useState(null);
@@ -43,7 +43,7 @@ export default function CarDetailsPage() {
   // ── booking form state
   const today   = new Date();
   const fromQ   = qs.get('from') ? new Date(qs.get('from')) : today;
-  const toQ     = qs.get('to')   ? new Date(qs.get('to'))   : new Date(today.getTime() + 2 * 86400000);
+  const toQ     = qs.get('to')   ? new Date(qs.get('to'))   : new Date(today.getTime() + 2*86400000);
   const [name, setName]               = useState('');
   const [startDate, setStartDate]     = useState(fromQ);
   const [startTime, setStartTime]     = useState('10:00');
@@ -52,13 +52,14 @@ export default function CarDetailsPage() {
   const [confirmManual, setConfirm]   = useState(false);
   const [error, setError]             = useState('');
 
-  // ── fetch listing from public endpoint
-  useEffect(() => {
-    (async () => {
+  // ── fetch public listing
+  useEffect(()=>{
+    (async()=>{
       try {
+        // **changed** to public endpoint
         const { data } = await api.get(`/listings/public/${id}`);
         setItem(data);
-      } catch (e) {
+      } catch(e) {
         console.error('Details fetch error:', e);
         alert(
           e.response?.status === 404
@@ -68,26 +69,26 @@ export default function CarDetailsPage() {
         navigate('/');
       }
     })();
-  }, [id, navigate]);
+  },[id,navigate]);
 
-  // ── close gallery on Escape key
-  const escHandler = useCallback(e => {
-    if (e.key === 'Escape') setGalleryOpen(false);
-  }, []);
-  useEffect(() => {
+  // ── close gallery on Escape
+  const escHandler = useCallback(e=>{
+    if(e.key==='Escape') setGalleryOpen(false);
+  },[]);
+  useEffect(()=>{
     window.addEventListener('keydown', escHandler);
-    return () => window.removeEventListener('keydown', escHandler);
-  }, [escHandler]);
+    return ()=>window.removeEventListener('keydown', escHandler);
+  },[escHandler]);
 
-  // ── handle booking
+  // ── booking submit
   const handleBooking = async e => {
     e.preventDefault();
     setError('');
 
-    if (item.transmission.toLowerCase() === 'manual' && !confirmManual) {
+    if(item.transmission.toLowerCase()==='manual' && !confirmManual){
       return setError('Please confirm you can drive a manual vehicle.');
     }
-    if (!token) {
+    if(!token){
       alert('Please log in to book.');
       return navigate('/login');
     }
@@ -96,7 +97,8 @@ export default function CarDetailsPage() {
     const eD = new Date(`${endDate.toISOString().slice(0,10)}T${endTime}`);
 
     try {
-      await api.post('/bookings', {
+      // **unchanged** booking payload except using listingId
+      await api.post('/bookings',{
         listingId:    id,
         customerName: name,
         startDate:    s,
@@ -105,14 +107,14 @@ export default function CarDetailsPage() {
         currency:     'gbp'
       });
 
+      // navigate with query params
       const params = new URLSearchParams({
         listingId: id,
         from:      s.toISOString(),
         to:        eD.toISOString()
       }).toString();
-
       navigate(`/payment?${params}`);
-    } catch (err) {
+    } catch(err){
       console.error('Booking error:', err);
       alert(
         err.response?.status === 404
@@ -122,56 +124,54 @@ export default function CarDetailsPage() {
     }
   };
 
-  // ── loading indicator
-  if (!item) {
-    return (
-      <>
-        <header className={cls.header}>
-          <div className={cls.logo} onClick={() => navigate('/')}>Hyre</div>
-        </header>
-        <p className={cls.loading}>Loading…</p>
-      </>
-    );
+  // ── loading
+  if(!item){
+    return <>
+      <header className={cls.header}>
+        <div className={cls.logo} onClick={()=>navigate('/')}>Hyre</div>
+      </header>
+      <p className={cls.loading}>Loading…</p>
+    </>;
   }
 
-  // ── derived values for render
-  const ROOT     = process.env.REACT_APP_BACKEND_URL.replace(/\/api$/, '');
+  // ── derived for render
+  const ROOT     = process.env.REACT_APP_BACKEND_URL.replace(/\/api$/,'');
   const pictures = item.images?.length ? item.images : [item.imageUrl].filter(Boolean);
   const leadImg  = pictures[picsIdx];
   const lat      = item.latitude  ?? item.location?.lat;
   const lng      = item.longitude ?? item.location?.lng;
-  const days     = daysBetween(startDate, endDate);
-  const subtotal = (days * parseFloat(item.pricePerDay || 0)).toFixed(0);
+  const days     = daysBetween(startDate,endDate);
+  const subtotal = (days * parseFloat(item.pricePerDay||0)).toFixed(0);
   const revs     = item.reviews || [];
   const count    = revs.length;
-  const avg      = count > 0
-    ? (revs.reduce((sum, r) => sum + (r.rating || 0), 0) / count).toFixed(2)
+  const avg      = count>0
+    ? (revs.reduce((sum,r)=>sum+(r.rating||0),0)/count).toFixed(2)
     : '0.00';
 
   return (
     <>
       <header className={cls.header}>
-        <div className={cls.logo} onClick={() => navigate('/')}>Hyre</div>
+        <div className={cls.logo} onClick={()=>navigate('/')}>Hyre</div>
         <button className={cls.menuIcon} onClick={toggle}>☰</button>
       </header>
       {sideMenu}
 
       {/* fullscreen gallery */}
       {galleryOpen && (
-        <div className={cls.modalBackdrop} onClick={() => setGalleryOpen(false)}>
-          <div className={cls.modalContent} onClick={e => e.stopPropagation()}>
+        <div className={cls.modalBackdrop} onClick={()=>setGalleryOpen(false)}>
+          <div className={cls.modalContent} onClick={e=>e.stopPropagation()}>
             <div className={cls.modalTop}>
               <h3>{item.make} {item.model} • {avg}⭐</h3>
-              <button className={cls.closeBtn} onClick={() => setGalleryOpen(false)}>✕</button>
+              <button className={cls.closeBtn} onClick={()=>setGalleryOpen(false)}>✕</button>
             </div>
-            <img src={`${ROOT}/${leadImg}`} alt="full" />
+            <img src={`${ROOT}/${leadImg}`} alt="full"/>
             <div className={cls.modalThumbs}>
-              {pictures.map((p, i) => (
+              {pictures.map((p,i)=>(
                 <img
                   key={i}
                   src={`${ROOT}/${p}`}
-                  className={i === picsIdx ? cls.modalActive : ''}
-                  onClick={() => setPicsIdx(i)}
+                  className={i===picsIdx?cls.modalActive:''}
+                  onClick={()=>setPicsIdx(i)}
                   alt="thumb"
                 />
               ))}
@@ -183,16 +183,16 @@ export default function CarDetailsPage() {
       <div className={cls.page}>
         {/* gallery */}
         <section className={cls.gallery}>
-          <div className={cls.mainImage} onClick={() => setGalleryOpen(true)}>
-            <img src={`${ROOT}/${leadImg}`} alt="vehicle" />
+          <div className={cls.mainImage} onClick={()=>setGalleryOpen(true)}>
+            <img src={`${ROOT}/${leadImg}`} alt="vehicle"/>
           </div>
           <div className={cls.sideImages}>
-            {pictures.slice(0,4).map((p, i) => (
+            {pictures.slice(0,4).map((p,i)=>(
               <img
                 key={i}
                 src={`${ROOT}/${p}`}
-                className={i === picsIdx ? cls.activeThumb : ''}
-                onClick={() => setPicsIdx(i)}
+                className={i===picsIdx?cls.activeThumb:''}
+                onClick={()=>setPicsIdx(i)}
                 alt="thumb"
               />
             ))}
@@ -211,12 +211,11 @@ export default function CarDetailsPage() {
             {/* host info */}
             <div className={cls.hostedBy}>
               {item.business.avatarUrl
-                ? <img src={`${ROOT}/${item.business.avatarUrl}`} alt="host" />
+                ? <img src={`${ROOT}/${item.business.avatarUrl}`} alt="host"/>
                 : <div className={cls.placeholderAvatar}>{item.business.name[0]}</div>}
               <div>
                 <strong>{item.business.name}</strong><br/>
-                Joined {new Date(item.business.createdAt)
-                  .toLocaleDateString('en-GB',{month:'short',year:'numeric'})}
+                Joined {new Date(item.business.createdAt).toLocaleDateString('en-GB',{month:'short',year:'numeric'})}
               </div>
             </div>
 
@@ -229,7 +228,7 @@ export default function CarDetailsPage() {
                   'appleCarPlay','androidAuto','keylessEntry','childSeat','leatherSeats',
                   'tintedWindows','convertible','roofRack','petFriendly','smokeFree',
                   'seatCovers','dashCam'
-                ].filter(f => item[f]).map(f => (
+                ].filter(f=>item[f]).map(f=>(
                   <li key={f}>{f.replace(/([A-Z])/g,' $1')}</li>
                 ))}
               </ul>
@@ -244,20 +243,16 @@ export default function CarDetailsPage() {
             )}
 
             {/* reviews */}
-            {count > 0 && (
+            {count>0 && (
               <div className={cls.section}>
                 <h2>Reviews</h2>
-                {revs.map(r => (
+                {revs.map(r=>(
                   <div key={r._id} className={cls.review}>
-                    <img
-                      src={r.client.avatarUrl ? `${ROOT}/${r.client.avatarUrl}` : '/avatar.svg'}
-                      alt="user"
-                    />
+                    <img src={r.client.avatarUrl?`${ROOT}/${r.client.avatarUrl}`:'/avatar.svg'} alt="user"/>
                     <div>
-                      <div className={cls.stars}>{'★'.repeat(Math.round(r.rating || 0))}</div>
+                      <div className={cls.stars}>{'★'.repeat(Math.round(r.rating||0))}</div>
                       <small>
-                        {r.client.name} • {new Date(r.createdAt)
-                          .toLocaleDateString('en-GB')}
+                        {r.client.name} • {new Date(r.createdAt).toLocaleDateString('en-GB')}
                       </small>
                       <p>{r.comment}</p>
                     </div>
@@ -267,12 +262,12 @@ export default function CarDetailsPage() {
             )}
 
             {/* pickup map */}
-            {lat != null && lng != null && (
+            {lat!=null && lng!=null && (
               <div className={cls.section}>
                 <h2>Pickup location</h2>
                 <div style={{height:'280px'}}>
                   <GoogleMapReact
-                    bootstrapURLKeys={{key: process.env.REACT_APP_GOOGLE_MAPS_API_KEY}}
+                    bootstrapURLKeys={{key:process.env.REACT_APP_GOOGLE_MAPS_API_KEY}}
                     defaultCenter={{lat,lng}}
                     defaultZoom={12}
                   >
@@ -299,7 +294,7 @@ export default function CarDetailsPage() {
                 className={cls.textInput}
                 placeholder="Your name"
                 value={name}
-                onChange={e => setName(e.target.value)}
+                onChange={e=>setName(e.target.value)}
               />
 
               <label>Trip start</label>
@@ -314,7 +309,7 @@ export default function CarDetailsPage() {
                 <input
                   type="time"
                   value={startTime}
-                  onChange={e => setStartTime(e.target.value)}
+                  onChange={e=>setStartTime(e.target.value)}
                   className={cls.timeInput}
                 />
               </div>
@@ -331,17 +326,17 @@ export default function CarDetailsPage() {
                 <input
                   type="time"
                   value={endTime}
-                  onChange={e => setEndTime(e.target.value)}
+                  onChange={e=>setEndTime(e.target.value)}
                   className={cls.timeInput}
                 />
               </div>
 
-              {item.transmission.toLowerCase() === 'manual' && (
+              {item.transmission.toLowerCase()==='manual' && (
                 <label className={cls.manualCheck}>
                   <input
                     type="checkbox"
                     checked={confirmManual}
-                    onChange={e => setConfirm(e.target.checked)}
+                    onChange={e=>setConfirm(e.target.checked)}
                   /> I can drive a manual vehicle
                 </label>
               )}

@@ -1,7 +1,9 @@
-const Booking    = require('../models/Booking');
-const Listing    = require('../models/Listing');
-const Business   = require('../models/Business');
-const Affiliate  = require('../models/Affiliate');
+// server/controllers/bookingController.js
+
+const Booking     = require('../models/Booking');
+const Listing     = require('../models/Listing');
+const Business    = require('../models/Business');
+const Affiliate   = require('../models/Affiliate');
 const PDFDocument = require('pdfkit');
 
 exports.createBooking = async (req, res) => {
@@ -17,21 +19,21 @@ exports.createBooking = async (req, res) => {
   } = req.body;
 
   try {
-    // look up the listing by whichever ID was sent
+    // Prefer listingId, fall back to carId
     const lookupId = listingId || carId;
     const listing  = await Listing.findById(lookupId);
     if (!listing) return res.status(404).json({ msg: 'Listing not found' });
 
-    const businessId = listing.business;
-    const bookingFee = basePrice * 0.05;
-    const serviceFee = basePrice * 0.05;
+    const businessId  = listing.business;
+    const bookingFee  = basePrice * 0.05;
+    const serviceFee  = basePrice * 0.05;
     const totalAmount = basePrice + bookingFee;
     const payout      = basePrice - serviceFee;
 
     const bookingData = {
-      // still store under `car` field for backward schema compatibility
-      car:        lookupId,
-      business:   businessId,
+      // still stored under `car` for backward compatibility
+      car:          lookupId,
+      business:     businessId,
       customerName,
       startDate,
       endDate,
@@ -40,7 +42,7 @@ exports.createBooking = async (req, res) => {
       serviceFee,
       totalAmount,
       payout,
-      currency: currency || 'usd'
+      currency:     currency || 'usd'
     };
 
     if (affiliateCode) {
@@ -49,15 +51,15 @@ exports.createBooking = async (req, res) => {
         return res.status(400).json({ msg: 'Invalid affiliate code' });
       }
       bookingData.affiliate = affiliate._id;
-      const commission       = basePrice * 0.10;
-      affiliate.earnings    += commission;
+      const commission      = basePrice * 0.10;
+      affiliate.earnings   += commission;
       await affiliate.save();
     }
 
     const booking = new Booking(bookingData);
     await booking.save();
 
-    // update business balance
+    // Update business balance
     if (businessId) {
       await Business.findByIdAndUpdate(businessId, { $inc: { balance: payout } });
     }
@@ -149,7 +151,7 @@ exports.generateInvoice = async (req, res) => {
     doc.fontSize(12).text(`Booking ID: ${booking._id}`);
     doc.text(`Customer Name: ${booking.customerName}`);
     doc.text(`Car: ${booking.car.make} ${booking.car.model}`);
-    doc.text(`Booking Dates: ${new Date(booking.startDate).toLocaleDateString()} – ${new Date(booking.endDate).toLocaleDateString()}`);
+    doc.text(`Booking Dates: ${new Date(booking.startDate).toLocaleDateString()} - ${new Date(booking.endDate).toLocaleDateString()}`);
     doc.text(`Base Price: $${booking.basePrice}`);
     doc.text(`Booking Fee (5%): $${booking.bookingFee}`);
     doc.text(`Service Fee (5%): $${booking.serviceFee}`);

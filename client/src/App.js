@@ -10,7 +10,12 @@ import CustomerDashboard  from './components/CustomerDashboard';
 import AffiliateDashboard from './components/AffiliateDashboard';
 import CarUpload          from './pages/CarUpload';
 import IdVerification     from './components/IdVerification';
-import Payment            from './components/Payment';
+
+// ← Import your booking flow PaymentPage
+import PaymentPage        from './pages/PaymentPage';
+// ← Rename the old payout component
+import Payout             from './components/Payment';
+
 import SearchResultsPage  from './pages/SearchResultsPage';
 import CarDetailsPage     from './pages/CarDetailsPage';
 import Chat               from './components/Chat';
@@ -44,13 +49,14 @@ export default function App() {
       <Route path="/dashboard/affiliate" element={<AffiliateDashboard />} />
 
       {/* functional pages */}
-      <Route path="/upload-car"  element={<CarUpload />} />
-      <Route path="/verify-id"   element={<IdVerification />} />
-      <Route path="/payment"     element={<Payment />} />
-      <Route path="/search"      element={<SearchResultsPage />} />
+      <Route path="/upload-car"    element={<CarUpload />} />
+      <Route path="/verify-id"     element={<IdVerification />} />
+      {/* ← Now renders booking PaymentPage */}
+      <Route path="/payment"       element={<PaymentPage />} />
+      <Route path="/payment/payout" element={<Payout />} />
+      <Route path="/search"        element={<SearchResultsPage />} />
 
-      {/* **details view** */}
-      {/* changed here ➔ now matches `/details/listing/:id` */}
+      {/* details view */}
       <Route path="/details/listing/:id" element={<CarDetailsPage />} />
 
       {/* chat */}
