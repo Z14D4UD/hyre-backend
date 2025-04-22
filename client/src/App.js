@@ -49,8 +49,9 @@ export default function App() {
       <Route path="/payment"     element={<Payment />} />
       <Route path="/search"      element={<SearchResultsPage />} />
 
-      {/* details view */}
-      <Route path="/details/:id" element={<CarDetailsPage />} />
+      {/* **details view** */}
+      {/* changed here ➔ now matches `/details/listing/:id` */}
+      <Route path="/details/listing/:id" element={<CarDetailsPage />} />
 
       {/* chat */}
       <Route path="/chat" element={<Chat />} />

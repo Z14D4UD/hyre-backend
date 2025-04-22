@@ -1,25 +1,33 @@
-// server/controllers/bookingController.js
-const Booking = require('../models/Booking');
-const Car = require('../models/Car');
-const Business = require('../models/Business');
+const Booking   = require('../models/Booking');
+const Listing   = require('../models/Listing');
+const Business  = require('../models/Business');
 const Affiliate = require('../models/Affiliate');
 const PDFDocument = require('pdfkit');
 
 exports.createBooking = async (req, res) => {
-  const { carId, customerName, startDate, endDate, basePrice, currency, affiliateCode } = req.body;
+  const {
+    listingId,
+    customerName,
+    startDate,
+    endDate,
+    basePrice,
+    currency,
+    affiliateCode
+  } = req.body;
+
   try {
-    const car = await Car.findById(carId);
-    if (!car) return res.status(404).json({ msg: 'Car not found' });
-    
-    const businessId = car.business;
+    const listing = await Listing.findById(listingId);
+    if (!listing) return res.status(404).json({ msg: 'Listing not found' });
+
+    const businessId = listing.business;
     const bookingFee = basePrice * 0.05;
     const serviceFee = basePrice * 0.05;
     const totalAmount = basePrice + bookingFee;
     const payout = basePrice - serviceFee;
-    
+
     const bookingData = {
-      car: carId,
-      business: businessId,
+      listing:     listingId,
+      business:    businessId,
       customerName,
       startDate,
       endDate,
@@ -30,7 +38,7 @@ exports.createBooking = async (req, res) => {
       payout,
       currency: currency || 'usd'
     };
-    
+
     if (affiliateCode) {
       const affiliate = await Affiliate.findOne({ affiliateCode: affiliateCode.toUpperCase() });
       if (!affiliate) {
@@ -41,15 +49,15 @@ exports.createBooking = async (req, res) => {
       affiliate.earnings += commission;
       await affiliate.save();
     }
-    
+
     const booking = new Booking(bookingData);
     await booking.save();
-    
+
     // Update business balance
     if (businessId) {
       await Business.findByIdAndUpdate(businessId, { $inc: { balance: payout } });
     }
-    
+
     res.json({ booking });
   } catch (error) {
     console.error('Booking error:', error);
@@ -76,7 +84,7 @@ exports.requestPayout = async (req, res) => {
 exports.getBookings = async (req, res) => {
   try {
     const bookings = await Booking.find({})
-      .populate('car', 'make model')
+      .populate('listing', 'make model')
       .populate('business', 'name email');
     res.json(bookings);
   } catch (error) {
@@ -98,7 +106,7 @@ exports.getMyBookings = async (req, res) => {
       return res.status(400).json({ msg: 'Invalid account type for booking retrieval' });
     }
     const bookings = await Booking.find(query)
-      .populate('car', 'make model')
+      .populate('listing', 'make model')
       .populate('business', 'name email');
     res.json(bookings);
   } catch (error) {
@@ -111,7 +119,7 @@ exports.getCustomerBookings = async (req, res) => {
   try {
     if (!req.customer) return res.status(401).json({ msg: 'Unauthorized' });
     const bookings = await Booking.find({ customer: req.customer.id })
-      .populate('car', 'make model')
+      .populate('listing', 'make model')
       .populate('business', 'name email');
     res.json(bookings);
   } catch (error) {
@@ -123,7 +131,7 @@ exports.getCustomerBookings = async (req, res) => {
 exports.generateInvoice = async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id)
-      .populate('car', 'make model')
+      .populate('listing', 'make model')
       .populate('business', 'name email');
     if (!booking) return res.status(404).json({ msg: 'Booking not found' });
 
@@ -136,8 +144,8 @@ exports.generateInvoice = async (req, res) => {
     doc.moveDown();
     doc.fontSize(12).text(`Booking ID: ${booking._id}`);
     doc.text(`Customer Name: ${booking.customerName}`);
-    doc.text(`Car: ${booking.car.make} ${booking.car.model}`);
-    doc.text(`Booking Dates: ${new Date(booking.startDate).toLocaleDateString()} - ${new Date(booking.endDate).toLocaleDateString()}`);
+    doc.text(`Listing: ${booking.listing.make} ${booking.listing.model}`);
+    doc.text(`Booking Dates: ${new Date(booking.startDate).toLocaleDateString()} – ${new Date(booking.endDate).toLocaleDateString()}`);
     doc.text(`Base Price: $${booking.basePrice}`);
     doc.text(`Booking Fee (5%): $${booking.bookingFee}`);
     doc.text(`Service Fee (5%): $${booking.serviceFee}`);

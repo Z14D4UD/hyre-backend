@@ -1,8 +1,6 @@
-// client/src/pages/CarDetailsPage.js
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import axios from 'axios';
-import api   from '../api';
+import api from '../api'; // axios pre‑configured with baseURL and auth
 
 import SideMenu           from '../components/SideMenu';
 import SideMenuCustomer   from '../components/SideMenuCustomer';
@@ -15,142 +13,165 @@ import 'react-datepicker/dist/react-datepicker.css';
 import cls from '../styles/CarDetailsPage.module.css';
 
 const Marker = () => <div style={{ color: '#c00', fontWeight: 700 }}>⬤</div>;
-const daysBetween = (a,b)=>Math.max(1, Math.ceil((b-a)/86400000));
+const daysBetween = (a, b) => Math.max(1, Math.ceil((b - a) / 86400000));
 
 export default function CarDetailsPage() {
-  const { id } = useParams();
-  const [qs]   = useSearchParams();
-  const navigate = useNavigate();
+  const { id }      = useParams();
+  const [qs]        = useSearchParams();
+  const navigate    = useNavigate();
 
   // ── side‑menu
   const [menuOpen, setMenuOpen] = useState(false);
   const token  = localStorage.getItem('token') || '';
-  const acct   = (localStorage.getItem('accountType')||'').toLowerCase();
-  const toggle = ()=>setMenuOpen(o=>!o);
-  const close  = ()=>setMenuOpen(false);
+  const acct   = (localStorage.getItem('accountType') || '').toLowerCase();
+  const toggle = () => setMenuOpen(o => !o);
+  const close  = () => setMenuOpen(false);
 
-  let sideMenu = <SideMenu isOpen={menuOpen} toggleMenu={toggle}/>;
-  if (token && acct==='customer')  sideMenu=<SideMenuCustomer isOpen={menuOpen} toggleMenu={toggle} closeMenu={close}/>;
-  if (token && acct==='business')  sideMenu=<SideMenuBusiness isOpen={menuOpen} toggleMenu={toggle} closeMenu={close}/>;
-  if (token && acct==='affiliate') sideMenu=<SideMenuAffiliate isOpen={menuOpen} toggleMenu={toggle} closeMenu={close}/>;
+  let sideMenu = <SideMenu isOpen={menuOpen} toggleMenu={toggle} />;
+  if (token && acct === 'customer')
+    sideMenu = <SideMenuCustomer isOpen={menuOpen} toggleMenu={toggle} closeMenu={close} />;
+  if (token && acct === 'business')
+    sideMenu = <SideMenuBusiness isOpen={menuOpen} toggleMenu={toggle} closeMenu={close} />;
+  if (token && acct === 'affiliate')
+    sideMenu = <SideMenuAffiliate isOpen={menuOpen} toggleMenu={toggle} closeMenu={close} />;
 
-  // ── state
-  const [item, setItem]         = useState(null);
-  const [picsIdx, setPicsIdx]   = useState(0);
+  // ── listing + gallery state
+  const [item, setItem]               = useState(null);
+  const [picsIdx, setPicsIdx]         = useState(0);
   const [galleryOpen, setGalleryOpen] = useState(false);
 
-  // form defaults
-  const today    = new Date();
-  const qFrom    = qs.get('from') ? new Date(qs.get('from')) : today;
-  const qUntil   = qs.get('to')   ? new Date(qs.get('to'))   : new Date(today.getTime()+2*86400000);
+  // ── booking form state
+  const today   = new Date();
+  const fromQ   = qs.get('from') ? new Date(qs.get('from')) : today;
+  const toQ     = qs.get('to')   ? new Date(qs.get('to'))   : new Date(today.getTime() + 2 * 86400000);
+  const [name, setName]               = useState('');
+  const [startDate, setStartDate]     = useState(fromQ);
+  const [startTime, setStartTime]     = useState('10:00');
+  const [endDate, setEndDate]         = useState(toQ);
+  const [endTime, setEndTime]         = useState('10:00');
+  const [confirmManual, setConfirm]   = useState(false);
+  const [error, setError]             = useState('');
 
-  const [name,setName]               = useState('');
-  const [startDate,setStartDate]     = useState(qFrom);
-  const [startTime,setStartTime]     = useState('10:00');
-  const [endDate,setEndDate]         = useState(qUntil);
-  const [endTime,setEndTime]         = useState('10:00');
-  const [confirmManual,setConfirm]   = useState(false);
-  const [error,setError]             = useState('');
-
-  // ── fetch public listing + reviews
-  useEffect(()=>{
-    (async()=>{
+  // ── fetch listing from public endpoint
+  useEffect(() => {
+    (async () => {
       try {
-        const API = process.env.REACT_APP_BACKEND_URL; // ".../api"
-        const { data } = await axios.get(`${API}/listings/public/${id}`);
+        const { data } = await api.get(`/listings/${id}`);
         setItem(data);
-      } catch(e){
+      } catch (e) {
         console.error('Details fetch error:', e);
-        alert('Failed to load listing.');
+        alert(
+          e.response?.status === 404
+            ? 'Listing not found.'
+            : 'Failed to load listing.'
+        );
+        navigate('/');
       }
     })();
-  },[id]);
+  }, [id, navigate]);
 
-  // close gallery on Esc
-  const escHandler = useCallback(e=>{
-    if(e.key==='Escape') setGalleryOpen(false);
-  },[]);
-  useEffect(()=>{
-    window.addEventListener('keydown',escHandler);
-    return ()=>window.removeEventListener('keydown',escHandler);
-  },[escHandler]);
+  // ── close gallery on Escape key
+  const escHandler = useCallback(e => {
+    if (e.key === 'Escape') setGalleryOpen(false);
+  }, []);
+  useEffect(() => {
+    window.addEventListener('keydown', escHandler);
+    return () => window.removeEventListener('keydown', escHandler);
+  }, [escHandler]);
 
-  // booking
+  // ── handle booking
   const handleBooking = async e => {
     e.preventDefault();
     setError('');
-    if(item.transmission.toLowerCase()==='manual' && !confirmManual){
+
+    if (item.transmission.toLowerCase() === 'manual' && !confirmManual) {
       return setError('Please confirm you can drive a manual vehicle.');
     }
-    if(!token){
-      return alert('Please log in to book.');
+    if (!token) {
+      alert('Please log in to book.');
+      return navigate('/login');
     }
+
+    const s  = new Date(`${startDate.toISOString().slice(0,10)}T${startTime}`);
+    const eD = new Date(`${endDate.toISOString().slice(0,10)}T${endTime}`);
+
     try {
-      const s  = new Date(`${startDate.toISOString().slice(0,10)}T${startTime}`);
-      const eD = new Date(`${endDate.toISOString().slice(0,10)}T${endTime}`);
-      await api.post('/bookings',{
-        carId:id,
-        customerName:name,
-        startDate:s,
-        endDate:eD,
-        basePrice:item.pricePerDay,
-        currency:'gbp'
+      await api.post('/bookings', {
+        listingId:    id,
+        customerName: name,
+        startDate:    s,
+        endDate:      eD,
+        basePrice:    item.pricePerDay,
+        currency:     'gbp'
       });
-      navigate('/payment', { state: { listing:item, start:s, end:eD } });
-    } catch(err){
-      console.error(err);
-      alert('Booking failed.');
+
+      const params = new URLSearchParams({
+        listingId: id,
+        from:      s.toISOString(),
+        to:        eD.toISOString()
+      }).toString();
+
+      navigate(`/payment?${params}`);
+    } catch (err) {
+      console.error('Booking error:', err);
+      alert(
+        err.response?.status === 404
+          ? 'Unable to create booking.'
+          : 'Booking failed.'
+      );
     }
   };
 
-  if(!item){
-    return <>
-      <header className={cls.header}>
-        <div className={cls.logo} onClick={()=>navigate('/')}>Hyre</div>
-      </header>
-      <p className={cls.loading}>Loading…</p>
-    </>;
+  // ── loading indicator
+  if (!item) {
+    return (
+      <>
+        <header className={cls.header}>
+          <div className={cls.logo} onClick={() => navigate('/')}>Hyre</div>
+        </header>
+        <p className={cls.loading}>Loading…</p>
+      </>
+    );
   }
 
-  // derived
-  const ROOT     = process.env.REACT_APP_BACKEND_URL.replace(/\/api$/,'');
+  // ── derived values for render
+  const ROOT     = process.env.REACT_APP_BACKEND_URL.replace(/\/api$/, '');
   const pictures = item.images?.length ? item.images : [item.imageUrl].filter(Boolean);
   const leadImg  = pictures[picsIdx];
   const lat      = item.latitude  ?? item.location?.lat;
   const lng      = item.longitude ?? item.location?.lng;
-  const days     = daysBetween(startDate,endDate);
-  const subtotal = (days * parseFloat(item.pricePerDay||0)).toFixed(0);
-
+  const days     = daysBetween(startDate, endDate);
+  const subtotal = (days * parseFloat(item.pricePerDay || 0)).toFixed(0);
   const revs     = item.reviews || [];
   const count    = revs.length;
-  const avg      = count>0
-    ? (revs.reduce((sum,r)=>sum + (r.rating||0),0)/count).toFixed(2)
+  const avg      = count > 0
+    ? (revs.reduce((sum, r) => sum + (r.rating || 0), 0) / count).toFixed(2)
     : '0.00';
 
   return (
     <>
       <header className={cls.header}>
-        <div className={cls.logo} onClick={()=>navigate('/')}>Hyre</div>
+        <div className={cls.logo} onClick={() => navigate('/')}>Hyre</div>
         <button className={cls.menuIcon} onClick={toggle}>☰</button>
       </header>
       {sideMenu}
 
       {/* fullscreen gallery */}
       {galleryOpen && (
-        <div className={cls.modalBackdrop} onClick={()=>setGalleryOpen(false)}>
-          <div className={cls.modalContent} onClick={e=>e.stopPropagation()}>
+        <div className={cls.modalBackdrop} onClick={() => setGalleryOpen(false)}>
+          <div className={cls.modalContent} onClick={e => e.stopPropagation()}>
             <div className={cls.modalTop}>
               <h3>{item.make} {item.model} • {avg}⭐</h3>
-              <button className={cls.closeBtn} onClick={()=>setGalleryOpen(false)}>✕</button>
+              <button className={cls.closeBtn} onClick={() => setGalleryOpen(false)}>✕</button>
             </div>
-            <img src={`${ROOT}/${leadImg}`} alt="full"/>
+            <img src={`${ROOT}/${leadImg}`} alt="full" />
             <div className={cls.modalThumbs}>
-              {pictures.map((p,i)=>(
+              {pictures.map((p, i) => (
                 <img
                   key={i}
                   src={`${ROOT}/${p}`}
-                  className={i===picsIdx?cls.modalActive:''}
-                  onClick={()=>setPicsIdx(i)}
+                  className={i === picsIdx ? cls.modalActive : ''}
+                  onClick={() => setPicsIdx(i)}
                   alt="thumb"
                 />
               ))}
@@ -162,16 +183,16 @@ export default function CarDetailsPage() {
       <div className={cls.page}>
         {/* gallery */}
         <section className={cls.gallery}>
-          <div className={cls.mainImage} onClick={()=>setGalleryOpen(true)}>
-            <img src={`${ROOT}/${leadImg}`} alt="vehicle"/>
+          <div className={cls.mainImage} onClick={() => setGalleryOpen(true)}>
+            <img src={`${ROOT}/${leadImg}`} alt="vehicle" />
           </div>
           <div className={cls.sideImages}>
-            {pictures.slice(0,4).map((p,i)=>(
+            {pictures.slice(0,4).map((p, i) => (
               <img
                 key={i}
                 src={`${ROOT}/${p}`}
-                className={i===picsIdx?cls.activeThumb:''}
-                onClick={()=>setPicsIdx(i)}
+                className={i === picsIdx ? cls.activeThumb : ''}
+                onClick={() => setPicsIdx(i)}
                 alt="thumb"
               />
             ))}
@@ -190,7 +211,7 @@ export default function CarDetailsPage() {
             {/* host info */}
             <div className={cls.hostedBy}>
               {item.business.avatarUrl
-                ? <img src={`${ROOT}/${item.business.avatarUrl}`} alt="host"/>
+                ? <img src={`${ROOT}/${item.business.avatarUrl}`} alt="host" />
                 : <div className={cls.placeholderAvatar}>{item.business.name[0]}</div>}
               <div>
                 <strong>{item.business.name}</strong><br/>
@@ -208,7 +229,7 @@ export default function CarDetailsPage() {
                   'appleCarPlay','androidAuto','keylessEntry','childSeat','leatherSeats',
                   'tintedWindows','convertible','roofRack','petFriendly','smokeFree',
                   'seatCovers','dashCam'
-                ].filter(f=>item[f]).map(f=>(
+                ].filter(f => item[f]).map(f => (
                   <li key={f}>{f.replace(/([A-Z])/g,' $1')}</li>
                 ))}
               </ul>
@@ -223,17 +244,17 @@ export default function CarDetailsPage() {
             )}
 
             {/* reviews */}
-            {count>0 && (
+            {count > 0 && (
               <div className={cls.section}>
                 <h2>Reviews</h2>
-                {revs.map(r=>(
+                {revs.map(r => (
                   <div key={r._id} className={cls.review}>
                     <img
-                      src={r.client.avatarUrl?`${ROOT}/${r.client.avatarUrl}`:'/avatar.svg'}
+                      src={r.client.avatarUrl ? `${ROOT}/${r.client.avatarUrl}` : '/avatar.svg'}
                       alt="user"
                     />
                     <div>
-                      <div className={cls.stars}>{'★'.repeat(Math.round(r.rating||0))}</div>
+                      <div className={cls.stars}>{'★'.repeat(Math.round(r.rating || 0))}</div>
                       <small>
                         {r.client.name} • {new Date(r.createdAt)
                           .toLocaleDateString('en-GB')}
@@ -245,13 +266,13 @@ export default function CarDetailsPage() {
               </div>
             )}
 
-            {/* map */}
-            {lat!=null && lng!=null && (
+            {/* pickup map */}
+            {lat != null && lng != null && (
               <div className={cls.section}>
                 <h2>Pickup location</h2>
                 <div style={{height:'280px'}}>
                   <GoogleMapReact
-                    bootstrapURLKeys={{key:process.env.REACT_APP_GOOGLE_MAPS_API_KEY}}
+                    bootstrapURLKeys={{key: process.env.REACT_APP_GOOGLE_MAPS_API_KEY}}
                     defaultCenter={{lat,lng}}
                     defaultZoom={12}
                   >
@@ -266,9 +287,9 @@ export default function CarDetailsPage() {
             <form onSubmit={handleBooking} className={cls.priceBox}>
               <div className={cls.priceRow}>
                 <span className={cls.price}>£{parseFloat(item.pricePerDay).toFixed(0)}</span>
-                <span className={cls.priceUnit}>/ day</span>
+                <span className={cls.priceUnit}>/ day</span>
               </div>
-              <div className={cls.subTotal}>£{subtotal} excl. taxes & fees</div>
+              <div className={cls.subTotal}>£{subtotal} excl. taxes & fees</div>
               <hr/>
 
               <h3>Your trip</h3>
@@ -278,7 +299,7 @@ export default function CarDetailsPage() {
                 className={cls.textInput}
                 placeholder="Your name"
                 value={name}
-                onChange={e=>setName(e.target.value)}
+                onChange={e => setName(e.target.value)}
               />
 
               <label>Trip start</label>
@@ -293,7 +314,7 @@ export default function CarDetailsPage() {
                 <input
                   type="time"
                   value={startTime}
-                  onChange={e=>setStartTime(e.target.value)}
+                  onChange={e => setStartTime(e.target.value)}
                   className={cls.timeInput}
                 />
               </div>
@@ -310,23 +331,23 @@ export default function CarDetailsPage() {
                 <input
                   type="time"
                   value={endTime}
-                  onChange={e=>setEndTime(e.target.value)}
+                  onChange={e => setEndTime(e.target.value)}
                   className={cls.timeInput}
                 />
               </div>
 
-              {item.transmission.toLowerCase()==='manual' && (
+              {item.transmission.toLowerCase() === 'manual' && (
                 <label className={cls.manualCheck}>
                   <input
                     type="checkbox"
                     checked={confirmManual}
-                    onChange={e=>setConfirm(e.target.checked)}
-                  /> I can drive a manual vehicle
+                    onChange={e => setConfirm(e.target.checked)}
+                  /> I can drive a manual vehicle
                 </label>
               )}
 
               {error && <p className={cls.error}>{error}</p>}
-              <button className={cls.bookBtn}>Continue</button>
+              <button type="submit" className={cls.bookBtn}>Continue</button>
             </form>
           </aside>
         </section>
