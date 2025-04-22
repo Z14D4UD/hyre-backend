@@ -1,3 +1,4 @@
+// client/src/pages/PaymentPage.js
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -62,24 +63,24 @@ export default function PaymentPage() {
   const service  = (subtotal / 1.2) * 0.05;
   const total    = subtotal + vat + service;
 
-  // Strip off the “/api” suffix so we can build image URLs
+  // Backend base URL (for images)
   const backendBase = process.env.REACT_APP_BACKEND_URL.replace(/\/api$/, '');
 
-  // — Stripe payment handler
+  // Stripe payment handler
   const handleCardPayment = async () => {
     if (!message.trim()) {
       return alert('Please leave a message to your local rental business before you pay.');
     }
 
     try {
-      // 1) Create the PaymentIntent on your server
-      const { data } = await api.post('/payments/stripe', {
+      // 1) Create PaymentIntent
+      const { data } = await api.post('/payment/stripe', {
         amount: Math.round(total * 100),
         currency: 'GBP'
       });
       console.log('stripe intent response:', data);
 
-      // 2) Confirm with Stripe.js
+      // 2) Confirm CardElement
       const { error, paymentIntent } = await stripe.confirmCardPayment(
         data.clientSecret,
         {
@@ -89,13 +90,12 @@ export default function PaymentPage() {
           }
         }
       );
-
       if (error) {
         console.error(error);
         return alert(error.message);
       }
 
-      // 3) On success, go to your confirmation page
+      // 3) Success → Confirmation
       navigate(`/confirmation?paymentIntent=${paymentIntent.id}`);
     } catch (err) {
       console.error('Stripe payment error:', err);
@@ -107,7 +107,11 @@ export default function PaymentPage() {
     <>
       {/* Header */}
       <header className={cls.header} style={{ borderBottom: '1px solid #eee' }}>
-        <div className={cls.logo} style={{ color: '#38b6ff' }} onClick={() => navigate('/')}>
+        <div
+          className={cls.logo}
+          style={{ color: '#38b6ff' }}
+          onClick={() => navigate('/')}
+        >
           Hyre
         </div>
         <button
@@ -119,7 +123,7 @@ export default function PaymentPage() {
         </button>
       </header>
 
-      {/* SideMenu */}
+      {/* Side Menu */}
       <SideMenuCustomer
         isOpen={menuOpen}
         toggleMenu={() => setMenuOpen(o => !o)}
@@ -131,6 +135,7 @@ export default function PaymentPage() {
 
           {/* Left Column */}
           <div className={cls.left}>
+
             {/* Payment Method */}
             <div className={cls.section} style={{ borderRadius:12, boxShadow:'0 2px 8px rgba(0,0,0,0.05)', padding:16 }}>
               <h3>Payment method</h3>
@@ -166,7 +171,7 @@ export default function PaymentPage() {
               />
             </div>
 
-            {/* CardElement Flow */}
+            {/* Stripe CardElement */}
             {method === 'card' && (
               <div className={cls.section} style={{ borderRadius:12, boxShadow:'0 2px 8px rgba(0,0,0,0.05)', padding:16 }}>
                 <CardElement options={{ hidePostalCode: true }} />
@@ -181,26 +186,24 @@ export default function PaymentPage() {
               </div>
             )}
 
-            {/* PayPal Buttons Flow */}
+            {/* PayPal Buttons */}
             {method === 'paypal' && (
               <div className={cls.section} style={{ borderRadius:12, boxShadow:'0 2px 8px rgba(0,0,0,0.05)', padding:16 }}>
                 <PayPalButtons
-                  style={{ layout: 'vertical' }}
+                  style={{ layout:'vertical' }}
                   createOrder={() => {
                     if (!message.trim()) {
                       alert('Please leave a message to your local rental business before you pay.');
                       return Promise.reject('Message required');
                     }
-                    return api
-                      .post('/payments/paypal/create-order', {
-                        amount: total.toFixed(2),
-                        currency: 'GBP'
-                      })
-                      .then(res => res.data.orderID);
+                    return api.post('/payment/paypal/create-order', {
+                      amount: total.toFixed(2),
+                      currency: 'GBP'
+                    })
+                    .then(res => res.data.orderID);
                   }}
-                  onApprove={(_data) => {
-                    return api
-                      .post('/payments/paypal/capture-order', { orderID: _data.orderID })
+                  onApprove={({ orderID }) => {
+                    return api.post('/payment/paypal/capture-order', { orderID })
                       .then(res => {
                         navigate(`/confirmation?paypalCaptureId=${res.data.capture.id}`);
                       });
@@ -212,6 +215,7 @@ export default function PaymentPage() {
                 />
               </div>
             )}
+
           </div>
 
           {/* Right Column (Summary) */}
@@ -229,7 +233,7 @@ export default function PaymentPage() {
             <h3>{listing.make} {listing.model}</h3>
             <div className={cls.rating}>
               {listing.reviews?.length
-                ? (listing.reviews.reduce((sum, r) => sum + (r.rating||0), 0) / listing.reviews.length).toFixed(2)
+                ? (listing.reviews.reduce((sum,r) => sum + (r.rating||0), 0) / listing.reviews.length).toFixed(2)
                 : '0.00'}★ ({listing.reviews?.length||0})
             </div>
             <p>This reservation is non‑refundable. <a href="/legal">Full policy</a></p>
@@ -240,7 +244,9 @@ export default function PaymentPage() {
                 {fromDate.toLocaleDateString()} → {toDate.toLocaleDateString()}<br/>
                 {days} days
               </p>
-              <button onClick={() => navigate(-1)} style={{ borderRadius:8, padding:4 }}>Change</button>
+              <button onClick={() => navigate(-1)} style={{ borderRadius:8, padding:4 }}>
+                Change
+              </button>
             </div>
 
             <div className={cls.section}>
