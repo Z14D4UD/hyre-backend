@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import api from '../api'; // axios pre‑configured with baseURL and auth
+import api from '../api'; // axios instance with baseURL + auth
 
 import SideMenu           from '../components/SideMenu';
 import SideMenuCustomer   from '../components/SideMenuCustomer';
@@ -56,7 +56,7 @@ export default function CarDetailsPage() {
   useEffect(() => {
     (async () => {
       try {
-        const { data } = await api.get(`/listings/${id}`);
+        const { data } = await api.get(`/listings/public/${id}`);
         setItem(data);
       } catch (e) {
         console.error('Details fetch error:', e);
