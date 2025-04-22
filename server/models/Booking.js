@@ -14,7 +14,7 @@ const BookingSchema = new mongoose.Schema({
   totalAmount: { type: Number },
   payout: { type: Number },
   currency: { type: String, default: 'usd' },
-  affiliate: { type: mongoose.Schema.Types.ObjectId, ref: 'Affiliate' }
+  affiliate: { type: mongoose.Schema.Types.ObjectId, ref: 'Affiliate' }  // ← already in schema
 }, { timestamps: true });
 
 module.exports = mongoose.model('Booking', BookingSchema);

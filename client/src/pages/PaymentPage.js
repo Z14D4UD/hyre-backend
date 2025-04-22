@@ -21,13 +21,14 @@ export default function PaymentPage() {
   const fromDate  = new Date(fromISO);
   const toDate    = new Date(toISO);
 
-  // State
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [listing,  setListing]  = useState(null);
-  const [method,   setMethod]   = useState('card');
-  const [message,  setMessage]  = useState('');
+  // –– State
+  const [menuOpen,      setMenuOpen]       = useState(false);
+  const [listing,       setListing]        = useState(null);
+  const [method,        setMethod]         = useState('card');
+  const [message,       setMessage]        = useState('');
+  const [affiliateCode, setAffiliateCode]  = useState('');   // ← ADDED
 
-  // Auth guard
+  // –– Auth guard
   const token = localStorage.getItem('token') || '';
   useEffect(() => {
     if (!token) {
@@ -36,7 +37,7 @@ export default function PaymentPage() {
     }
   }, [token, navigate]);
 
-  // Fetch the listing
+  // –– Fetch
   useEffect(() => {
     api.get(`/listings/${listingId}`)
       .then(r => setListing(r.data))
@@ -51,11 +52,9 @@ export default function PaymentPage() {
       });
   }, [listingId, navigate]);
 
-  if (!listing) {
-    return <p className={cls.loading}>Loading booking…</p>;
-  }
+  if (!listing) return <p className={cls.loading}>Loading booking…</p>;
 
-  // Pricing
+  // –– Pricing
   const days     = daysBetween(fromDate, toDate);
   const base     = listing.pricePerDay || 0;
   const subtotal = days * base;
@@ -63,10 +62,10 @@ export default function PaymentPage() {
   const service  = (subtotal / 1.2) * 0.05;
   const total    = subtotal + vat + service;
 
-  // Backend base URL (for images)
+  // –– Backend base URL (for images)
   const backendBase = process.env.REACT_APP_BACKEND_URL.replace(/\/api$/, '');
 
-  // Stripe payment handler
+  // –– Pay handler
   const handleCardPayment = async () => {
     if (!message.trim()) {
       return alert('Please leave a message to your local rental business before you pay.');
@@ -80,7 +79,7 @@ export default function PaymentPage() {
       });
       console.log('stripe intent response:', data);
 
-      // 2) Confirm CardElement
+      // 2) Confirm card payment
       const { error, paymentIntent } = await stripe.confirmCardPayment(
         data.clientSecret,
         {
@@ -95,7 +94,17 @@ export default function PaymentPage() {
         return alert(error.message);
       }
 
-      // 3) Success → Confirmation
+      // 3) Record booking, passing affiliateCode
+      await api.post('/bookings', {
+        listingId,
+        startDate: fromISO,
+        endDate: toISO,
+        basePrice: base,
+        currency: 'GBP',
+        affiliateCode: affiliateCode.trim() || undefined   // ← ADDED
+      });
+
+      // 4) Navigate on success
       navigate(`/confirmation?paymentIntent=${paymentIntent.id}`);
     } catch (err) {
       console.error('Stripe payment error:', err);
@@ -171,6 +180,19 @@ export default function PaymentPage() {
               />
             </div>
 
+            {/* Affiliate Code */}
+            <div className={cls.section} style={{ borderRadius:12, boxShadow:'0 2px 8px rgba(0,0,0,0.05)', padding:16 }}>
+              <h3>Affiliate Code (optional)</h3>
+              <input
+                type="text"
+                className={cls.textInput}
+                placeholder="Enter affiliate code"
+                value={affiliateCode}
+                onChange={e => setAffiliateCode(e.target.value)}
+                style={{ borderRadius:8, padding:'8px', width:'100%' }}
+              />
+            </div>
+
             {/* Stripe CardElement */}
             {method === 'card' && (
               <div className={cls.section} style={{ borderRadius:12, boxShadow:'0 2px 8px rgba(0,0,0,0.05)', padding:16 }}>
@@ -191,7 +213,7 @@ export default function PaymentPage() {
               <div className={cls.section} style={{ borderRadius:12, boxShadow:'0 2px 8px rgba(0,0,0,0.05)', padding:16 }}>
                 <PayPalButtons
                   style={{ layout:'vertical' }}
-                  createOrder={() => {
+                  createOrder={(_data, actions) => {
                     if (!message.trim()) {
                       alert('Please leave a message to your local rental business before you pay.');
                       return Promise.reject('Message required');
@@ -204,7 +226,15 @@ export default function PaymentPage() {
                   }}
                   onApprove={({ orderID }) => {
                     return api.post('/payment/paypal/capture-order', { orderID })
-                      .then(res => {
+                      .then(async res => {
+                        await api.post('/bookings', {
+                          listingId,
+                          startDate: fromISO,
+                          endDate: toISO,
+                          basePrice: base,
+                          currency: 'GBP',
+                          affiliateCode: affiliateCode.trim() || undefined
+                        });
                         navigate(`/confirmation?paypalCaptureId=${res.data.capture.id}`);
                       });
                   }}
@@ -230,11 +260,11 @@ export default function PaymentPage() {
               className={cls.thumb}
               style={{ borderRadius:8 }}
             />
-            <h3>{listing.make} {listing.model}</h3>
+            <h3>{listing.make} {listing.model}</h3>
             <div className={cls.rating}>
-              {listing.reviews?.length
-                ? (listing.reviews.reduce((sum,r) => sum + (r.rating||0), 0) / listing.reviews.length).toFixed(2)
-                : '0.00'}★ ({listing.reviews?.length||0})
+              {(listing.reviews?.length
+                ? (listing.reviews.reduce((sum,r)=>sum+(r.rating||0),0)/listing.reviews.length).toFixed(2)
+                : '0.00')}★ ({listing.reviews?.length||0})
             </div>
             <p>This reservation is non‑refundable. <a href="/legal">Full policy</a></p>
 
@@ -244,9 +274,7 @@ export default function PaymentPage() {
                 {fromDate.toLocaleDateString()} → {toDate.toLocaleDateString()}<br/>
                 {days} days
               </p>
-              <button onClick={() => navigate(-1)} style={{ borderRadius:8, padding:4 }}>
-                Change
-              </button>
+              <button onClick={()=>navigate(-1)} style={{ borderRadius:8, padding:4 }}>Change</button>
             </div>
 
             <div className={cls.section}>

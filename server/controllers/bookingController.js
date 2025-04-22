@@ -1,9 +1,8 @@
 // server/controllers/bookingController.js
-
-const Booking     = require('../models/Booking');
-const Listing     = require('../models/Listing');
-const Business    = require('../models/Business');
-const Affiliate   = require('../models/Affiliate');
+const Booking   = require('../models/Booking');
+const Listing   = require('../models/Listing');
+const Business  = require('../models/Business');
+const Affiliate = require('../models/Affiliate');
 const PDFDocument = require('pdfkit');
 
 exports.createBooking = async (req, res) => {
@@ -15,11 +14,10 @@ exports.createBooking = async (req, res) => {
     endDate,
     basePrice,
     currency,
-    affiliateCode
+    affiliateCode    // ← ALREADY HANDLED
   } = req.body;
 
   try {
-    // Prefer listingId, fall back to carId
     const lookupId = listingId || carId;
     const listing  = await Listing.findById(lookupId);
     if (!listing) return res.status(404).json({ msg: 'Listing not found' });
@@ -31,7 +29,6 @@ exports.createBooking = async (req, res) => {
     const payout      = basePrice - serviceFee;
 
     const bookingData = {
-      // still stored under `car` for backward compatibility
       car:          lookupId,
       business:     businessId,
       customerName,
@@ -59,7 +56,6 @@ exports.createBooking = async (req, res) => {
     const booking = new Booking(bookingData);
     await booking.save();
 
-    // Update business balance
     if (businessId) {
       await Business.findByIdAndUpdate(businessId, { $inc: { balance: payout } });
     }
