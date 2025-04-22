@@ -4,15 +4,13 @@ const path    = require('path');
 const Listing = require('../models/Listing');
 const Review  = require('../models/Review');
 
-/* ───────────────────────── helpers ───────────────────────── */
+/** helper: convert multer file paths into public URLs */
 const relPaths = (files = []) =>
   files.map(f => 'uploads/' + path.basename(f.path).replace(/\\/g, '/'));
 
-/* ───────────────────────── CREATE ────────────────────────── */
 exports.createListing = async (req, res) => {
   try {
     if (!req.business) return res.status(403).json({ msg: 'Forbidden' });
-
     const listing = await Listing.create({
       business:      req.business.id,
       title:         req.body.title,
@@ -50,7 +48,6 @@ exports.createListing = async (req, res) => {
       dashCam:        req.body.dashCam === 'true',
       images:         relPaths(req.files),
     });
-
     res.status(201).json(listing);
   } catch (err) {
     console.error('CREATE listing err:', err);
@@ -58,7 +55,6 @@ exports.createListing = async (req, res) => {
   }
 };
 
-/* ───────────────────────── READ (BUSINESS) ───────────────── */
 exports.getBusinessListings = async (req, res) => {
   try {
     if (!req.business) return res.status(403).json({ msg: 'Forbidden' });
@@ -70,7 +66,6 @@ exports.getBusinessListings = async (req, res) => {
   }
 };
 
-/* ───────────────────────── READ ONE (AUTHENTICATED) ─────── */
 exports.getListingById = async (req, res) => {
   try {
     const listing = await Listing.findById(req.params.id);
@@ -82,26 +77,25 @@ exports.getListingById = async (req, res) => {
   }
 };
 
-/* ───────────────────────── PUBLIC READ‑ONLY ────────────────
-   GET /api/listings/public/:id
-   Returns listing + host info + reviews */
+/**
+ * PUBLIC READ‑ONLY
+ * GET /api/listings/public/:id
+ * Returns listing + host info (with avatarUrl) + reviews (with client info)
+ */
 exports.getListingPublic = async (req, res) => {
   try {
-    // 1) fetch listing + host minimal info
     const listing = await Listing
       .findById(req.params.id)
-      .populate('business', 'name createdAt avatarUrl')
+      .populate('business', 'name createdAt avatarUrl')  // host name + avatarUrl
       .lean();
     if (!listing) return res.status(404).json({ msg: 'Not found' });
 
-    // 2) fetch reviews for this listing (with client name + avatarUrl)
     const reviews = await Review
       .find({ listing: listing._id })
-      .populate('client', 'name avatarUrl')
+      .populate('client', 'name avatarUrl')             // client name + avatar
       .sort({ createdAt: -1 })
       .lean();
 
-    // 3) respond
     res.json({ ...listing, reviews });
   } catch (err) {
     console.error('PUBLIC listing err:', err);
@@ -109,7 +103,6 @@ exports.getListingPublic = async (req, res) => {
   }
 };
 
-/* ───────────────────────── UPDATE ────────────────────────── */
 exports.updateListing = async (req, res) => {
   try {
     const update = {
@@ -162,7 +155,6 @@ exports.updateListing = async (req, res) => {
   }
 };
 
-/* ───────────────────────── DELETE ───────────────────────── */
 exports.deleteListing = async (req, res) => {
   try {
     const del = await Listing.findByIdAndDelete(req.params.id);

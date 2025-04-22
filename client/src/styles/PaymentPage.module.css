@@ -1,0 +1,108 @@
+.container {
+    max-width: 1024px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+  .back {
+    background: none;
+    border: none;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-bottom: 1rem;
+  }
+  .title {
+    font-size: 1.75rem;
+    margin-bottom: 1.5rem;
+  }
+  .columns {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+  }
+  .left {
+    flex: 1 1 320px;
+  }
+  .right {
+    flex: 0 0 320px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 1rem;
+  }
+  .section {
+    margin-bottom: 1.5rem;
+  }
+  .textarea {
+    width: 100%;
+    min-height: 80px;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font: inherit;
+  }
+  .input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font: inherit;
+  }
+  .payBtn {
+    width: 100%;
+    padding: 0.75rem;
+    background: #6236ff;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-top: 1rem;
+  }
+  .payBtn:hover {
+    background: #4d28d4;
+  }
+  .loading {
+    text-align: center;
+    padding: 2rem;
+  }
+  .thumb {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 6px;
+    margin-bottom: 0.75rem;
+  }
+  .rating {
+    font-size: 0.9rem;
+    color: #555;
+    margin-bottom: 0.75rem;
+  }
+  .breakdown, .totalRow {
+    display: flex;
+    justify-content: space-between;
+    margin: 0.5rem 0;
+  }
+  .totalRow {
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+  .error {
+    color: #c00;
+    margin-bottom: 1rem;
+  }
+  hr {
+    border: none;
+    border-top: 1px solid #eee;
+    margin: 1rem 0;
+  }
+  /* Responsive: stack columns on narrow screens */
+  @media (max-width: 768px) {
+    .columns {
+      flex-direction: column;
+    }
+    .right {
+      order: -1;
+      margin-bottom: 2rem;
+    }
+  }
+  
