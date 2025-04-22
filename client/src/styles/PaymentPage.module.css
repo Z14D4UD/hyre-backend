@@ -1,3 +1,30 @@
+/* PaymentPage.module.css */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background: white;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+.logo {
+  font-size: 1.25rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+.menuIcon {
+  font-size: 1.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+
+
 .container {
     max-width: 1024px;
     margin: 2rem auto;
