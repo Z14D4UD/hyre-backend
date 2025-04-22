@@ -68,7 +68,7 @@ app.use('/api/cars',          carRoutes);
 app.use('/api/business',      businessRoutes);   // generic business
 app.use('/api/business',      listingRoutes);    // auth CRUD  (/listings …)
 app.use('/api/listings',      publicListingRoutes); // public GET /api/listings/:id
-app.use('/api/payments',      paymentRoutes);
+app.use('/api/payment',      paymentRoutes);
 app.use('/api/affiliate',     affiliateRoutes);
 app.use('/api/account',       accountRoutes);
 app.use('/api/support',       supportRoutes);
