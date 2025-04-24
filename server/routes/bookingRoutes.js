@@ -1,7 +1,6 @@
 // server/routes/bookingRoutes.js
 const express = require('express');
 const router  = express.Router();
-const authMiddleware = require('../middlewares/authMiddleware');
 const {
   createBooking,
   requestPayout,
@@ -9,21 +8,27 @@ const {
   getMyBookings,
   getCustomerBookings,
   generateInvoice,
-  updateBookingStatus    // ← make sure this is exported from bookingController
+  updateBookingStatus
 } = require('../controllers/bookingController');
 
+// Create a new booking
 router.post('/', createBooking);
+
+// Fetch all bookings (admin)
 router.get('/', getBookings);
+
+// Fetch bookings for the logged-in account
 router.get('/my', getMyBookings);
 router.get('/customer', getCustomerBookings);
+
+// Download a PDF invoice
 router.get('/invoice/:id', generateInvoice);
+
+// Business requests a payout
 router.post('/payout', requestPayout);
 
-// NEW: Patch status
-router.patch(
-  '/:id/status',
-  authMiddleware,
-  updateBookingStatus
-);
+// **Approve or reject a booking**
+// PATCH /bookings/:id/status
+router.patch('/:id/status', updateBookingStatus);
 
 module.exports = router;
