@@ -1,4 +1,5 @@
 // server/controllers/bookingController.js
+
 const Booking       = require('../models/Booking');
 const Listing       = require('../models/Listing');
 const Business      = require('../models/Business');
@@ -28,10 +29,6 @@ exports.createBooking = async (req, res) => {
     const listing  = await Listing.findById(lookupId);
     if (!listing) return res.status(404).json({ msg: 'Listing not found' });
 
-    // Ensure authenticated customer
-    const customerId = req.customer?.id;
-    if (!customerId) return res.status(401).json({ msg: 'Must be logged in as a customer to book' });
-
     const businessId  = listing.business;
     const bookingFee  = basePrice * 0.05;
     const serviceFee  = basePrice * 0.05;
@@ -41,7 +38,6 @@ exports.createBooking = async (req, res) => {
     const bookingData = {
       car:          lookupId,
       business:     businessId,
-      customer:     customerId,
       customerName,
       startDate,
       endDate,
@@ -152,10 +148,7 @@ exports.generateInvoice = async (req, res) => {
     if (!booking) return res.status(404).json({ msg: 'Booking not found' });
 
     const doc = new PDFDocument();
-    res.setHeader(
-      'Content-Type',
-      'application/pdf'
-    );
+    res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
       'Content-Disposition',
       `attachment; filename=invoice_${booking._id}.pdf`
@@ -166,7 +159,9 @@ exports.generateInvoice = async (req, res) => {
     doc.moveDown();
     doc.fontSize(12).text(`Booking ID: ${booking._id}`);
     doc.text(`Customer Name: ${booking.customerName}`);
-    doc.text(`Car: ${booking.car.make} ${booking.car.model}`);
+    doc.text(
+      `Car: ${booking.car.make} ${booking.car.model}`
+    );
     doc.text(
       `Booking Dates: ${new Date(booking.startDate).toLocaleDateString()} - ${new Date(
         booking.endDate
@@ -188,41 +183,57 @@ exports.generateInvoice = async (req, res) => {
   }
 };
 
+/**
+ * PATCH /api/bookings/:id/status
+ * Body: { status: 'Pending' | 'Active' | 'Cancelled' }
+ */
 exports.updateBookingStatus = async (req, res) => {
   const bookingId = req.params.id;
   const { status } = req.body;
 
   try {
+    // Fetch booking + business + customer
     const booking = await Booking.findById(bookingId)
       .populate('business', 'name email')
       .populate('customer', 'name email');
-    if (!booking) return res.status(404).json({ msg: 'Booking not found' });
 
+    if (!booking) {
+      return res.status(404).json({ msg: 'Booking not found' });
+    }
+
+    // Update status
     booking.status = status;
     await booking.save();
 
-    // send emails
+    // Prepare email data safely
     const emailData = {
-      customerEmail: booking.customer.email,
-      customerName:  booking.customer.name,
+      customerEmail: booking.customer?.email,
+      customerName:  booking.customer?.name || booking.customerName,
       bookingId:     booking._id,
       startDate:     booking.startDate,
       endDate:       booking.endDate
     };
-    if (status === 'Active') {
-      await sendBookingApprovalEmail(emailData);
-    } else if (status === 'Cancelled') {
-      await sendBookingRejectionEmail(emailData);
+
+    // Only send if we have an email address
+    if (emailData.customerEmail) {
+      if (status === 'Active') {
+        await sendBookingApprovalEmail(emailData);
+      } else if (status === 'Cancelled') {
+        await sendBookingRejectionEmail(emailData);
+      }
+    } else {
+      console.warn(`Skipping email send: no customer email for booking ${booking._id}`);
     }
 
-    // in-app chat
+    // In-app chat notification
     let convo = await Conversation.findOne({ bookingId: booking._id });
     if (!convo) {
       convo = await Conversation.create({
         bookingId:   booking._id,
-        participants:[booking.customer._id]
+        participants:[booking.customer?._id].filter(Boolean)
       });
     }
+
     const msgText = `Your booking ${booking._id} has been ${status.toLowerCase()}.`;
     const msg = await Message.create({
       conversation: convo._id,
@@ -231,13 +242,14 @@ exports.updateBookingStatus = async (req, res) => {
       text:         msgText,
       readBy:       [booking.business._id]
     });
+
     convo.lastMessage = msg.text;
     convo.updatedAt   = Date.now();
     await convo.save();
 
-    res.json({ booking });
+    return res.json({ booking });
   } catch (error) {
     console.error('Error updating booking status:', error);
-    res.status(500).json({ msg: 'Server error while updating status' });
+    return res.status(500).json({ msg: 'Server error while updating status' });
   }
 };
