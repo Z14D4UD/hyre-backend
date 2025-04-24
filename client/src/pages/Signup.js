@@ -10,10 +10,10 @@ export default function Signup() {
   const navigate = useNavigate();
 
   // Form fields
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [name, setName]       = useState('');
+  const [email, setEmail]     = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('customer'); // default role
+  const [role, setRole]       = useState('customer'); // default role
 
   // Click brand to go home
   const goHome = () => {
@@ -24,21 +24,29 @@ export default function Signup() {
   const handleSignup = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/auth/signup`, {
-        name,
-        email,
-        password,
-        accountType: role
-      });
+      const res = await axios.post(
+        `${process.env.REACT_APP_BACKEND_URL}/auth/signup`,
+        { name, email, password, accountType: role }
+      );
 
+      // store token
       if (res.data.token) {
         localStorage.setItem('token', res.data.token);
+        localStorage.setItem('accountType', role);
       }
-      if (res.data.redirectUrl) {
-        navigate(res.data.redirectUrl);
+
+      // redirect based on role
+      if (role === 'customer') {
+        navigate('/account');
+      } else if (role === 'business') {
+        navigate('/dashboard/business');
+      } else if (role === 'affiliate') {
+        navigate('/dashboard/affiliate');
       } else {
-        navigate('/dashboard');
+        // fallback
+        navigate('/');
       }
+
     } catch (error) {
       console.error(error.response?.data || error);
       alert(error.response?.data?.msg || 'Signup failed');
@@ -50,28 +58,21 @@ export default function Signup() {
       {/* Left wave panel */}
       <div className={styles.leftPanel}>
         <div className={styles.desktopWave}></div>
-
-        {/* Brand container in center of wave */}
         <div className={styles.brandContainer} onClick={goHome}>
           <div className={styles.brandTitle}>Hyre</div>
-          {/* Optional subtext if you want the same style as login */}
           <div className={styles.brandSubtext}>
-            {/* e.g. "Create Your Account" or any tagline */}
             Let your journey begin...
           </div>
         </div>
       </div>
 
-      
-
-      {/* Right panel: white background with signup form */}
+      {/* Right panel */}
       <div className={styles.rightPanel}>
         <div className={styles.formContainer}>
           <h2 className={styles.formTitle}>Sign Up</h2>
           <p className={styles.formSubtitle}>Create your account to continue</p>
 
           <form className={styles.form} onSubmit={handleSignup}>
-            {/* Name field */}
             <input
               className={styles.inputField}
               type="text"
@@ -80,8 +81,6 @@ export default function Signup() {
               onChange={(e) => setName(e.target.value)}
               required
             />
-
-            {/* Email field */}
             <input
               className={styles.inputField}
               type="email"
@@ -90,8 +89,6 @@ export default function Signup() {
               onChange={(e) => setEmail(e.target.value)}
               required
             />
-
-            {/* Password field */}
             <input
               className={styles.inputField}
               type="password"
@@ -100,8 +97,6 @@ export default function Signup() {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
-
-            {/* Role dropdown */}
             <select
               className={styles.inputField}
               value={role}
@@ -112,24 +107,22 @@ export default function Signup() {
               <option value="customer">{t('Sign up as a Customer')}</option>
               <option value="affiliate">{t('Sign up as an Affiliate')}</option>
             </select>
-
             <button className={styles.signupButton} type="submit">
               Sign Up
             </button>
           </form>
 
           <div className={styles.checkboxContainer}>
-  <input
-    type="checkbox"
-    id="acceptTerms"
-    className={styles.checkbox}
-    required
-  />
-  <label htmlFor="acceptTerms" className={styles.checkboxLabel}>
-    I accept the terms and policy
-  </label>
-</div>
-
+            <input
+              type="checkbox"
+              id="acceptTerms"
+              className={styles.checkbox}
+              required
+            />
+            <label htmlFor="acceptTerms" className={styles.checkboxLabel}>
+              I accept the terms and policy
+            </label>
+          </div>
 
           <div className={styles.extraRow}>
             Already have an account?
