@@ -1,277 +1,242 @@
 /* client/src/styles/BusinessBookings.module.css */
 
 :root {
-    --color-bg: #f4f6f8;
-    --color-surface: #fff;
-    --color-border: #e0e0e0;
-    --color-primary: #38b6ff;
-    --color-text-main: #333;
-    --color-text-muted: #777;
+  --color-bg: #f4f6f8;
+  --color-surface: #fff;
+  --color-border: #e0e0e0;
+  --color-primary: #38b6ff;
+  --color-text-main: #333;
+  --color-text-muted: #777;
+  --radius: 8px;
+  --shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  --gap: 1rem;
+}
+
+.bookingsContainer {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--color-bg);
+  font-family: 'Roboto', sans-serif;
+}
+
+/* Header */
+.header {
+  width: 100%;
+  height: 60px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 1000;
+}
+
+.logo {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: var(--color-primary);
+  cursor: pointer;
+}
+
+.menuIcon {
+  font-size: 1.6rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-main);
+}
+
+/* Main Content */
+.mainContent {
+  margin-top: 60px; /* offset header */
+  padding: 1.5rem;
+}
+
+/* Page Title */
+.pageTitle {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: var(--gap);
+  color: var(--color-text-main);
+}
+
+/* Stats Row */
+.statsRow {
+  display: flex;
+  gap: var(--gap);
+  margin-bottom: var(--gap);
+}
+
+.statCard {
+  flex: 1;
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  padding: 1.2rem;
+  box-shadow: var(--shadow);
+}
+
+.statCard h3 {
+  font-size: 1rem;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.statCard p {
+  font-size: 1.6rem;
+  font-weight: bold;
+  margin: 0.5rem 0 0;
+}
+
+/* Middle Section: Chart + Table */
+.middleSection {
+  display: flex;
+  gap: 2rem;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+}
+
+/* Chart wrapper */
+.chartWrapper {
+  flex: 0 0 400px;
+  max-width: 45%;
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  padding: 1.2rem;
+  box-shadow: var(--shadow);
+}
+
+/* Table wrapper */
+.tableWrapper {
+  flex: 1;
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  padding: 1.2rem;
+  box-shadow: var(--shadow);
+  overflow-x: auto;
+}
+
+/* Chart card internal */
+.chartHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--gap);
+}
+
+/* Bookings Table */
+.bookingsTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.bookingsTable th,
+.bookingsTable td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+  font-size: 0.9rem;
+  white-space: normal;
+}
+
+.bookingsTable thead {
+  background: #f9f9f9;
+}
+
+.bookingsTable tbody tr:hover {
+  background: #fafafa;
+}
+
+/* Status Badge */
+.statusBadge {
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-transform: capitalize;
+}
+
+.upcoming  { background: #e0f7fa; color: #006064; }
+.pending   { background: #fff9c4; color: #827717; }
+.active    { background: #e1f5fe; color: #0277bd; }
+.cancelled { background: #ffebee; color: #c62828; }
+
+/* Approve / Reject Buttons */
+.statusButton {
+  padding: 0.4rem 0.8rem;
+  background: #eee;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.2s;
+  margin-right: 0.5rem;
+}
+.statusButton:hover {
+  background: #ddd;
+}
+
+/* Hide dummy pagination if any */
+.pagination {
+  display: none;
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 1024px) {
+  .chartWrapper {
+    flex: 1 1 100%;
+    max-width: 100%;
   }
-  
-  /* Container for the entire page */
-  .bookingsContainer {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    background-color: var(--color-bg);
-    font-family: 'Roboto', sans-serif;
-  }
-  
-  /* Header */
-  .header {
-    width: 100%;
-    height: 60px;
-    background: var(--color-surface);
-    border-bottom: 1px solid var(--color-border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 1.5rem;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 1000;
-  }
-  
-  .logo {
-    font-size: 1.8rem;
-    font-weight: bold;
-    color: var(--color-primary);
-    cursor: pointer;
-  }
-  
-  .menuIcon {
-    font-size: 1.6rem;
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--color-text-main);
-    margin-right: 1rem;
-  }
-  
-  /* Main Content */
-  .mainContent {
-    margin-top: 60px; /* offset header */
-    padding: 1.5rem;
-  }
-  
-  /* Page Title */
-  .pageTitle {
-    font-size: 2rem;
-    font-weight: bold;
-    margin-bottom: 1.5rem;
-    color: var(--color-text-main);
-  }
-  
-  /* Stats Row */
-  .statsRow {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-  }
-  
-  .statCard {
-    flex: 1;
-    background: var(--color-surface);
-    border-radius: 8px;
-    padding: 1.2rem;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-  }
-  
-  .statCard h3 {
-    font-size: 1rem;
-    color: var(--color-text-muted);
-    margin: 0;
-  }
-  
-  .statCard p {
-    font-size: 1.6rem;
-    font-weight: bold;
-    margin: 0.5rem 0 0 0;
-  }
-  
-  /* Top Section (Chart & Add Booking) */
-  .topSection {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-  }
-  
-  .chartCard {
-    flex: 2;
-    background: var(--color-surface);
-    border-radius: 8px;
-    padding: 1.2rem;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-  }
-  
-  .chartHeader {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 1rem;
-  }
-  
-  .addBookingContainer {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .addBookingButton {
-    padding: 0.8rem 1.6rem;
-    background: var(--color-primary);
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  
-  .addBookingButton:hover {
-    background: #30a2e0;
-  }
-  
-  /* Table Section */
-  .tableSection {
-    background: var(--color-surface);
-    border-radius: 8px;
-    padding: 1.2rem;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-  }
-  
-  .tableTitle {
-    margin-bottom: 1rem;
-    font-size: 1.4rem;
-    font-weight: bold;
-    color: var(--color-text-main);
-  }
-  
-  /* Wrap table in a scrollable container */
   .tableWrapper {
-    overflow-x: auto;
+    flex: 1 1 100%;
+    max-width: 100%;
   }
-  
-  .bookingsTable {
-    width: 100%;
-    border-collapse: collapse;
-    /* Remove fixed layout to allow dynamic sizing */
+}
+
+@media (max-width: 768px) {
+  .statsRow, .middleSection {
+    flex-direction: column;
   }
-  
+  .pageTitle {
+    font-size: 1.8rem;
+  }
   .bookingsTable th,
   .bookingsTable td {
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid #eee;
-    text-align: left;
-    font-size: 0.9rem;
-    white-space: normal; /* Allow text to wrap */
-  }
-  
-  .bookingsTable thead {
-    background: #f9f9f9;
-  }
-  
-  .bookingsTable tbody tr:hover {
-    background: #fafafa;
-  }
-  
-  /* Status Badge */
-  .statusBadge {
-    padding: 0.3rem 0.6rem;
-    border-radius: 4px;
     font-size: 0.8rem;
-    font-weight: bold;
-    text-transform: capitalize;
+    padding: 0.6rem;
   }
-  
-  .upcoming {
-    background: #e0f7fa;
-    color: #006064;
+}
+
+@media (max-width: 480px) {
+  .header {
+    padding: 0 1rem;
   }
-  
-  .pending {
-    background: #fff9c4;
-    color: #827717;
+  .logo {
+    font-size: 1.5rem;
   }
-  
-  .active {
-    background: #e1f5fe;
-    color: #0277bd;
+  .menuIcon {
+    font-size: 1.4rem;
   }
-  
-  .cancelled {
-    background: #ffebee;
-    color: #c62828;
+  .mainContent {
+    padding: 1rem;
   }
-  
-  /* Status Button */
+  .pageTitle {
+    font-size: 1.5rem;
+    margin-bottom: 0.8rem;
+  }
+  .statCard {
+    padding: 0.8rem;
+  }
+  .statCard p {
+    font-size: 1.4rem;
+  }
+  /* Stack Approve/Reject vertically */
   .statusButton {
-    padding: 0.4rem 0.8rem;
-    background: #eee;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.85rem;
-    transition: background 0.2s;
-    margin-right: 0.5rem;
+    display: block;
+    width: 100%;
+    margin: 0.3rem 0;
   }
-  
-  .statusButton:hover {
-    background: #ddd;
-  }
-  
-  .editBtn {
-    background: var(--color-primary);
-    color: #fff;
-  }
-  
-  .deleteBtn {
-    background: #e74c3c;
-    color: #fff;
-  }
-  
-  /* Hide dummy pagination */
-  .pagination {
-    display: none;
-  }
-  
-  .middleSection {
-    display: flex;
-    gap: 2rem;
-    margin-top: 2rem;
-  }
-  
-  /* constrain the chart to the left column */
-  .chartWrapper {
-    flex: 0 0 400px;        /* fixed width—adjust as you like */
-    max-width: 45%;         /* no wider than 45% of container */
-  }
-  
-  /* stretch the table to fill remaining space */
-  .tableWrapper {
-    flex: 1;
-    overflow-x: auto;
-  }
-  /* Responsive Styles */
-  @media (max-width: 768px) {
-    .statsRow, .topSection {
-      flex-direction: column;
-    }
-    .chartCard, .addBookingContainer {
-      width: 100%;
-    }
-    .pageTitle {
-      font-size: 1.8rem;
-    }
-    .bookingsTable th,
-    .bookingsTable td {
-      font-size: 0.8rem;
-      padding: 0.75rem;
-    }
-  }
-  
+}
