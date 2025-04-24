@@ -1,15 +1,14 @@
 // server/controllers/bookingController.js
-
-const Booking       = require('../models/Booking');
-const Listing       = require('../models/Listing');
-const Business      = require('../models/Business');
-const Affiliate     = require('../models/Affiliate');
-const Conversation  = require('../models/Conversation');
-const Message       = require('../models/Message');
-const PDFDocument   = require('pdfkit');
-const { 
-  sendBookingApprovalEmail, 
-  sendBookingRejectionEmail 
+const Booking      = require('../models/Booking');
+const Listing      = require('../models/Listing');
+const Business     = require('../models/Business');
+const Affiliate    = require('../models/Affiliate');
+const Conversation = require('../models/Conversation');
+const Message      = require('../models/Message');
+const PDFDocument  = require('pdfkit');
+const {
+  sendBookingApprovalEmail,
+  sendBookingRejectionEmail
 } = require('../utils/mailer');
 
 exports.createBooking = async (req, res) => {
@@ -46,18 +45,17 @@ exports.createBooking = async (req, res) => {
       serviceFee,
       totalAmount,
       payout,
-      currency:     currency || 'usd'
+      currency:     currency || 'usd',
+      status:       'Pending',
     };
 
     if (affiliateCode) {
-      const affiliate = await Affiliate.findOne({ affiliateCode: affiliateCode.toUpperCase() });
-      if (!affiliate) {
-        return res.status(400).json({ msg: 'Invalid affiliate code' });
-      }
-      bookingData.affiliate = affiliate._id;
+      const aff = await Affiliate.findOne({ affiliateCode: affiliateCode.toUpperCase() });
+      if (!aff) return res.status(400).json({ msg: 'Invalid affiliate code' });
+      bookingData.affiliate = aff._id;
       const commission      = basePrice * 0.10;
-      affiliate.earnings   += commission;
-      await affiliate.save();
+      aff.earnings         += commission;
+      await aff.save();
     }
 
     const booking = new Booking(bookingData);
@@ -78,11 +76,11 @@ exports.requestPayout = async (req, res) => {
   if (!req.business) return res.status(401).json({ msg: 'Unauthorized' });
   const businessId = req.business.id;
   try {
-    const business = await Business.findById(businessId);
-    if (!business) return res.status(404).json({ msg: 'Business not found' });
-    const payoutAmount = business.balance;
-    business.balance = 0;
-    await business.save();
+    const biz = await Business.findById(businessId);
+    if (!biz) return res.status(404).json({ msg: 'Business not found' });
+    const payoutAmount = biz.balance;
+    biz.balance = 0;
+    await biz.save();
     res.json({ msg: `Payout of $${payoutAmount.toFixed(2)} processed successfully.` });
   } catch (error) {
     console.error(error);
@@ -115,6 +113,7 @@ exports.getMyBookings = async (req, res) => {
     } else {
       return res.status(400).json({ msg: 'Invalid account type for booking retrieval' });
     }
+
     const bookings = await Booking.find(query)
       .populate('car', 'make model')
       .populate('business', 'name email')
@@ -149,7 +148,10 @@ exports.generateInvoice = async (req, res) => {
 
     const doc = new PDFDocument();
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename=invoice_${booking._id}.pdf`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=invoice_${booking._id}.pdf`
+    );
     doc.pipe(res);
 
     doc.fontSize(20).text('Invoice', { align: 'center' });
@@ -157,7 +159,11 @@ exports.generateInvoice = async (req, res) => {
     doc.fontSize(12).text(`Booking ID: ${booking._id}`);
     doc.text(`Customer Name: ${booking.customerName}`);
     doc.text(`Car: ${booking.car.make} ${booking.car.model}`);
-    doc.text(`Booking Dates: ${new Date(booking.startDate).toLocaleDateString()} - ${new Date(booking.endDate).toLocaleDateString()}`);
+    doc.text(
+      `Booking Dates: ${new Date(booking.startDate).toLocaleDateString()} - ${new Date(
+        booking.endDate
+      ).toLocaleDateString()}`
+    );
     doc.text(`Base Price: $${booking.basePrice}`);
     doc.text(`Booking Fee (5%): $${booking.bookingFee}`);
     doc.text(`Service Fee (5%): $${booking.serviceFee}`);
@@ -174,10 +180,6 @@ exports.generateInvoice = async (req, res) => {
   }
 };
 
-/**
- * PATCH /bookings/:id/status
- * Body: { status: 'Pending' | 'Active' | 'Cancelled' }
- */
 exports.updateBookingStatus = async (req, res) => {
   const bookingId = req.params.id;
   const { status } = req.body;
@@ -186,13 +188,12 @@ exports.updateBookingStatus = async (req, res) => {
     const booking = await Booking.findById(bookingId)
       .populate('business', 'name email')
       .populate('customer', 'name email');
-
     if (!booking) return res.status(404).json({ msg: 'Booking not found' });
 
     booking.status = status;
     await booking.save();
 
-    // Send email notification
+    // send emails
     const emailData = {
       customerEmail: booking.customer.email,
       customerName:  booking.customer.name,
@@ -206,12 +207,12 @@ exports.updateBookingStatus = async (req, res) => {
       await sendBookingRejectionEmail(emailData);
     }
 
-    // Create or update in‐app conversation
+    // in-app chat
     let convo = await Conversation.findOne({ bookingId: booking._id });
     if (!convo) {
       convo = await Conversation.create({
-        bookingId:    booking._id,
-        participants: [booking.customer._id]
+        bookingId:   booking._id,
+        participants:[booking.customer._id]
       });
     }
     const msgText = `Your booking ${booking._id} has been ${status.toLowerCase()}.`;
