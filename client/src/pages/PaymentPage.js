@@ -77,7 +77,6 @@ export default function PaymentPage() {
         amount: Math.round(total * 100),
         currency: 'GBP'
       });
-      console.log('stripe intent response:', data);
 
       // 2) Confirm card payment
       const { error, paymentIntent } = await stripe.confirmCardPayment(

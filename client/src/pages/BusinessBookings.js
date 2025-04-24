@@ -1,4 +1,5 @@
 // client/src/pages/BusinessBookings.js
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -32,10 +33,10 @@ ChartJS.register(
 );
 
 export default function BusinessBookings() {
-  const navigate = useNavigate();
-  const token = localStorage.getItem('token') || '';
+  const navigate    = useNavigate();
+  const token       = localStorage.getItem('token') || '';
   const accountType = (localStorage.getItem('accountType') || '').toLowerCase();
-  const isBusiness = token && accountType === 'business';
+  const isBusiness  = token && accountType === 'business';
 
   // Redirect if not logged in as a business user
   useEffect(() => {
@@ -45,216 +46,147 @@ export default function BusinessBookings() {
     }
   }, [isBusiness, navigate]);
 
-  const [menuOpen, setMenuOpen] = useState(false);
-  const toggleMenu = () => setMenuOpen(!menuOpen);
-  const closeMenu = () => setMenuOpen(false);
-
-  // State for bookings and stats
-  const [bookings, setBookings] = useState([]);
+  const [menuOpen,      setMenuOpen]      = useState(false);
+  const [bookings,      setBookings]      = useState([]);
   const [upcomingCount, setUpcomingCount] = useState(0);
-  const [pendingCount, setPendingCount] = useState(0);
-  const [activeCount, setActiveCount] = useState(0);
-  const [cancelledCount, setCancelledCount] = useState(0);
-  const [monthlyData, setMonthlyData] = useState(Array(12).fill(0));
+  const [pendingCount,  setPendingCount]  = useState(0);
+  const [activeCount,   setActiveCount]   = useState(0);
+  const [cancelledCount,setCancelledCount]= useState(0);
+  const [monthlyData,   setMonthlyData]   = useState(Array(12).fill(0));
 
-  const backendUrl = process.env.REACT_APP_BACKEND_URL; // e.g., "https://hyre-backend.onrender.com/api"
-  // Remove '/api' for static files if necessary:
-  const baseUrl = backendUrl.replace('/api', '');
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
+  const baseUrl    = backendUrl.replace('/api','');
 
-  // Fetch bookings data from the backend
+  // Fetch bookings
   useEffect(() => {
-    axios
-      .get(`${backendUrl}/bookings`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => {
-        setBookings(res.data);
-      })
-      .catch((err) => {
-        console.error('Error fetching bookings:', err);
-        alert('Failed to fetch bookings.');
-      });
+    axios.get(`${backendUrl}/bookings`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(res => setBookings(res.data))
+    .catch(err => {
+      console.error('Error fetching bookings:', err);
+      alert('Failed to fetch bookings.');
+    });
   }, [backendUrl, token]);
 
-  // Process bookings to compute stats and monthly data
+  // Compute stats
   useEffect(() => {
-    if (!bookings || !Array.isArray(bookings)) return;
-
-    let upcoming = 0,
-      pending = 0,
-      active = 0,
-      cancelled = 0;
-    const monthCounts = Array(12).fill(0);
-
-    bookings.forEach((b) => {
-      if (b.status === 'Upcoming') upcoming++;
-      if (b.status === 'Pending') pending++;
-      if (b.status === 'Active') active++;
-      if (b.status === 'Cancelled') cancelled++;
-
-      // Use the startDate for monthly grouping (adjust as needed)
-      const start = new Date(b.startDate);
-      const monthIndex = start.getMonth(); // 0-based index
-      monthCounts[monthIndex] += 1;
+    let up=0, pe=0, ac=0, ca=0;
+    const months = Array(12).fill(0);
+    bookings.forEach(b => {
+      if (b.status==='Upcoming') up++;
+      if (b.status==='Pending')   pe++;
+      if (b.status==='Active')    ac++;
+      if (b.status==='Cancelled') ca++;
+      const m = new Date(b.startDate).getMonth();
+      months[m]++;
     });
-
-    setUpcomingCount(upcoming);
-    setPendingCount(pending);
-    setActiveCount(active);
-    setCancelledCount(cancelled);
-    setMonthlyData(monthCounts);
+    setUpcomingCount(up);
+    setPendingCount(pe);
+    setActiveCount(ac);
+    setCancelledCount(ca);
+    setMonthlyData(months);
   }, [bookings]);
 
-  // Handle real-time status change (assumes a PATCH endpoint exists)
+  // Approve / Reject (simplified)
   const handleStatusChange = (bookingId, newStatus) => {
-    axios
-      .patch(`${backendUrl}/bookings/${bookingId}/status`, { status: newStatus }, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => {
-        // Update local state to reflect the status change
-        const updatedBookings = bookings.map((b) =>
-          b._id === bookingId ? { ...b, status: newStatus } : b
-        );
-        setBookings(updatedBookings);
-      })
-      .catch((err) => {
-        console.error('Error updating booking status:', err);
-        alert('Failed to update status.');
-      });
+    axios.patch(
+      `${backendUrl}/bookings/${bookingId}/status`,
+      { status: newStatus },
+      { headers: { Authorization: `Bearer ${token}` } }
+    )
+    .then(() => {
+      setBookings(bs =>
+        bs.map(b => b._id===bookingId ? { ...b, status:newStatus } : b)
+      );
+    })
+    .catch(err => {
+      console.error('Error updating booking status:', err);
+      alert('Failed to update status.');
+    });
   };
 
-  // Prepare chart data for Bookings Overview
+  // Chart config
   const chartData = {
-    labels: [
-      'Jan','Feb','Mar','Apr','May','Jun',
-      'Jul','Aug','Sep','Oct','Nov','Dec'
-    ],
-    datasets: [
-      {
-        label: 'Bookings',
-        data: monthlyData,
-        backgroundColor: '#4f3cc9',
-      },
-    ],
+    labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+    datasets: [{ label:'Bookings', data:monthlyData, backgroundColor:'#4f3cc9' }]
   };
-
-  const chartOptions = {
-    responsive: true,
-    plugins: {
-      legend: { display: false },
-      title: { display: false },
-    },
-  };
+  const chartOptions = { responsive:true, plugins:{ legend:{display:false} } };
 
   return (
     <div className={styles.bookingsContainer}>
       {/* Header */}
       <header className={styles.header}>
-        <div className={styles.logo} onClick={() => navigate('/')}>Hyre</div>
-        <button className={styles.menuIcon} onClick={toggleMenu}>☰</button>
+        <div className={styles.logo} onClick={()=>navigate('/')}>Hyre</div>
+        <button className={styles.menuIcon} onClick={()=>setMenuOpen(o=>!o)}>☰</button>
       </header>
 
       {/* Side Menu */}
-      <SideMenuBusiness isOpen={menuOpen} toggleMenu={toggleMenu} closeMenu={closeMenu} />
+      <SideMenuBusiness
+        isOpen={menuOpen}
+        toggleMenu={()=>setMenuOpen(o=>!o)}
+        closeMenu={()=>setMenuOpen(false)}
+      />
 
-      {/* Main Content */}
+      {/* Main */}
       <div className={styles.mainContent}>
         <h1 className={styles.pageTitle}>Bookings</h1>
 
-        {/* Top Stats Row */}
+        {/* Stats */}
         <div className={styles.statsRow}>
-          <div className={styles.statCard}>
-            <h3>Upcoming</h3>
-            <p>{upcomingCount}</p>
-          </div>
-          <div className={styles.statCard}>
-            <h3>Pending</h3>
-            <p>{pendingCount}</p>
-          </div>
-          <div className={styles.statCard}>
-            <h3>Active</h3>
-            <p>{activeCount}</p>
-          </div>
-          <div className={styles.statCard}>
-            <h3>Cancelled</h3>
-            <p>{cancelledCount}</p>
-          </div>
+          <div className={styles.statCard}><h3>Upcoming</h3><p>{upcomingCount}</p></div>
+          <div className={styles.statCard}><h3>Pending</h3><p>{pendingCount}</p></div>
+          <div className={styles.statCard}><h3>Active</h3><p>{activeCount}</p></div>
+          <div className={styles.statCard}><h3>Cancelled</h3><p>{cancelledCount}</p></div>
         </div>
 
-        {/* Chart & Add Booking Button */}
-        <div className={styles.topSection}>
-          <div className={styles.chartCard}>
-            <div className={styles.chartHeader}>
-              <h2>Bookings Overview</h2>
-              <span>Last 12 Months</span>
-            </div>
+        {/* Chart + Table Side by Side */}
+        <div className={styles.middleSection}>
+          <div className={styles.chartWrapper}>
             <Bar data={chartData} options={chartOptions} />
           </div>
-          <div className={styles.addBookingContainer}>
-            {/* Uncomment and update this if you have an Add Booking page */}
-            {/* <button className={styles.addBookingButton} onClick={() => navigate('/add-booking')}>
-              Add Booking
-            </button> */}
-          </div>
-        </div>
-
-        {/* Bookings Table */}
-        <div className={styles.tableSection}>
-          <h2 className={styles.tableTitle}>Bookings List</h2>
           <div className={styles.tableWrapper}>
             <table className={styles.bookingsTable}>
               <thead>
                 <tr>
-                  <th>Booking ID</th>
-                  <th>Customer</th>
-                  <th>Car</th>
-                  <th>Start</th>
-                  <th>End</th>
-                  <th>Price</th>
-                  <th>Status</th>
-                  <th>Action</th>
+                  <th>Booking ID</th><th>Customer</th><th>Car</th>
+                  <th>Start</th><th>End</th><th>Price</th>
+                  <th>Status</th><th>Action</th>
                 </tr>
               </thead>
               <tbody>
-                {bookings.length === 0 ? (
-                  <tr>
-                    <td colSpan="8" style={{ textAlign: 'center' }}>No bookings found.</td>
-                  </tr>
-                ) : (
-                  bookings.map((b) => (
-                    <tr key={b._id}>
-                      <td>{b._id}</td>
-                      <td>{b.customerName || 'N/A'}</td>
-                      <td>{b.carModel || 'N/A'}</td>
-                      <td>{new Date(b.startDate).toLocaleDateString()}</td>
-                      <td>{new Date(b.endDate).toLocaleDateString()}</td>
-                      <td>${b.price || 0}</td>
-                      <td>
-                        <span className={`${styles.statusBadge} ${styles[b.status?.toLowerCase()]}`}>
-                          {b.status}
-                        </span>
-                      </td>
-                      <td>
-                        {b.status === 'Cancelled' ? (
-                          <button
-                            className={styles.statusButton}
-                            onClick={() => handleStatusChange(b._id, 'Active')}
-                          >
-                            Re-Activate
-                          </button>
-                        ) : (
-                          <button
-                            className={styles.statusButton}
-                            onClick={() => handleStatusChange(b._id, 'Cancelled')}
-                          >
-                            Cancel
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                )}
+                {bookings.length===0
+                  ? <tr><td colSpan="8" style={{ textAlign:'center' }}>No bookings found.</td></tr>
+                  : bookings.map(b=>(
+                      <tr key={b._id}>
+                        <td>{b._id}</td>
+                        <td>{b.customerName||'N/A'}</td>
+                        <td>{b.car?.make + ' ' + b.car?.model || 'N/A'}</td>
+                        <td>{new Date(b.startDate).toLocaleDateString()}</td>
+                        <td>{new Date(b.endDate).toLocaleDateString()}</td>
+                        <td>${b.totalAmount?.toFixed(2)||0}</td>
+                        <td>
+                          <span className={`${styles.statusBadge} ${styles[b.status?.toLowerCase()]}`}>
+                            {b.status}
+                          </span>
+                        </td>
+                        <td>
+                          {b.status==='Pending' ? (
+                            <>
+                              <button
+                                className={styles.statusButton}
+                                onClick={()=>handleStatusChange(b._id,'Active')}
+                              >Approve</button>
+                              <button
+                                className={styles.statusButton}
+                                onClick={()=>handleStatusChange(b._id,'Cancelled')}
+                              >Reject</button>
+                            </>
+                          ) : <em>—</em>}
+                        </td>
+                      </tr>
+                    ))
+                }
               </tbody>
             </table>
           </div>

@@ -240,6 +240,23 @@
     display: none;
   }
   
+  .middleSection {
+    display: flex;
+    gap: 2rem;
+    margin-top: 2rem;
+  }
+  
+  /* constrain the chart to the left column */
+  .chartWrapper {
+    flex: 0 0 400px;        /* fixed width—adjust as you like */
+    max-width: 45%;         /* no wider than 45% of container */
+  }
+  
+  /* stretch the table to fill remaining space */
+  .tableWrapper {
+    flex: 1;
+    overflow-x: auto;
+  }
   /* Responsive Styles */
   @media (max-width: 768px) {
     .statsRow, .topSection {

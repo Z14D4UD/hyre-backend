@@ -53,7 +53,6 @@ export default function AccountPage() {
         { headers: { Authorization: `Bearer ${token}` } }
       )
       .then((res) => {
-        console.log('PUT response data:', res.data);
         setUser(res.data);
         setTransmission(res.data.transmission || '');
         alert('Transmission preference saved.');

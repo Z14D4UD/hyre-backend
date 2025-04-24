@@ -76,7 +76,6 @@ export default function Profile() {
 
   const handleAvatarChange = (e) => {
     if (e.target.files && e.target.files[0]) {
-      console.log('File selected:', e.target.files[0]);
       setAvatarFile(e.target.files[0]);
     }
   };
@@ -97,7 +96,6 @@ export default function Profile() {
 
     // Log FormData entries for debugging (Note: logging file objects may not show full details)
     for (let pair of formData.entries()) {
-      console.log(`${pair[0]}:`, pair[1]);
     }
 
     // Let Axios set the content-type header automatically.
@@ -108,7 +106,6 @@ export default function Profile() {
         },
       })
       .then((res) => {
-        console.log('Profile updated:', res.data);
         setUser(res.data);
         setIsEditing(false);
         alert('Profile updated successfully.');

@@ -98,7 +98,6 @@ export default function EditListing() {
     try {
       const results = await geocodeByAddress(value);
       const latLng = await getLatLng(results[0]);
-      console.log('Coords:', latLng);
     } catch (err) {
       console.error(err);
     }

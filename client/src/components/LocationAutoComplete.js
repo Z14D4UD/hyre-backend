@@ -15,7 +15,6 @@ export default function LocationAutocomplete({ location, setLocation }) {
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
     libraries,
   });
-  console.log("Google Maps API Key:", process.env.REACT_APP_GOOGLE_MAPS_API_KEY);
 
   useEffect(() => {
     if (isLoaded && !autocomplete && inputRef.current) {

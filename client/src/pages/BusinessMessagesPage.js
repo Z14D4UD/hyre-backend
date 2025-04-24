@@ -1,43 +1,31 @@
 // client/src/pages/BusinessMessagesPage.js
+
 import React, { useEffect, useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { FaSearch, FaPaperclip } from 'react-icons/fa';
-import SideMenuBusiness from '../components/SideMenuBusiness';
-import styles from '../styles/MessagesPage.module.css';
-import axios from 'axios';
+import { useNavigate }                  from 'react-router-dom';
+import { FaSearch, FaPaperclip }        from 'react-icons/fa';
+import SideMenuBusiness                 from '../components/SideMenuBusiness';
+import styles                           from '../styles/MessagesPage.module.css';
+import axios                            from 'axios';
 
 export default function BusinessMessagesPage() {
-  const navigate = useNavigate();
-  const token = localStorage.getItem('token');
+  const navigate    = useNavigate();
+  const token       = localStorage.getItem('token');
   const accountType = localStorage.getItem('accountType');
-  const isBusiness = token && accountType === 'business';
+  const isBusiness  = token && accountType==='business';
 
-  // Side menu state
   const [menuOpen, setMenuOpen] = useState(false);
-  const toggleMenu = () => setMenuOpen(!menuOpen);
-  const closeMenu = () => setMenuOpen(false);
-
-  // Filter and search state
-  const [filter, setFilter] = useState('all');
+  const [filter,   setFilter]   = useState('all');
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-
-  // Conversations & selected conversation
   const [conversations, setConversations] = useState([]);
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [messages, setMessages] = useState([]);
-
-  // New message inputs
   const [messageText, setMessageText] = useState('');
-  const [attachment, setAttachment] = useState(null);
-
-  // Ref for scrolling
+  const [attachment, setAttachment]   = useState(null);
   const messagesEndRef = useRef(null);
 
-  // Base URL for your backend API
   const backendUrl = process.env.REACT_APP_BACKEND_URL || 'https://hyre-backend.onrender.com/api';
 
-  // Ensure business is logged in
   useEffect(() => {
     if (!isBusiness) {
       alert('Please log in as a business to view messages.');
@@ -45,8 +33,7 @@ export default function BusinessMessagesPage() {
       return;
     }
     fetchConversations();
-    // eslint-disable-next-line
-  }, [isBusiness, filter, searchTerm, navigate]);
+  }, [isBusiness, filter, searchTerm]);
 
   const fetchConversations = async () => {
     try {
@@ -55,8 +42,8 @@ export default function BusinessMessagesPage() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setConversations(res.data);
-    } catch (error) {
-      console.error('Error fetching conversations:', error);
+    } catch (err) {
+      console.error('Error fetching conversations:', err);
     }
   };
 
@@ -65,156 +52,84 @@ export default function BusinessMessagesPage() {
     try {
       const res = await axios.get(
         `${backendUrl}/chat/conversations/${conv._id}/messages`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization:`Bearer ${token}` } }
       );
       setMessages(res.data.messages);
-      // Optionally mark as read
       await axios.put(
         `${backendUrl}/chat/conversations/${conv._id}/read`,
         {},
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization:`Bearer ${token}` } }
       );
       scrollToBottom();
-    } catch (error) {
-      console.error('Error fetching messages:', error);
+    } catch (err) {
+      console.error('Error fetching messages:', err);
     }
   };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior:'smooth' });
   };
 
   const handleSendMessage = async () => {
-    if (!selectedConversation || (!messageText && !attachment)) return;
+    if (!selectedConversation) return;
+    if (!messageText && !attachment) return;
     try {
       const formData = new FormData();
       formData.append('text', messageText);
-      if (attachment) {
-        formData.append('attachment', attachment);
-      }
+      if (attachment) formData.append('attachment', attachment);
       const res = await axios.post(
         `${backendUrl}/chat/conversations/${selectedConversation._id}/messages`,
         formData,
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data',
-          },
+            'Content-Type': 'multipart/form-data'
+          }
         }
       );
-      setMessages((prev) => [...prev, res.data]);
+      setMessages(msgs => [...msgs, res.data]);
       setMessageText('');
       setAttachment(null);
       fetchConversations();
       scrollToBottom();
-    } catch (error) {
-      console.error('Error sending message:', error);
+    } catch (err) {
+      console.error('Error sending message:', err);
       alert('Failed to send message.');
     }
   };
 
-  const handleAttachmentChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setAttachment(e.target.files[0]);
-    }
-  };
-
-  const handleSearchIconClick = () => {
-    setSearchOpen(true);
-  };
-
-  const handleCancelSearch = () => {
-    setSearchOpen(false);
-    setSearchTerm('');
-  };
-
-  const renderConversationList = () => {
-    if (!conversations.length) {
-      return <div className={styles.noConversations}>No conversations yet.</div>;
-    }
-    return conversations.map((conv) => {
-      const isSelected = selectedConversation && selectedConversation._id === conv._id;
-      return (
-        <div
-          key={conv._id}
-          className={`${styles.conversationItem} ${isSelected ? styles.selectedConv : ''}`}
-          onClick={() => handleSelectConversation(conv)}
-        >
-          <div className={styles.conversationTitle}>
-            {conv.name || 'Conversation'}
-          </div>
-          <div className={styles.conversationSnippet}>
-            {conv.lastMessage || 'No messages yet'}
-          </div>
-          {conv.unreadCount > 0 && (
-            <div className={styles.unreadBadge}>{conv.unreadCount}</div>
-          )}
-        </div>
-      );
-    });
-  };
-
-  const renderMessages = () => {
-    if (!selectedConversation) {
-      return <div className={styles.emptyMessages}>Select a conversation to view messages.</div>;
-    }
-    if (!messages.length) {
-      return <div className={styles.emptyMessages}>No messages yet.</div>;
-    }
-    return messages.map((msg) => {
-      // For business, you might store the business id in localStorage as "businessId"
-      const myId = localStorage.getItem('businessId');
-      const isMine = msg.sender === myId;
-      return (
-        <div
-          key={msg._id}
-          className={`${styles.messageItem} ${isMine ? styles.myMessage : styles.theirMessage}`}
-        >
-          <div className={styles.messageText}>{msg.text}</div>
-          {msg.attachment && (
-            <div className={styles.attachmentWrapper}>
-              <a href={`${backendUrl}/${msg.attachment}`} target="_blank" rel="noopener noreferrer">
-                View Attachment
-              </a>
-            </div>
-          )}
-          <div className={styles.messageTimestamp}>
-            {new Date(msg.createdAt).toLocaleString()}
-          </div>
-        </div>
-      );
-    });
+  const handleAttachmentChange = e => {
+    if (e.target.files?.[0]) setAttachment(e.target.files[0]);
   };
 
   return (
     <div className={styles.container}>
       {/* Header */}
       <header className={styles.header}>
-        <div className={styles.logo} onClick={() => navigate('/')}>Hyre</div>
-        <button className={styles.menuIcon} onClick={toggleMenu}>☰</button>
+        <div className={styles.logo} onClick={()=>navigate('/')}>Hyre</div>
+        <button className={styles.menuIcon} onClick={()=>setMenuOpen(o=>!o)}>☰</button>
       </header>
-      {/* Business side menu */}
-      <SideMenuBusiness isOpen={menuOpen} toggleMenu={toggleMenu} closeMenu={closeMenu} />
-      {/* Main content */}
+
+      {/* Side Menu */}
+      <SideMenuBusiness isOpen={menuOpen} toggleMenu={()=>setMenuOpen(o=>!o)} closeMenu={()=>setMenuOpen(false)}/>
+
+      {/* Main */}
       <div className={styles.content}>
         <div className={styles.leftPane}>
           <div className={styles.messagesHeader}>
             <h2>Messages</h2>
             <div className={styles.filterRow}>
-              <button
-                className={`${styles.filterButton} ${filter === 'all' ? styles.activeFilter : ''}`}
-                onClick={() => setFilter('all')}
-              >
-                All
-              </button>
-              <button
-                className={`${styles.filterButton} ${filter === 'unread' ? styles.activeFilter : ''}`}
-                onClick={() => setFilter('unread')}
-              >
-                Unread
-              </button>
-              <button className={styles.searchIconBtn} onClick={handleSearchIconClick}>
-                <FaSearch />
+              {['all','unread'].map(f => (
+                <button
+                  key={f}
+                  className={`${styles.filterButton} ${filter===f ? styles.activeFilter : ''}`}
+                  onClick={()=>setFilter(f)}
+                >
+                  {f.charAt(0).toUpperCase()+f.slice(1)}
+                </button>
+              ))}
+              <button className={styles.searchIconBtn} onClick={()=>setSearchOpen(o=>!o)}>
+                <FaSearch/>
               </button>
             </div>
             {searchOpen && (
@@ -224,39 +139,72 @@ export default function BusinessMessagesPage() {
                   placeholder="Search conversations..."
                   className={styles.searchInput}
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={e=>setSearchTerm(e.target.value)}
                 />
-                <button className={styles.cancelSearchBtn} onClick={handleCancelSearch}>
+                <button className={styles.cancelSearchBtn} onClick={()=>{setSearchTerm('');setSearchOpen(false);}}>
                   Cancel
                 </button>
               </div>
             )}
           </div>
           <div className={styles.conversationList}>
-            {renderConversationList()}
+            {conversations.length===0
+              ? <div className={styles.noConversations}>No conversations yet.</div>
+              : conversations.map(conv => {
+                  const selected = selectedConversation?._id===conv._id;
+                  return (
+                    <div
+                      key={conv._id}
+                      className={`${styles.conversationItem} ${selected?styles.selectedConv:''}`}
+                      onClick={()=>handleSelectConversation(conv)}
+                    >
+                      <div className={styles.conversationTitle}>{conv.name||'Conversation'}</div>
+                      <div className={styles.conversationSnippet}>{conv.lastMessage||'No messages yet'}</div>
+                      {conv.unreadCount>0 && <div className={styles.unreadBadge}>{conv.unreadCount}</div>}
+                    </div>
+                  );
+                })
+            }
           </div>
         </div>
+
         <div className={styles.rightPane}>
           <div className={styles.messageThread}>
-            {renderMessages()}
+            {selectedConversation ? (
+              messages.map(msg => {
+                const mine  = msg.sender===localStorage.getItem('businessId');
+                return (
+                  <div key={msg._id} className={`${styles.messageItem} ${mine?styles.myMessage:styles.theirMessage}`}>
+                    <div className={styles.messageText}>{msg.text}</div>
+                    {msg.attachment && (
+                      <div className={styles.attachmentWrapper}>
+                        <a href={`${backendUrl}/${msg.attachment}`} target="_blank" rel="noopener noreferrer">
+                          View Attachment
+                        </a>
+                      </div>
+                    )}
+                    <div className={styles.messageTimestamp}>
+                      {new Date(msg.createdAt).toLocaleString()}
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className={styles.emptyMessages}>Select a conversation to view messages.</div>
+            )}
             <div ref={messagesEndRef} />
           </div>
+
           {selectedConversation && (
             <div className={styles.messageInputArea}>
               <textarea
                 className={styles.textArea}
                 placeholder="Type your message..."
                 value={messageText}
-                onChange={(e) => setMessageText(e.target.value)}
+                onChange={e=>setMessageText(e.target.value)}
               />
-              <input
-                type="file"
-                className={styles.attachmentInput}
-                onChange={handleAttachmentChange}
-              />
-              <button className={styles.sendButton} onClick={handleSendMessage}>
-                Send
-              </button>
+              <input type="file" className={styles.attachmentInput} onChange={handleAttachmentChange} />
+              <button className={styles.sendButton} onClick={handleSendMessage}>Send</button>
             </div>
           )}
         </div>

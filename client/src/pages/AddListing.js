@@ -103,7 +103,6 @@ export default function AddListing() {
     try {
       const results = await geocodeByAddress(value);
       const latLng = await getLatLng(results[0]);
-      console.log('Selected address coordinates:', latLng);
     } catch (error) {
       console.error('Error fetching address details:', error);
     }

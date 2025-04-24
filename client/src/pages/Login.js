@@ -33,7 +33,6 @@ export default function Login() {
       localStorage.setItem('token', token);
       localStorage.setItem('accountType', accountType);
 
-      console.log('Server returned accountType:', accountType);
 
       // For customers, businesses, and affiliates, navigate to the home page.
       if (token && accountType) {

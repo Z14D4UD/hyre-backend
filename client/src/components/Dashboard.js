@@ -1,7 +1,7 @@
 // client/src/components/Dashboard.js
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { useNavigate }        from 'react-router-dom';
+import axios                  from 'axios';
 
 // Chart.js imports
 import {
@@ -19,7 +19,7 @@ import {
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
 
 import SideMenuBusiness from './SideMenuBusiness';
-import styles from '../styles/Dashboard.module.css';
+import styles           from '../styles/Dashboard.module.css';
 
 // Register Chart.js components
 ChartJS.register(
@@ -38,74 +38,81 @@ export default function Dashboard() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [stats, setStats] = useState({
     totalRevenue: 0,
-    rentedCars: 0,
-    bookings: 0,
-    activeCars: 0,
-    balance: 0,
+    rentedCars:   0,
+    bookings:     0,
+    activeCars:   0,
+    balance:      0,
+    rentStatus: {
+      hired:     0,
+      pending:   0,
+      cancelled: 0
+    }
   });
-  const [earningsData, setEarningsData] = useState([]);
+  const [earningsData, setEarningsData]                 = useState([]);
   const [bookingsOverviewData, setBookingsOverviewData] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading]                           = useState(true);
 
   // Reminders state
-  const [reminders, setReminders] = useState([]);
-  const [newReminderTitle, setNewReminderTitle] = useState('');
+  const [reminders, setReminders]                         = useState([]);
+  const [newReminderTitle, setNewReminderTitle]           = useState('');
   const [newReminderDescription, setNewReminderDescription] = useState('');
-  const [editingReminderId, setEditingReminderId] = useState(null);
-  const [editingTitle, setEditingTitle] = useState('');
-  const [editingDescription, setEditingDescription] = useState('');
+  const [editingReminderId, setEditingReminderId]         = useState(null);
+  const [editingTitle, setEditingTitle]                   = useState('');
+  const [editingDescription, setEditingDescription]       = useState('');
 
-  const navigate = useNavigate();
-  const token = (localStorage.getItem('token') || '').trim();
+  const navigate    = useNavigate();
+  const token       = (localStorage.getItem('token') || '').trim();
   const axiosConfig = { headers: { Authorization: `Bearer ${token}` } };
-  const baseUrl = process.env.REACT_APP_BACKEND_URL; // e.g., https://your-backend-domain.com/api
+  const baseUrl     = process.env.REACT_APP_BACKEND_URL;
 
   const toggleMenu = () => setMenuOpen(!menuOpen);
-  const closeMenu = () => setMenuOpen(false);
+  const closeMenu  = () => setMenuOpen(false);
 
   // Withdrawal modal states
   const [withdrawalModalOpen, setWithdrawalModalOpen] = useState(false);
-  const [withdrawalAmount, setWithdrawalAmount] = useState('');
-  const [withdrawalMethod, setWithdrawalMethod] = useState('paypal');
-  const [paypalEmail, setPaypalEmail] = useState(''); // Only for PayPal
+  const [withdrawalAmount, setWithdrawalAmount]       = useState('');
+  const [withdrawalMethod, setWithdrawalMethod]       = useState('paypal');
+  const [paypalEmail, setPaypalEmail]                 = useState('');
 
   useEffect(() => {
     async function fetchData() {
       try {
-        // Fetch stats
-        const statsRes = await axios.get(`${baseUrl}/business/stats`, axiosConfig);
-        setStats(statsRes.data);
+        // 1) Fetch stats and merge in (so rentStatus never gets wiped out)
+        const { data: statsData } = await axios.get(`${baseUrl}/business/stats`, axiosConfig);
+        setStats(prev => ({
+          ...prev,
+          ...statsData,
+          rentStatus: statsData.rentStatus ?? prev.rentStatus
+        }));
 
-        // Fetch earnings data
-        const earningsRes = await axios.get(`${baseUrl}/business/earnings`, axiosConfig);
-        setEarningsData(earningsRes.data);
+        // 2) Fetch earnings data
+        const { data: earn } = await axios.get(`${baseUrl}/business/earnings`, axiosConfig);
+        setEarningsData(earn);
 
-        // Fetch bookings overview
-        const bookingsOverviewRes = await axios.get(`${baseUrl}/business/bookingsOverview`, axiosConfig);
-        setBookingsOverviewData(bookingsOverviewRes.data);
+        // 3) Fetch bookings overview
+        const { data: over } = await axios.get(`${baseUrl}/business/bookingsOverview`, axiosConfig);
+        setBookingsOverviewData(over);
 
-        // Fetch reminders
-        const remindersRes = await axios.get(`${baseUrl}/reminders`, axiosConfig);
-        setReminders(remindersRes.data);
-
-        setLoading(false);
-      } catch (error) {
-        if (error.response && error.response.status === 401) {
+        // 4) Fetch reminders
+        const { data: rem } = await axios.get(`${baseUrl}/reminders`, axiosConfig);
+        setReminders(rem);
+      } catch (err) {
+        if (err.response?.status === 401) {
           navigate('/login');
         } else {
-          console.error('Error fetching dashboard data:', error);
+          console.error('Error fetching dashboard data:', err);
         }
+      } finally {
         setLoading(false);
       }
     }
-    if (token) {
-      fetchData();
-    }
+
+    if (token) fetchData();
   }, [token, baseUrl, navigate]);
 
   // Chart data setups
   const earningsChartData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
     datasets: [{
       label: 'Earnings ($)',
       data: earningsData,
@@ -116,7 +123,7 @@ export default function Dashboard() {
   };
 
   const bookingsOverviewChartData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
     datasets: [{
       label: 'Bookings',
       data: bookingsOverviewData,
@@ -124,96 +131,97 @@ export default function Dashboard() {
     }]
   };
 
+  // Build rentStatusData from stats.rentStatus
   const rentStatusData = {
-    labels: ['Hired', 'Pending', 'Cancelled'],
+    labels: ['Hired','Pending','Cancelled'],
     datasets: [{
-      data: [58, 24, 18],
-      backgroundColor: ['#2ecc71', '#f1c40f', '#e74c3c']
+      data: [
+        stats.rentStatus.hired,
+        stats.rentStatus.pending,
+        stats.rentStatus.cancelled
+      ],
+      backgroundColor: ['#2ecc71','#f1c40f','#e74c3c']
     }]
   };
 
+  // Compute percentages
+  const totalStatus = stats.rentStatus.hired + stats.rentStatus.pending + stats.rentStatus.cancelled;
+  const pct = n => totalStatus ? Math.round((n/totalStatus)*100) : 0;
+
   // Handle withdrawal submission
   const handleWithdrawalSubmit = async () => {
-    const amount = parseFloat(withdrawalAmount);
-    if (isNaN(amount) || amount <= 0) {
-      alert('Please enter a valid withdrawal amount.');
-      return;
+    const amt = parseFloat(withdrawalAmount);
+    if (isNaN(amt) || amt <= 0) {
+      return alert('Please enter a valid withdrawal amount.');
     }
 
     if (withdrawalMethod === 'bank') {
-      // Redirect to Stripe Connect onboarding flow.
       localStorage.setItem('pendingWithdrawalAmount', withdrawalAmount);
-      navigate('/connect-bank');
-      return;
+      return navigate('/connect-bank');
     }
 
-    // Process PayPal withdrawal
     try {
-      const payload = {
-        amount,
-        method: 'paypal',
-        details: {
-          paypalEmail,
-        },
-      };
-      await axios.post(`${baseUrl}/withdrawals`, payload, axiosConfig);
+      await axios.post(
+        `${baseUrl}/withdrawals`,
+        { amount: amt, method: 'paypal', details: { paypalEmail } },
+        axiosConfig
+      );
       alert('Withdrawal request submitted successfully!');
       setWithdrawalModalOpen(false);
-    } catch (error) {
-      console.error('Error submitting withdrawal:', error);
+    } catch (err) {
+      console.error('Error submitting withdrawal:', err);
       alert('Failed to submit withdrawal request.');
     }
   };
 
   // Reminders handlers
-  const handleAddReminder = async (e) => {
+  const handleAddReminder = async e => {
     e.preventDefault();
     if (!newReminderTitle) {
-      alert('Please enter a title for the reminder.');
-      return;
+      return alert('Please enter a title for the reminder.');
     }
     try {
-      const payload = {
-        title: newReminderTitle,
-        description: newReminderDescription,
-      };
-      const res = await axios.post(`${baseUrl}/reminders`, payload, axiosConfig);
-      setReminders(res.data.reminders);
+      const { data } = await axios.post(
+        `${baseUrl}/reminders`,
+        { title: newReminderTitle, description: newReminderDescription },
+        axiosConfig
+      );
+      setReminders(data.reminders);
       setNewReminderTitle('');
       setNewReminderDescription('');
-    } catch (error) {
-      console.error('Error adding reminder:', error);
+    } catch (err) {
+      console.error('Error adding reminder:', err);
       alert('Failed to add reminder.');
     }
   };
 
-  const handleEditReminder = (reminder) => {
-    setEditingReminderId(reminder._id);
-    setEditingTitle(reminder.title);
-    setEditingDescription(reminder.description);
+  const handleEditReminder = r => {
+    setEditingReminderId(r._id);
+    setEditingTitle(r.title);
+    setEditingDescription(r.description);
   };
 
-  const handleUpdateReminder = async (reminderId) => {
+  const handleUpdateReminder = async id => {
     try {
-      const payload = {
-        title: editingTitle,
-        description: editingDescription,
-      };
-      const res = await axios.put(`${baseUrl}/reminders/${reminderId}`, payload, axiosConfig);
-      setReminders(res.data.reminders);
+      const { data } = await axios.put(
+        `${baseUrl}/reminders/${id}`,
+        { title: editingTitle, description: editingDescription },
+        axiosConfig
+      );
+      setReminders(data.reminders);
       setEditingReminderId(null);
-    } catch (error) {
-      console.error('Error updating reminder:', error);
+    } catch (err) {
+      console.error('Error updating reminder:', err);
       alert('Failed to update reminder.');
     }
   };
 
-  const handleDeleteReminder = async (reminderId) => {
+  const handleDeleteReminder = async id => {
     try {
-      const res = await axios.delete(`${baseUrl}/reminders/${reminderId}`, axiosConfig);
-      setReminders(res.data.reminders);
-    } catch (error) {
-      console.error('Error deleting reminder:', error);
+      const { data } = await axios.delete(`${baseUrl}/reminders/${id}`, axiosConfig);
+      setReminders(data.reminders);
+    } catch (err) {
+      console.error('Error deleting reminder:', err);
       alert('Failed to delete reminder.');
     }
   };
@@ -236,14 +244,22 @@ export default function Dashboard() {
     <div className={styles.dashboardContainer}>
       {/* Header */}
       <header className={styles.header}>
-        <div className={styles.logo} onClick={() => navigate('/')} style={{ color: '#38b6ff' }}>
+        <div
+          className={styles.logo}
+          onClick={() => navigate('/')}
+          style={{ color: '#38b6ff' }}
+        >
           Hyre
         </div>
         <button className={styles.menuIcon} onClick={toggleMenu}>☰</button>
       </header>
 
       {/* Side Menu */}
-      <SideMenuBusiness isOpen={menuOpen} toggleMenu={toggleMenu} closeMenu={closeMenu} />
+      <SideMenuBusiness
+        isOpen={menuOpen}
+        toggleMenu={toggleMenu}
+        closeMenu={closeMenu}
+      />
 
       {/* Main Content */}
       <div className={styles.mainContent}>
@@ -297,63 +313,55 @@ export default function Dashboard() {
               <h2>Rent Status</h2>
               <Doughnut data={rentStatusData} />
               <div className={styles.rentStatusLabels}>
-                <div>
-                  Hired <span>58%</span>
-                </div>
-                <div>
-                  Pending <span>24%</span>
-                </div>
-                <div>
-                  Cancelled <span>18%</span>
-                </div>
+                <div>Hired     <span>{pct(stats.rentStatus.hired)}%</span></div>
+                <div>Pending   <span>{pct(stats.rentStatus.pending)}%</span></div>
+                <div>Cancelled <span>{pct(stats.rentStatus.cancelled)}%</span></div>
               </div>
             </div>
 
             {/* Reminders Section */}
             <div className={styles.remindersCard}>
               <h2>Reminders</h2>
-
-              {/* Add New Reminder Form */}
+              {/* Add */}
               <form onSubmit={handleAddReminder} className={styles.reminderForm}>
                 <input
                   type="text"
                   placeholder="Title"
                   value={newReminderTitle}
-                  onChange={(e) => setNewReminderTitle(e.target.value)}
+                  onChange={e => setNewReminderTitle(e.target.value)}
                 />
                 <input
                   type="text"
                   placeholder="Description"
                   value={newReminderDescription}
-                  onChange={(e) => setNewReminderDescription(e.target.value)}
+                  onChange={e => setNewReminderDescription(e.target.value)}
                 />
                 <button type="submit">Add Reminder</button>
               </form>
-
-              {/* Display Existing Reminders */}
+              {/* List */}
               <ul className={styles.reminderList}>
-                {reminders.map((reminder) => (
-                  <li key={reminder._id}>
-                    {editingReminderId === reminder._id ? (
+                {reminders.map(r => (
+                  <li key={r._id}>
+                    {editingReminderId === r._id ? (
                       <>
                         <input
                           type="text"
                           value={editingTitle}
-                          onChange={(e) => setEditingTitle(e.target.value)}
+                          onChange={e => setEditingTitle(e.target.value)}
                         />
                         <input
                           type="text"
                           value={editingDescription}
-                          onChange={(e) => setEditingDescription(e.target.value)}
+                          onChange={e => setEditingDescription(e.target.value)}
                         />
-                        <button onClick={() => handleUpdateReminder(reminder._id)}>Save</button>
+                        <button onClick={() => handleUpdateReminder(r._id)}>Save</button>
                         <button onClick={() => setEditingReminderId(null)}>Cancel</button>
                       </>
                     ) : (
                       <>
-                        <strong>{reminder.title}</strong> - {reminder.description}
-                        <button onClick={() => handleEditReminder(reminder)}>Edit</button>
-                        <button onClick={() => handleDeleteReminder(reminder._id)}>Delete</button>
+                        <strong>{r.title}</strong> – {r.description}
+                        <button onClick={() => handleEditReminder(r)}>Edit</button>
+                        <button onClick={() => handleDeleteReminder(r._id)}>Delete</button>
                       </>
                     )}
                   </li>
@@ -372,49 +380,39 @@ export default function Dashboard() {
               <input
                 type="number"
                 value={withdrawalAmount}
-                onChange={(e) => setWithdrawalAmount(e.target.value)}
+                onChange={e => setWithdrawalAmount(e.target.value)}
                 placeholder="Enter amount"
               />
-
               <label>Withdrawal Method</label>
               <select
                 value={withdrawalMethod}
-                onChange={(e) => setWithdrawalMethod(e.target.value)}
+                onChange={e => setWithdrawalMethod(e.target.value)}
               >
                 <option value="paypal">PayPal</option>
                 <option value="bank">Bank Account</option>
               </select>
-
               {withdrawalMethod === 'paypal' && (
                 <>
                   <label>PayPal Email</label>
                   <input
                     type="email"
                     value={paypalEmail}
-                    onChange={(e) => setPaypalEmail(e.target.value)}
+                    onChange={e => setPaypalEmail(e.target.value)}
                     placeholder="Enter your PayPal email"
                   />
                 </>
               )}
-
               <div className={styles.modalButtons}>
-                <button
-                  className={styles.buttonPrimary}
-                  onClick={handleWithdrawalSubmit}
-                >
+                <button className={styles.buttonPrimary} onClick={handleWithdrawalSubmit}>
                   Submit Withdrawal
                 </button>
-                <button
-                  className={styles.buttonDanger}
-                  onClick={() => setWithdrawalModalOpen(false)}
-                >
+                <button className={styles.buttonDanger} onClick={() => setWithdrawalModalOpen(false)}>
                   Cancel
                 </button>
               </div>
             </div>
           </div>
         )}
-
       </div>
     </div>
   );

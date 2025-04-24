@@ -1,9 +1,16 @@
 // server/controllers/bookingController.js
-const Booking   = require('../models/Booking');
-const Listing   = require('../models/Listing');
-const Business  = require('../models/Business');
-const Affiliate = require('../models/Affiliate');
-const PDFDocument = require('pdfkit');
+
+const Booking       = require('../models/Booking');
+const Listing       = require('../models/Listing');
+const Business      = require('../models/Business');
+const Affiliate     = require('../models/Affiliate');
+const Conversation  = require('../models/Conversation');
+const Message       = require('../models/Message');
+const PDFDocument   = require('pdfkit');
+const { 
+  sendBookingApprovalEmail, 
+  sendBookingRejectionEmail 
+} = require('../utils/mailer');
 
 exports.createBooking = async (req, res) => {
   const {
@@ -14,7 +21,7 @@ exports.createBooking = async (req, res) => {
     endDate,
     basePrice,
     currency,
-    affiliateCode    // ← ALREADY HANDLED
+    affiliateCode
   } = req.body;
 
   try {
@@ -87,7 +94,8 @@ exports.getBookings = async (req, res) => {
   try {
     const bookings = await Booking.find({})
       .populate('car', 'make model')
-      .populate('business', 'name email');
+      .populate('business', 'name email')
+      .populate('customer', 'name email');
     res.json(bookings);
   } catch (error) {
     console.error(error);
@@ -109,7 +117,8 @@ exports.getMyBookings = async (req, res) => {
     }
     const bookings = await Booking.find(query)
       .populate('car', 'make model')
-      .populate('business', 'name email');
+      .populate('business', 'name email')
+      .populate('customer', 'name email');
     res.json(bookings);
   } catch (error) {
     console.error(error);
@@ -122,7 +131,8 @@ exports.getCustomerBookings = async (req, res) => {
     if (!req.customer) return res.status(401).json({ msg: 'Unauthorized' });
     const bookings = await Booking.find({ customer: req.customer.id })
       .populate('car', 'make model')
-      .populate('business', 'name email');
+      .populate('business', 'name email')
+      .populate('customer', 'name email');
     res.json(bookings);
   } catch (error) {
     console.error(error);
@@ -161,5 +171,64 @@ exports.generateInvoice = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).send('Server error');
+  }
+};
+
+/**
+ * PATCH /bookings/:id/status
+ * Body: { status: 'Pending' | 'Active' | 'Cancelled' }
+ */
+exports.updateBookingStatus = async (req, res) => {
+  const bookingId = req.params.id;
+  const { status } = req.body;
+
+  try {
+    const booking = await Booking.findById(bookingId)
+      .populate('business', 'name email')
+      .populate('customer', 'name email');
+
+    if (!booking) return res.status(404).json({ msg: 'Booking not found' });
+
+    booking.status = status;
+    await booking.save();
+
+    // Send email notification
+    const emailData = {
+      customerEmail: booking.customer.email,
+      customerName:  booking.customer.name,
+      bookingId:     booking._id,
+      startDate:     booking.startDate,
+      endDate:       booking.endDate
+    };
+    if (status === 'Active') {
+      await sendBookingApprovalEmail(emailData);
+    } else if (status === 'Cancelled') {
+      await sendBookingRejectionEmail(emailData);
+    }
+
+    // Create or update in‐app conversation
+    let convo = await Conversation.findOne({ bookingId: booking._id });
+    if (!convo) {
+      convo = await Conversation.create({
+        bookingId:    booking._id,
+        participants: [booking.customer._id]
+      });
+    }
+    const msgText = `Your booking ${booking._id} has been ${status.toLowerCase()}.`;
+    const msg = await Message.create({
+      conversation: convo._id,
+      sender:       booking.business._id,
+      senderModel:  'Business',
+      text:         msgText,
+      readBy:       [booking.business._id]
+    });
+    convo.lastMessage = msg.text;
+    convo.updatedAt   = Date.now();
+    await convo.save();
+
+    res.json({ booking });
+  } catch (error) {
+    console.error('Error updating booking status:', error);
+    res.status(500).json({ msg: 'Server error while updating status' });
   }
 };

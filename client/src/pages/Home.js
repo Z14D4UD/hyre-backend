@@ -92,7 +92,6 @@ export default function Home() {
         if (coords) {
           lat = coords.lat;
           lng = coords.lng;
-          console.log('Home → handleSearch: geocoded to', { lat, lng });
         }
       } catch (err) {
         console.error('Geocode error on Home page:', err);

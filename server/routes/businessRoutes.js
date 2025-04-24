@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middlewares/authMiddleware');
 const upload = require('../middlewares/uploadMiddleware');
+const { updateBookingStatus } = require('../controllers/bookingController');
 
 const {
   verifyID,
@@ -52,5 +53,6 @@ router.get('/listings', authMiddleware, getBusinessListings);
 router.get('/listings/:id', authMiddleware, getListingById);
 router.put('/listings/:id', authMiddleware, upload.array('images', 10), updateListing);
 router.delete('/listings/:id', authMiddleware, deleteListing);
+router.patch('/:id/status', updateBookingStatus);
 
 module.exports = router;

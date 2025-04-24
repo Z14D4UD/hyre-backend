@@ -84,7 +84,6 @@ const io = new Server(server, {
   cors: { origin: allowedOrigins, methods: ['GET','POST','PUT','DELETE'], credentials: true }
 });
 io.on('connection', socket => {
-  console.log('socket', socket.id);
   socket.on('joinRoom', room => socket.join(room));
   socket.on('sendMessage', data => io.to(data.room).emit('receiveMessage', data));
 });
