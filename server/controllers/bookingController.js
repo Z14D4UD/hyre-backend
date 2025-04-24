@@ -1,11 +1,11 @@
 // server/controllers/bookingController.js
-const Booking      = require('../models/Booking');
-const Listing      = require('../models/Listing');
-const Business     = require('../models/Business');
-const Affiliate    = require('../models/Affiliate');
-const Conversation = require('../models/Conversation');
-const Message      = require('../models/Message');
-const PDFDocument  = require('pdfkit');
+const Booking       = require('../models/Booking');
+const Listing       = require('../models/Listing');
+const Business      = require('../models/Business');
+const Affiliate     = require('../models/Affiliate');
+const Conversation  = require('../models/Conversation');
+const Message       = require('../models/Message');
+const PDFDocument   = require('pdfkit');
 const {
   sendBookingApprovalEmail,
   sendBookingRejectionEmail
@@ -28,6 +28,10 @@ exports.createBooking = async (req, res) => {
     const listing  = await Listing.findById(lookupId);
     if (!listing) return res.status(404).json({ msg: 'Listing not found' });
 
+    // Ensure authenticated customer
+    const customerId = req.customer?.id;
+    if (!customerId) return res.status(401).json({ msg: 'Must be logged in as a customer to book' });
+
     const businessId  = listing.business;
     const bookingFee  = basePrice * 0.05;
     const serviceFee  = basePrice * 0.05;
@@ -37,6 +41,7 @@ exports.createBooking = async (req, res) => {
     const bookingData = {
       car:          lookupId,
       business:     businessId,
+      customer:     customerId,
       customerName,
       startDate,
       endDate,
@@ -147,7 +152,10 @@ exports.generateInvoice = async (req, res) => {
     if (!booking) return res.status(404).json({ msg: 'Booking not found' });
 
     const doc = new PDFDocument();
-    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Type',
+      'application/pdf'
+    );
     res.setHeader(
       'Content-Disposition',
       `attachment; filename=invoice_${booking._id}.pdf`
