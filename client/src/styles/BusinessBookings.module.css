@@ -17,7 +17,6 @@
   font-family: 'Roboto', sans-serif;
 }
 
-/* fixed header */
 .header {
   width: 100%;
   height: 60px;
@@ -27,9 +26,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 1.5rem;
-  position: fixed;
-  top: 0;
-  z-index: 1000;
+  position: fixed; top:0; left:0; right:0; z-index:1000;
 }
 
 .logo {
@@ -45,9 +42,9 @@
   border: none;
   cursor: pointer;
   color: var(--color-text-main);
+  margin-right: 1rem;
 }
 
-/* push content below header */
 .mainContent {
   margin-top: 60px;
   padding: 1.5rem;
@@ -75,26 +72,20 @@
 }
 
 .statCard h3 {
-  font-size: 1rem;
-  color: var(--color-text-muted);
-  margin: 0;
+  margin: 0; font-size:1rem; color:var(--color-text-muted);
 }
 
 .statCard p {
-  font-size: 1.6rem;
-  font-weight: bold;
-  margin: .5rem 0 0;
+  margin-top:0.5rem; font-size:1.6rem; font-weight:bold;
 }
 
-.topSection {
+.middleSection {
   display: flex;
-  flex-wrap: wrap;
   gap: 1rem;
-  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
 }
 
 .chartCard {
-  flex: 1 1 100%;
   background: var(--color-surface);
   border-radius: 8px;
   padding: 1.2rem;
@@ -102,17 +93,15 @@
 }
 
 .chartHeader {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 1rem;
+  display: flex; justify-content: space-between; margin-bottom:1rem;
 }
 
 .chartWrapper {
-  width: 100%;
+  width: 350px;
 }
 
-/* table */
 .tableSection {
+  flex: 1;
   background: var(--color-surface);
   border-radius: 8px;
   padding: 1.2rem;
@@ -137,10 +126,10 @@
 
 .bookingsTable th,
 .bookingsTable td {
-  padding: .75rem 1rem;
+  padding: 0.75rem 1rem;
   border-bottom: 1px solid #eee;
   text-align: left;
-  font-size: .9rem;
+  font-size: 0.9rem;
 }
 
 .bookingsTable thead {
@@ -151,11 +140,10 @@
   background: #fafafa;
 }
 
-/* status badges */
 .statusBadge {
-  padding: .3rem .6rem;
+  padding: 0.3rem 0.6rem;
   border-radius: 4px;
-  font-size: .8rem;
+  font-size: 0.8rem;
   font-weight: bold;
   text-transform: capitalize;
 }
@@ -165,14 +153,17 @@
 .active     { background: #e1f5fe; color: #0277bd; }
 .cancelled  { background: #ffebee; color: #c62828; }
 
-/* buttons */
+.actionCell {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .approveBtn {
   background: var(--color-primary);
   color: #fff;
   border: none;
+  padding: 0.4rem 0.8rem;
   border-radius: 4px;
-  padding: .4rem .8rem;
-  margin-right: .5rem;
   cursor: pointer;
 }
 
@@ -180,45 +171,38 @@
   background: #e74c3c;
   color: #fff;
   border: none;
+  padding: 0.4rem 0.8rem;
   border-radius: 4px;
-  padding: .4rem .8rem;
   cursor: pointer;
 }
 
-.clearBtn {
-  background: transparent;
-  border: none;
+.deleteIcon {
+  font-size: 1.4rem;
   color: #c62828;
-  font-size: 1.2rem;
-  line-height: 1;
   cursor: pointer;
-  padding: .2rem .5rem;
-  transition: background .2s;
+  user-select: none;
+  line-height: 1;
 }
 
-.clearBtn:hover {
-  background: rgba(198,40,40,0.1);
-  border-radius: 4px;
+.approveBtn:hover, .rejectBtn:hover, .deleteIcon:hover {
+  opacity: 0.9;
 }
 
-/* layout for action cell */
-.actionCell {
-  white-space: nowrap;
-  vertical-align: middle;
-}
-
-/* responsive tweaks */
 @media (max-width: 768px) {
-  .statsRow,
-  .topSection {
+  .statsRow, .middleSection {
     flex-direction: column;
   }
-  .chartCard {
+  .chartWrapper {
     width: 100%;
   }
-  .bookingsTable th,
-  .bookingsTable td {
-    font-size: .8rem;
-    padding: .5rem;
+  .tableWrapper {
+    width: 100%;
+  }
+  .pageTitle {
+    font-size: 1.8rem;
+  }
+  .bookingsTable th, .bookingsTable td {
+    font-size: 0.8rem;
+    padding: 0.5rem;
   }
 }

@@ -159,9 +159,7 @@ exports.generateInvoice = async (req, res) => {
     doc.moveDown();
     doc.fontSize(12).text(`Booking ID: ${booking._id}`);
     doc.text(`Customer Name: ${booking.customerName}`);
-    doc.text(
-      `Car: ${booking.car.make} ${booking.car.model}`
-    );
+    doc.text(`Car: ${booking.car.make} ${booking.car.model}`);
     doc.text(
       `Booking Dates: ${new Date(booking.startDate).toLocaleDateString()} - ${new Date(
         booking.endDate

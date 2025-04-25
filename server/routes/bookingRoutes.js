@@ -2,6 +2,7 @@
 
 const express = require('express');
 const router  = express.Router();
+const authMiddleware    = require('../middlewares/authMiddleware');
 const {
   createBooking,
   requestPayout,
@@ -12,13 +13,12 @@ const {
   updateBookingStatus
 } = require('../controllers/bookingController');
 const { deleteBooking } = require('../controllers/deleteBookingController');
-const authMiddleware    = require('../middlewares/authMiddleware');
 
 // Public booking endpoints
 router.post('/', createBooking);
 router.get('/', getBookings);
 
-// Protected endpoints (require login)
+// Protected endpoints
 router.use(authMiddleware);
 router.get('/my', getMyBookings);
 router.get('/customer', getCustomerBookings);
