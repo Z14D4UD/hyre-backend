@@ -7,7 +7,13 @@ const BusinessSchema = new mongoose.Schema({
   password: { type: String, required: true },
   emailConfirmationToken: { type: String },
   verified: { type: Boolean, default: false },
+
+  // AVAILABLE funds the business can withdraw
   balance: { type: Number, default: 0 },
+
+  // NEW: funds held in escrow until pickup date
+  pendingBalance: { type: Number, default: 0 },
+
   isFeatured: { type: Boolean, default: false },
   image: { type: String },
   description: { type: String },
@@ -16,14 +22,13 @@ const BusinessSchema = new mongoose.Schema({
   aboutMe: { type: String },
   reminders: [
     {
-      title: String,      // e.g. "Inspect and service the fleet"
+      title: String,
       description: String,
       dueDate: Date,
-      // any other fields you want
     }
   ],
   avatarUrl: { type: String },
-  stripeAccountId: { type: String }, // NEW field for storing Stripe Connect account ID
+  stripeAccountId: { type: String },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Business', BusinessSchema);

@@ -153,6 +153,13 @@
 .active     { background: #e1f5fe; color: #0277bd; }
 .cancelled  { background: #ffebee; color: #c62828; }
 
+/* after your other .statusBadge classes */
+.completed {
+  background: #e0e0e0;
+  color: #555;
+}
+
+
 .actionCell {
   display: flex;
   gap: 0.5rem;
@@ -183,6 +190,7 @@
   user-select: none;
   line-height: 1;
 }
+
 
 .approveBtn:hover, .rejectBtn:hover, .deleteIcon:hover {
   opacity: 0.9;

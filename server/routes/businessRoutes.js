@@ -1,19 +1,18 @@
 // server/routes/businessRoutes.js
 const express = require('express');
-const router = express.Router();
-const authMiddleware = require('../middlewares/authMiddleware');
-const upload = require('../middlewares/uploadMiddleware');
-const { updateBookingStatus } = require('../controllers/bookingController');
+const router  = express.Router();
+const auth    = require('../middlewares/authMiddleware');
+const upload  = require('../middlewares/uploadMiddleware');
 
 const {
   verifyID,
   getStats,
+  releasePendingPayouts,
   getEarnings,
   getBookingsOverview,
 } = require('../controllers/businessController');
 
 const { getBusinessProfile, updateBusinessProfile } = require('../controllers/businessProfileController');
-
 const {
   createListing,
   getBusinessListings,
@@ -22,10 +21,9 @@ const {
   deleteListing,
 } = require('../controllers/listingController');
 
-const Business = require('../models/Business');
-
-// Route to get featured businesses
+// featured (public)
 router.get('/featured', async (req, res) => {
+  const Business = require('../models/Business');
   try {
     const featured = await Business.find({ isFeatured: true });
     res.json(featured);
@@ -35,24 +33,29 @@ router.get('/featured', async (req, res) => {
   }
 });
 
-// Route to verify business ID
-router.post('/verify-id', authMiddleware, upload.single('idDocument'), verifyID);
+// require auth for all below
+router.use(auth);
 
-// Dashboard endpoints
-router.get('/stats', authMiddleware, getStats);
-router.get('/earnings', authMiddleware, getEarnings);
-router.get('/bookingsOverview', authMiddleware, getBookingsOverview);
+// verify ID
+router.post('/verify-id', upload.single('idDocument'), verifyID);
 
-// Business Profile endpoints (for "My Profile" page)
-router.get('/me', authMiddleware, getBusinessProfile);
-router.put('/me', authMiddleware, upload.single('avatar'), updateBusinessProfile);
+// ESCROW: release pending into available
+router.post('/release-payouts', releasePendingPayouts);
 
-// Listings endpoints for "My Listings" page
-router.post('/listings', authMiddleware, upload.array('images', 10), createListing);
-router.get('/listings', authMiddleware, getBusinessListings);
-router.get('/listings/:id', authMiddleware, getListingById);
-router.put('/listings/:id', authMiddleware, upload.array('images', 10), updateListing);
-router.delete('/listings/:id', authMiddleware, deleteListing);
-router.patch('/:id/status', updateBookingStatus);
+// dashboard stats
+router.get('/stats', getStats);
+router.get('/earnings', getEarnings);
+router.get('/bookingsOverview', getBookingsOverview);
+
+// profile
+router.get('/me', getBusinessProfile);
+router.put('/me', upload.single('avatar'), updateBusinessProfile);
+
+// listings
+router.post('/listings', upload.array('images', 10), createListing);
+router.get('/listings', getBusinessListings);
+router.get('/listings/:id', getListingById);
+router.put('/listings/:id', upload.array('images', 10), updateListing);
+router.delete('/listings/:id', deleteListing);
 
 module.exports = router;

@@ -1,4 +1,5 @@
 // client/src/components/Dashboard.js
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate }        from 'react-router-dom';
 import axios                  from 'axios';
@@ -37,11 +38,12 @@ ChartJS.register(
 export default function Dashboard() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [stats, setStats] = useState({
-    totalRevenue: 0,
-    rentedCars:   0,
-    bookings:     0,
-    activeCars:   0,
-    balance:      0,
+    totalRevenue:     0,
+    rentedCars:       0,
+    bookings:         0,
+    activeCars:       0,
+    availableBalance: 0,
+    pendingBalance:   0,
     rentStatus: {
       hired:     0,
       pending:   0,
@@ -53,12 +55,12 @@ export default function Dashboard() {
   const [loading, setLoading]                           = useState(true);
 
   // Reminders state
-  const [reminders, setReminders]                         = useState([]);
-  const [newReminderTitle, setNewReminderTitle]           = useState('');
+  const [reminders, setReminders]                           = useState([]);
+  const [newReminderTitle, setNewReminderTitle]             = useState('');
   const [newReminderDescription, setNewReminderDescription] = useState('');
-  const [editingReminderId, setEditingReminderId]         = useState(null);
-  const [editingTitle, setEditingTitle]                   = useState('');
-  const [editingDescription, setEditingDescription]       = useState('');
+  const [editingReminderId, setEditingReminderId]           = useState(null);
+  const [editingTitle, setEditingTitle]                     = useState('');
+  const [editingDescription, setEditingDescription]         = useState('');
 
   const navigate    = useNavigate();
   const token       = (localStorage.getItem('token') || '').trim();
@@ -77,24 +79,36 @@ export default function Dashboard() {
   useEffect(() => {
     async function fetchData() {
       try {
-        // 1) Fetch stats and merge in (so rentStatus never gets wiped out)
-        const { data: statsData } = await axios.get(`${baseUrl}/business/stats`, axiosConfig);
+        // 1) Fetch stats (now includes availableBalance & pendingBalance)
+        const { data: statsData } = await axios.get(
+          `${baseUrl}/business/stats`,
+          axiosConfig
+        );
         setStats(prev => ({
           ...prev,
           ...statsData,
           rentStatus: statsData.rentStatus ?? prev.rentStatus
         }));
 
-        // 2) Fetch earnings data
-        const { data: earn } = await axios.get(`${baseUrl}/business/earnings`, axiosConfig);
+        // 2) Fetch earnings
+        const { data: earn } = await axios.get(
+          `${baseUrl}/business/earnings`,
+          axiosConfig
+        );
         setEarningsData(earn);
 
         // 3) Fetch bookings overview
-        const { data: over } = await axios.get(`${baseUrl}/business/bookingsOverview`, axiosConfig);
+        const { data: over } = await axios.get(
+          `${baseUrl}/business/bookingsOverview`,
+          axiosConfig
+        );
         setBookingsOverviewData(over);
 
         // 4) Fetch reminders
-        const { data: rem } = await axios.get(`${baseUrl}/reminders`, axiosConfig);
+        const { data: rem } = await axios.get(
+          `${baseUrl}/reminders`,
+          axiosConfig
+        );
         setReminders(rem);
       } catch (err) {
         if (err.response?.status === 401) {
@@ -148,7 +162,24 @@ export default function Dashboard() {
   const totalStatus = stats.rentStatus.hired + stats.rentStatus.pending + stats.rentStatus.cancelled;
   const pct = n => totalStatus ? Math.round((n/totalStatus)*100) : 0;
 
-  // Handle withdrawal submission
+  // Release escrow into available balance
+  const handleRelease = () => {
+    axios.post(
+      `${baseUrl}/business/release-payouts`,
+      {},
+      axiosConfig
+    )
+      .then(res => {
+        setStats(prev => ({
+          ...prev,
+          availableBalance: res.data.availableBalance,
+          pendingBalance:   res.data.pendingBalance
+        }));
+      })
+      .catch(() => alert('Failed to release pending payouts.'));
+  };
+
+  // Submit withdrawal request
   const handleWithdrawalSubmit = async () => {
     const amt = parseFloat(withdrawalAmount);
     if (isNaN(amt) || amt <= 0) {
@@ -285,15 +316,28 @@ export default function Dashboard() {
             <h3>Active Cars</h3>
             <p>{stats.activeCars}</p>
           </div>
+
           <div className={styles.card}>
-            <h3>Balance</h3>
-            <p>${stats.balance.toFixed(2)}</p>
+            <h3>Available Balance</h3>
+            <p>${stats.availableBalance.toFixed(2)}</p>
             <button
               className={`${styles.withdrawButton} ${styles.roundButton}`}
               onClick={() => setWithdrawalModalOpen(true)}
             >
               Withdraw
             </button>
+          </div>
+
+          <div className={styles.card}>
+            <h3>Pending Payouts</h3>
+            <p>${stats.pendingBalance.toFixed(2)}</p>
+            <button
+              className={`${styles.withdrawButton} ${styles.roundButton}`}
+              onClick={handleRelease}
+            >
+              Release Funds
+            </button>
+            <small>Held until pickup date</small>
           </div>
         </div>
 
