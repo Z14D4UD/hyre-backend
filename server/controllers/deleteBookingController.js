@@ -1,27 +1,33 @@
 // server/controllers/deleteBookingController.js
 
 const Booking = require('../models/Booking');
+const Conversation = require('../models/Conversation');
+const Message = require('../models/Message');
 
 /**
  * DELETE /api/bookings/:id
- * Only the owning business may delete its booking.
+ * Remove a booking (and its associated chat) entirely.
  */
 exports.deleteBooking = async (req, res) => {
+  const { id } = req.params;
+
   try {
-    const booking = await Booking.findById(req.params.id);
-    if (!booking) {
+    // 1) Find and remove any conversation & messages tied to this booking
+    const convo = await Conversation.findOne({ bookingId: id });
+    if (convo) {
+      await Message.deleteMany({ conversation: convo._id });
+      await convo.deleteOne();
+    }
+
+    // 2) Remove the booking itself
+    const deleted = await Booking.findByIdAndDelete(id);
+    if (!deleted) {
       return res.status(404).json({ msg: 'Booking not found' });
     }
 
-    // ensure only the business that owns it can delete
-    if (!req.business || booking.business.toString() !== req.business.id) {
-      return res.status(403).json({ msg: 'Forbidden: cannot delete this booking' });
-    }
-
-    await Booking.findByIdAndDelete(req.params.id);
-    return res.json({ msg: 'Booking removed successfully' });
+    res.json({ msg: 'Booking and related chat removed.' });
   } catch (err) {
     console.error('Error deleting booking:', err);
-    return res.status(500).json({ msg: 'Server error while deleting booking' });
+    res.status(500).json({ msg: 'Server error deleting booking' });
   }
 };

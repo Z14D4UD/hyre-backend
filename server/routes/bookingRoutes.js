@@ -1,7 +1,7 @@
 // server/routes/bookingRoutes.js
-const express         = require('express');
-const router          = express.Router();
-const authMiddleware  = require('../middlewares/authMiddleware');
+
+const express = require('express');
+const router  = express.Router();
 const {
   createBooking,
   requestPayout,
@@ -11,28 +11,24 @@ const {
   generateInvoice,
   updateBookingStatus
 } = require('../controllers/bookingController');
+const { deleteBooking } = require('../controllers/deleteBookingController');
+const authMiddleware    = require('../middlewares/authMiddleware');
 
-// Create a new booking (customer only)
-router.post('/',           authMiddleware, createBooking);
+// Public booking endpoints
+router.post('/', createBooking);
+router.get('/', getBookings);
 
-// Fetch all bookings (any authenticated user)
-router.get('/',            authMiddleware, getBookings);
+// Protected endpoints (require login)
+router.use(authMiddleware);
+router.get('/my', getMyBookings);
+router.get('/customer', getCustomerBookings);
+router.get('/invoice/:id', generateInvoice);
+router.post('/payout', requestPayout);
 
-// Fetch bookings for current user
-router.get('/my',          authMiddleware, getMyBookings);
-router.get('/customer',    authMiddleware, getCustomerBookings);
+// PATCH status endpoint
+router.patch('/:id/status', updateBookingStatus);
 
-// Download invoice PDF
-router.get('/invoice/:id', authMiddleware, generateInvoice);
-
-// Request payout (business only)
-router.post('/payout',     authMiddleware, requestPayout);
-
-// Update booking status (business only)
-router.patch('/:id/status', authMiddleware, updateBookingStatus);
-
-// **NEW** delete a booking
+// DELETE booking
 router.delete('/:id', deleteBooking);
-
 
 module.exports = router;
