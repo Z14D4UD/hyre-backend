@@ -28,6 +28,7 @@ export default function BusinessBookings() {
   const accountType = (localStorage.getItem('accountType') || '').toLowerCase();
   const isBusiness  = token && accountType === 'business';
 
+  // redirect if not business
   useEffect(() => {
     if (!isBusiness) {
       alert('Please log in as a business to view bookings.');
@@ -39,14 +40,15 @@ export default function BusinessBookings() {
   const [bookings, setBookings]       = useState([]);
   const [monthlyData, setMonthlyData] = useState(Array(12).fill(0));
   const [counts, setCounts]           = useState({
-    upcoming: 0,
-    pending:  0,
-    active:   0,
-    cancelled:0
+    upcoming:  0,
+    pending:   0,
+    active:    0,
+    cancelled: 0
   });
 
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
+  // fetch bookings
   useEffect(() => {
     axios
       .get(`${backendUrl}/bookings`, {
@@ -56,11 +58,13 @@ export default function BusinessBookings() {
       .catch(() => alert('Failed to fetch bookings.'));
   }, [backendUrl, token]);
 
+  // recalc stats & chart
   useEffect(() => {
     const stats = { upcoming:0, pending:0, active:0, cancelled:0 };
-    const months= Array(12).fill(0);
+    const months = Array(12).fill(0);
     bookings.forEach(b => {
-      stats[b.status.toLowerCase()] += 1;
+      const key = b.status.toLowerCase();
+      if (stats[key] !== undefined) stats[key]++;
       const m = new Date(b.startDate).getMonth();
       months[m]++;
     });
@@ -68,25 +72,40 @@ export default function BusinessBookings() {
     setMonthlyData(months);
   }, [bookings]);
 
+  // approve/reject handler
   const handleStatusChange = (id, newStatus) => {
     axios
       .patch(`${backendUrl}/bookings/${id}/status`, { status: newStatus }, {
         headers: { Authorization: `Bearer ${token}` }
       })
       .then(() => {
-        setBookings(bs => bs.map(b => (
-          b._id === id ? { ...b, status: newStatus } : b
-        )));
+        setBookings(bs =>
+          bs.map(b => b._id === id ? { ...b, status: newStatus } : b)
+        );
       })
       .catch(() => alert('Failed to update status.'));
   };
 
+  // clear (delete) handler
+  const handleClearBooking = (id) => {
+    if (!window.confirm('Permanently remove this booking?')) return;
+    axios
+      .delete(`${backendUrl}/bookings/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      .then(() => {
+        // remove locally
+        setBookings(bs => bs.filter(b => b._id !== id));
+      })
+      .catch(() => alert('Failed to remove booking.'));
+  };
+
   const chartData = {
     labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
-    datasets:[{
+    datasets: [{
       label: 'Bookings',
       data: monthlyData,
-      backgroundColor: '#38b6ff',
+      backgroundColor: '#38b6ff'
     }]
   };
 
@@ -94,22 +113,22 @@ export default function BusinessBookings() {
     <div className={styles.bookingsContainer}>
       <header className={styles.header}>
         <div className={styles.logo} onClick={() => navigate('/')}>Hyre</div>
-        <button className={styles.menuIcon} onClick={()=>setMenuOpen(o=>!o)}>☰</button>
+        <button className={styles.menuIcon} onClick={() => setMenuOpen(o => !o)}>☰</button>
       </header>
 
       <SideMenuBusiness
         isOpen={menuOpen}
-        toggleMenu={()=>setMenuOpen(o=>!o)}
-        closeMenu={()=>setMenuOpen(false)}
+        toggleMenu={() => setMenuOpen(o => !o)}
+        closeMenu={() => setMenuOpen(false)}
       />
 
       <main className={styles.mainContent}>
         <h1 className={styles.pageTitle}>Bookings</h1>
 
         <div className={styles.statsRow}>
-          {['upcoming','pending','active','cancelled'].map(key=>(
+          {['upcoming','pending','active','cancelled'].map(key => (
             <div key={key} className={styles.statCard}>
-              <h3>{key.charAt(0).toUpperCase()+key.slice(1)}</h3>
+              <h3>{key.charAt(0).toUpperCase() + key.slice(1)}</h3>
               <p>{counts[key]}</p>
             </div>
           ))}
@@ -122,7 +141,13 @@ export default function BusinessBookings() {
               <span>Last 12 Months</span>
             </div>
             <div className={styles.chartWrapper}>
-              <Bar data={chartData} options={{ responsive:true, plugins:{ legend:{ display:false } } }} />
+              <Bar
+                data={chartData}
+                options={{
+                  responsive: true,
+                  plugins: { legend: { display: false } }
+                }}
+              />
             </div>
           </div>
         </div>
@@ -145,7 +170,7 @@ export default function BusinessBookings() {
               </thead>
               <tbody>
                 {bookings.length === 0
-                  ? <tr><td colSpan="8" style={{textAlign:'center'}}>No bookings found.</td></tr>
+                  ? <tr><td colSpan="8" style={{ textAlign: 'center' }}>No bookings found.</td></tr>
                   : bookings.map(b => (
                     <tr key={b._id}>
                       <td>{b._id}</td>
@@ -160,23 +185,30 @@ export default function BusinessBookings() {
                         </span>
                       </td>
                       <td className={styles.actionCell}>
-                        {b.status === 'Pending' && (
+                        {b.status === 'Pending' ? (
                           <>
                             <button
                               className={styles.approveBtn}
-                              onClick={()=>handleStatusChange(b._id,'Active')}
+                              onClick={() => handleStatusChange(b._id, 'Active')}
                             >
                               Approve
                             </button>
                             <button
                               className={styles.rejectBtn}
-                              onClick={()=>handleStatusChange(b._id,'Cancelled')}
+                              onClick={() => handleStatusChange(b._id, 'Cancelled')}
                             >
                               Reject
                             </button>
                           </>
+                        ) : (
+                          <button
+                            className={styles.clearBtn}
+                            title="Remove booking"
+                            onClick={() => handleClearBooking(b._id)}
+                          >
+                            ×
+                          </button>
                         )}
-                        {b.status !== 'Pending' && '—'}
                       </td>
                     </tr>
                   ))

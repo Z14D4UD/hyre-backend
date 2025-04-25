@@ -1,3 +1,5 @@
+/* client/src/styles/BusinessBookings.module.css */
+
 :root {
   --color-bg: #f4f6f8;
   --color-surface: #fff;
@@ -11,12 +13,13 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background: var(--color-bg);
+  background-color: var(--color-bg);
+  font-family: 'Roboto', sans-serif;
 }
 
+/* fixed header */
 .header {
-  position: fixed;
-  top: 0; left: 0; right: 0;
+  width: 100%;
   height: 60px;
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
@@ -24,6 +27,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 1.5rem;
+  position: fixed;
+  top: 0;
   z-index: 1000;
 }
 
@@ -35,12 +40,14 @@
 }
 
 .menuIcon {
+  font-size: 1.6rem;
   background: none;
   border: none;
-  font-size: 1.6rem;
   cursor: pointer;
+  color: var(--color-text-main);
 }
 
+/* push content below header */
 .mainContent {
   margin-top: 60px;
   padding: 1.5rem;
@@ -49,70 +56,71 @@
 .pageTitle {
   font-size: 2rem;
   font-weight: bold;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
   color: var(--color-text-main);
 }
 
 .statsRow {
   display: flex;
   gap: 1rem;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
 }
 
 .statCard {
-  flex: 1 1 150px;
+  flex: 1;
   background: var(--color-surface);
   border-radius: 8px;
-  padding: 1rem;
+  padding: 1.2rem;
   box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
 .statCard h3 {
-  margin: 0;
-  color: var(--color-text-muted);
   font-size: 1rem;
+  color: var(--color-text-muted);
+  margin: 0;
 }
 
 .statCard p {
-  margin: .5rem 0 0;
   font-size: 1.6rem;
   font-weight: bold;
+  margin: .5rem 0 0;
 }
 
 .topSection {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
   margin-bottom: 1.5rem;
 }
 
 .chartCard {
+  flex: 1 1 100%;
   background: var(--color-surface);
   border-radius: 8px;
-  padding: 1rem;
+  padding: 1.2rem;
   box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
 .chartHeader {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: .5rem;
+  margin-bottom: 1rem;
 }
 
 .chartWrapper {
   width: 100%;
-  max-width: 500px;
-  margin: 0 auto;
 }
 
+/* table */
 .tableSection {
   background: var(--color-surface);
   border-radius: 8px;
-  padding: 1rem;
+  padding: 1.2rem;
   box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
 .tableTitle {
-  margin-bottom: .75rem;
+  margin-bottom: 1rem;
   font-size: 1.4rem;
   font-weight: bold;
   color: var(--color-text-main);
@@ -131,8 +139,8 @@
 .bookingsTable td {
   padding: .75rem 1rem;
   border-bottom: 1px solid #eee;
-  font-size: .9rem;
   text-align: left;
+  font-size: .9rem;
 }
 
 .bookingsTable thead {
@@ -143,11 +151,13 @@
   background: #fafafa;
 }
 
+/* status badges */
 .statusBadge {
-  padding: .25rem .5rem;
+  padding: .3rem .6rem;
   border-radius: 4px;
   font-size: .8rem;
   font-weight: bold;
+  text-transform: capitalize;
 }
 
 .upcoming   { background: #e0f7fa; color: #006064; }
@@ -155,17 +165,14 @@
 .active     { background: #e1f5fe; color: #0277bd; }
 .cancelled  { background: #ffebee; color: #c62828; }
 
-.actionCell {
-  display: flex;
-  gap: .5rem;
-}
-
+/* buttons */
 .approveBtn {
   background: var(--color-primary);
   color: #fff;
   border: none;
-  padding: .5rem .75rem;
   border-radius: 4px;
+  padding: .4rem .8rem;
+  margin-right: .5rem;
   cursor: pointer;
 }
 
@@ -173,14 +180,45 @@
   background: #e74c3c;
   color: #fff;
   border: none;
-  padding: .5rem .75rem;
   border-radius: 4px;
+  padding: .4rem .8rem;
   cursor: pointer;
 }
 
+.clearBtn {
+  background: transparent;
+  border: none;
+  color: #c62828;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: .2rem .5rem;
+  transition: background .2s;
+}
+
+.clearBtn:hover {
+  background: rgba(198,40,40,0.1);
+  border-radius: 4px;
+}
+
+/* layout for action cell */
+.actionCell {
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+/* responsive tweaks */
 @media (max-width: 768px) {
-  .pageTitle { font-size: 1.6rem; }
-  .statCard { flex: 1 1 100%; }
-  .chartWrapper { max-width: 100%; }
-  .bookingsTable th, .bookingsTable td { font-size: .8rem; padding: .5rem; }
+  .statsRow,
+  .topSection {
+    flex-direction: column;
+  }
+  .chartCard {
+    width: 100%;
+  }
+  .bookingsTable th,
+  .bookingsTable td {
+    font-size: .8rem;
+    padding: .5rem;
+  }
 }

@@ -31,4 +31,8 @@ router.post('/payout',     authMiddleware, requestPayout);
 // Update booking status (business only)
 router.patch('/:id/status', authMiddleware, updateBookingStatus);
 
+// **NEW** delete a booking
+router.delete('/:id', deleteBooking);
+
+
 module.exports = router;
