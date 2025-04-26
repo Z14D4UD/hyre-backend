@@ -1,29 +1,31 @@
 // server/routes/businessRoutes.js
 const express = require('express');
-const router  = express.Router();
-const auth    = require('../middlewares/authMiddleware');
-const upload  = require('../middlewares/uploadMiddleware');
+const router = express.Router();
+const authMiddleware = require('../middlewares/authMiddleware');
 
+// use multer directly for uploads
+const multer = require('multer');
+const upload = multer({ dest: 'uploads/businessIds/' });
+
+const { updateBookingStatus } = require('../controllers/bookingController');
 const {
   verifyID,
   getStats,
-  releasePendingPayouts,
   getEarnings,
-  getBookingsOverview,
+  getBookingsOverview
 } = require('../controllers/businessController');
-
 const { getBusinessProfile, updateBusinessProfile } = require('../controllers/businessProfileController');
 const {
   createListing,
   getBusinessListings,
   getListingById,
   updateListing,
-  deleteListing,
+  deleteListing
 } = require('../controllers/listingController');
+const Business = require('../models/Business');
 
-// featured (public)
+// Route to get featured businesses
 router.get('/featured', async (req, res) => {
-  const Business = require('../models/Business');
   try {
     const featured = await Business.find({ isFeatured: true });
     res.json(featured);
@@ -33,29 +35,31 @@ router.get('/featured', async (req, res) => {
   }
 });
 
-// require auth for all below
-router.use(auth);
+// Verify business ID
+router.post(
+  '/verify-id',
+  authMiddleware,
+  upload.single('idDocument'),
+  verifyID
+);
 
-// verify ID
-router.post('/verify-id', upload.single('idDocument'), verifyID);
+// Dashboard endpoints
+router.get('/stats', authMiddleware, getStats);
+router.get('/earnings', authMiddleware, getEarnings);
+router.get('/bookingsOverview', authMiddleware, getBookingsOverview);
 
-// ESCROW: release pending into available
-router.post('/release-payouts', releasePendingPayouts);
+// Business Profile endpoints
+router.get('/me', authMiddleware, getBusinessProfile);
+router.put('/me', authMiddleware, upload.single('avatar'), updateBusinessProfile);
 
-// dashboard stats
-router.get('/stats', getStats);
-router.get('/earnings', getEarnings);
-router.get('/bookingsOverview', getBookingsOverview);
+// Listings endpoints
+router.post('/listings', authMiddleware, upload.array('images', 10), createListing);
+router.get('/listings', authMiddleware, getBusinessListings);
+router.get('/listings/:id', authMiddleware, getListingById);
+router.put('/listings/:id', authMiddleware, upload.array('images', 10), updateListing);
+router.delete('/listings/:id', authMiddleware, deleteListing);
 
-// profile
-router.get('/me', getBusinessProfile);
-router.put('/me', upload.single('avatar'), updateBusinessProfile);
-
-// listings
-router.post('/listings', upload.array('images', 10), createListing);
-router.get('/listings', getBusinessListings);
-router.get('/listings/:id', getListingById);
-router.put('/listings/:id', upload.array('images', 10), updateListing);
-router.delete('/listings/:id', deleteListing);
+// Booking status update (shared with bookingRoutes too)
+router.patch('/:id/status', authMiddleware, updateBookingStatus);
 
 module.exports = router;
