@@ -7,7 +7,7 @@ const Car      = require('../models/Car');
 
 // Verify uploaded ID document
 exports.verifyID = async (req, res) => {
-  const businessId = req.business?.id;
+  const businessId     = req.business?.id;
   const idDocumentPath = req.file ? req.file.path : '';
   if (!idDocumentPath) {
     return res.status(400).json({ msg: 'No ID document uploaded' });
@@ -18,72 +18,103 @@ exports.verifyID = async (req, res) => {
       { idDocument: idDocumentPath, verified: true },
       { new: true }
     );
-    return res.json({ msg: 'ID verified successfully', business });
+    res.json({ msg: 'ID verified successfully', business });
   } catch (error) {
     console.error('Error in verifyID:', error.stack);
-    return res.status(500).send('Server error');
+    res.status(500).send('Server error');
   }
 };
 
-// Dashboard stats (including escrow balances)
+// Fetch stats for business dashboard, with escrow logic
 exports.getStats = async (req, res) => {
   if (!req.business) {
+    console.error("getStats: req.business is undefined", req);
     return res.status(403).json({ msg: 'Forbidden: not a business user' });
   }
   const businessId = req.business.id;
   const today      = new Date();
 
   try {
-    // Total revenue
+    // 1) Total revenue (all time)
     const totalRevenueResult = await Booking.aggregate([
       { $match: { business: new mongoose.Types.ObjectId(businessId) } },
-      { $group: { _id: null, total: { $sum: "$totalAmount" } } }
+      { $group:   { _id: null, total: { $sum: "$totalAmount" } } }
     ]);
     const totalRevenue = totalRevenueResult[0]?.total || 0;
 
-    // Counts
-    const bookings     = await Booking.countDocuments({ business: businessId });
-    const totalCars    = await Car.countDocuments({ business: businessId });
+    // 2) Total bookings count
+    const bookingsCount = await Booking.countDocuments({ business: businessId });
+
+    // 3) Total cars for this business
+    const totalCars = await Car.countDocuments({ business: businessId });
+
+    // 4) Distinct rented cars ever
     const rentedCarsResult = await Booking.aggregate([
       { $match: { business: new mongoose.Types.ObjectId(businessId) } },
       { $group: { _id: "$car" } },
       { $count: "count" }
     ]);
     const rentedCars = rentedCarsResult[0]?.count || 0;
+
+    // 5) Active cars right now (booking in-progress)
     const activeCarsResult = await Booking.aggregate([
       { $match: {
           business:  new mongoose.Types.ObjectId(businessId),
           startDate: { $lte: today },
-          endDate:   { $gte: today }
+          endDate:   { $gte: today },
+          status:    "Active"
       }},
       { $group: { _id: "$car" } },
       { $count: "count" }
     ]);
     const activeCars = activeCarsResult[0]?.count || 0;
 
-    // Balances
-    const biz      = await Business.findById(businessId).lean();
-    const availableBalance = biz.balance;
-    const pendingBalance   = biz.pendingBalance;
+    // 6) Available balance: sum of payouts for bookings whose startDate ≤ today and status is Active
+    const availResult = await Booking.aggregate([
+      { $match: {
+          business:  new mongoose.Types.ObjectId(businessId),
+          startDate: { $lte: today },
+          status:    "Active"
+      }},
+      { $group: { _id: null, total: { $sum: "$payout" } } }
+    ]);
+    const availableBalance = availResult[0]?.total || 0;
 
-    // Rent status breakdown
-    const hiredCount     = activeCars;
+    // 7) Pending payouts: sum of payouts for future bookings (startDate > today) still Active
+    const pendResult = await Booking.aggregate([
+      { $match: {
+          business:  new mongoose.Types.ObjectId(businessId),
+          startDate: { $gt: today },
+          status:    "Active"
+      }},
+      { $group: { _id: null, total: { $sum: "$payout" } } }
+    ]);
+    const pendingPayouts = pendResult[0]?.total || 0;
+
+    // 8) Rent-status breakdown (for the donut)
+    const hiredCount     = await Booking.countDocuments({
+      business: businessId,
+      startDate: { $lte: today },
+      endDate:   { $gte: today },
+      status:   "Active"
+    });
     const pendingCount   = await Booking.countDocuments({
       business:  businessId,
-      startDate: { $gt: today }
+      startDate: { $gt: today },
+      status:    "Active"
     });
     const cancelledCount = await Booking.countDocuments({
-      business: businessId,
-      endDate:  { $lt: today }
+      business,
+      status: "Cancelled"
     });
 
-    return res.json({
+    res.json({
       totalRevenue,
-      bookings,
+      bookings:     bookingsCount,
       rentedCars,
       activeCars,
-      availableBalance,
-      pendingBalance,
+      balance:      availableBalance, // maps to your front-end "Available Balance"
+      pendingPayouts,                 // front-end will read stats.pendingPayouts
       rentStatus: {
         hired:     hiredCount,
         pending:   pendingCount,
@@ -92,52 +123,18 @@ exports.getStats = async (req, res) => {
     });
   } catch (error) {
     console.error('Error in getStats:', error.stack);
-    return res.status(500).json({ msg: 'Server error while fetching stats' });
-  }
-};
-
-// Release escrow into available balance for all started bookings
-exports.releasePendingPayouts = async (req, res) => {
-  if (!req.business) {
-    return res.status(403).json({ msg: 'Forbidden: not a business user' });
-  }
-  const bizId = req.business.id;
-  try {
-    const now = new Date();
-    const started = await Booking.find({
-      business:  bizId,
-      status:    'Active',
-      startDate: { $lte: now }
-    }).lean();
-
-    const totalToRelease = started.reduce((sum, b) => sum + (b.payout || 0), 0);
-
-    if (totalToRelease > 0) {
-      await Business.findByIdAndUpdate(bizId, {
-        $inc: {
-          pendingBalance: -totalToRelease,
-          balance:        totalToRelease
-        }
-      });
-    }
-
-    const biz = await Business.findById(bizId).lean();
-    return res.json({
-      availableBalance: biz.balance,
-      pendingBalance:   biz.pendingBalance
-    });
-  } catch (error) {
-    console.error('Error in releasePendingPayouts:', error);
-    return res.status(500).json({ msg: 'Server error while releasing payouts' });
+    res.status(500).json({ msg: 'Server error while fetching stats' });
   }
 };
 
 // Fetch monthly earnings for chart
 exports.getEarnings = async (req, res) => {
   if (!req.business) {
+    console.error("getEarnings: req.business is undefined", req);
     return res.status(403).json({ msg: 'Forbidden: not a business user' });
   }
   const businessId = req.business.id;
+
   try {
     const earnings = await Booking.aggregate([
       { $match: { business: new mongoose.Types.ObjectId(businessId) } },
@@ -154,21 +151,23 @@ exports.getEarnings = async (req, res) => {
     earnings.forEach(item => {
       monthlyEarnings[item._id - 1] = item.totalEarnings;
     });
-    return res.json(monthlyEarnings);
+    res.json(monthlyEarnings);
   } catch (error) {
     console.error('Error in getEarnings:', error.stack);
-    return res.status(500).json({ msg: 'Server error while fetching earnings' });
+    res.status(500).json({ msg: 'Server error while fetching earnings' });
   }
 };
 
 // Fetch monthly bookings count for chart
 exports.getBookingsOverview = async (req, res) => {
   if (!req.business) {
+    console.error("getBookingsOverview: req.business is undefined", req);
     return res.status(403).json({ msg: 'Forbidden: not a business user' });
   }
   const businessId = req.business.id;
+
   try {
-    const overview = await Booking.aggregate([
+    const bookingsOverview = await Booking.aggregate([
       { $match: { business: new mongoose.Types.ObjectId(businessId) } },
       {
         $group: {
@@ -179,13 +178,13 @@ exports.getBookingsOverview = async (req, res) => {
       { $sort: { "_id": 1 } }
     ]);
 
-    const monthly = Array(12).fill(0);
-    overview.forEach(item => {
-      monthly[item._id - 1] = item.count;
+    const monthlyBookings = Array(12).fill(0);
+    bookingsOverview.forEach(item => {
+      monthlyBookings[item._id - 1] = item.count;
     });
-    return res.json(monthly);
+    res.json(monthlyBookings);
   } catch (error) {
     console.error('Error in getBookingsOverview:', error.stack);
-    return res.status(500).json({ msg: 'Server error while fetching bookings overview' });
+    res.status(500).json({ msg: 'Server error while fetching bookings overview' });
   }
 };
