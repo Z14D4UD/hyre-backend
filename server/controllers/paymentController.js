@@ -1,6 +1,15 @@
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const paypal = require('@paypal/checkout-server-sdk');
+// server/controllers/paymentController.js
 
+// 1) Ensure we actually have a Stripe secret key
+if (!process.env.STRIPE_SECRET_KEY) {
+  console.error('⚠️  STRIPE_SECRET_KEY is not set in the environment!');
+}
+const stripe = require('stripe')(
+  process.env.STRIPE_SECRET_KEY,
+  { apiVersion: '2020-08-27' }
+);
+
+const paypal = require('@paypal/checkout-server-sdk');
 function paypalEnvironment() {
   const clientId = process.env.PAYPAL_CLIENT_ID;
   const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
@@ -10,12 +19,26 @@ const paypalClient = new paypal.core.PayPalHttpClient(paypalEnvironment());
 
 exports.createStripePayment = async (req, res) => {
   const { amount, currency } = req.body;
+
+  // 2) Basic validation
+  if (typeof amount !== 'number' || !currency) {
+    return res
+      .status(400)
+      .json({ error: 'Request must include numeric amount and currency.' });
+  }
+
   try {
-    const paymentIntent = await stripe.paymentIntents.create({ amount, currency });
-    res.json({ clientSecret: paymentIntent.client_secret });
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount,
+      currency
+    });
+    return res.json({ clientSecret: paymentIntent.client_secret });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: error.message });
+    // 3) Log and return whatever Stripe gave us
+    console.error('Stripe createPaymentIntent error:', error);
+    return res
+      .status(500)
+      .json({ error: error.raw?.message || error.message });
   }
 };
 
@@ -31,10 +54,10 @@ exports.createPayPalOrder = async (req, res) => {
   });
   try {
     const order = await paypalClient.execute(request);
-    res.json({ orderID: order.result.id });
+    return res.json({ orderID: order.result.id });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: error.message });
+    console.error('PayPal create-order error:', error);
+    return res.status(500).json({ error: error.message });
   }
 };
 
@@ -44,9 +67,9 @@ exports.capturePayPalOrder = async (req, res) => {
   request.requestBody({});
   try {
     const capture = await paypalClient.execute(request);
-    res.json({ capture: capture.result });
+    return res.json({ capture: capture.result });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: error.message });
+    console.error('PayPal capture-order error:', error);
+    return res.status(500).json({ error: error.message });
   }
 };

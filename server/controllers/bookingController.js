@@ -13,10 +13,14 @@ const {
 } = require('../utils/mailer');
 
 exports.createBooking = async (req, res) => {
+  // now protected by authMiddleware, so we expect req.customer
+  if (!req.customer) {
+    return res.status(401).json({ msg: 'Authentication required' });
+  }
+
   const {
     carId,
     listingId,
-    customerName,
     startDate,
     endDate,
     basePrice,
@@ -38,7 +42,8 @@ exports.createBooking = async (req, res) => {
     const bookingData = {
       car:          lookupId,
       business:     businessId,
-      customerName,
+      customer:     req.customer.id,      // ← use authenticated customer
+      customerName: req.customer.name,    // ← pull name from token
       startDate,
       endDate,
       basePrice,
@@ -62,7 +67,7 @@ exports.createBooking = async (req, res) => {
     const booking = new Booking(bookingData);
     await booking.save();
 
-    // ↪︎ HOLD funds in escrow, not immediately withdrawable
+    // ↪︎ HOLD funds in escrow
     if (businessId) {
       await Business.findByIdAndUpdate(businessId, {
         $inc: { pendingBalance: payout }

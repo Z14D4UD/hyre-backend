@@ -1,5 +1,4 @@
 // server/routes/bookingRoutes.js
-
 const express = require('express');
 const router  = express.Router();
 const authMiddleware    = require('../middlewares/authMiddleware');
@@ -14,11 +13,13 @@ const {
 } = require('../controllers/bookingController');
 const { deleteBooking } = require('../controllers/deleteBookingController');
 
-// Public booking endpoints
-router.post('/', createBooking);
+// Booking creation must be authenticated
+router.post('/', authMiddleware, createBooking);
+
+// Public booking list
 router.get('/', getBookings);
 
-// Protected endpoints
+// All the routes below also require auth
 router.use(authMiddleware);
 router.get('/my', getMyBookings);
 router.get('/customer', getCustomerBookings);
