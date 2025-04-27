@@ -1,4 +1,5 @@
 // client/src/pages/PaymentPage.js
+
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -71,10 +72,16 @@ export default function PaymentPage() {
       return alert('Please leave a message to your local rental business before you pay.');
     }
 
+    // Compute pence and enforce Stripe minimum
+    const amountInPence = Math.round(total * 100);
+    if (amountInPence < 30) {
+      return alert('Payments must be at least £0.30.');
+    }
+
     try {
       // 1) Create PaymentIntent
       const { data } = await api.post('/payment/stripe', {
-        amount: Math.round(total * 100),
+        amount: amountInPence,
         currency: 'GBP'
       });
 
@@ -89,7 +96,7 @@ export default function PaymentPage() {
         }
       );
       if (error) {
-        console.error(error);
+        console.error('Stripe confirmCardPayment error:', error);
         return alert(error.message);
       }
 
@@ -107,7 +114,9 @@ export default function PaymentPage() {
       navigate(`/confirmation?paymentIntent=${paymentIntent.id}`);
     } catch (err) {
       console.error('Stripe payment error:', err);
-      alert('Payment failed. Please try again.');
+      // show the server/Stripe error if available
+      const msg = err.response?.data?.error || err.message || 'Payment failed. Please try again.';
+      alert(msg);
     }
   };
 
@@ -154,7 +163,7 @@ export default function PaymentPage() {
                   value="card"
                   checked={method === 'card'}
                   onChange={() => setMethod('card')}
-                /> Card
+                /> Card
               </label>
               <label className={cls.breakdown}>
                 <input
@@ -163,7 +172,7 @@ export default function PaymentPage() {
                   value="paypal"
                   checked={method === 'paypal'}
                   onChange={() => setMethod('paypal')}
-                /> PayPal
+                /> PayPal
               </label>
             </div>
 
@@ -202,7 +211,7 @@ export default function PaymentPage() {
                   disabled={!stripe || !elements}
                   style={{ borderRadius:24, backgroundColor:'#38b6ff', boxShadow:'0 4px 12px rgba(0,0,0,0.1)', marginTop:16 }}
                 >
-                  Pay £{total.toFixed(2)}
+                  Pay £{total.toFixed(2)}
                 </button>
               </div>
             )}
@@ -265,13 +274,13 @@ export default function PaymentPage() {
                 ? (listing.reviews.reduce((sum,r)=>sum+(r.rating||0),0)/listing.reviews.length).toFixed(2)
                 : '0.00')}★ ({listing.reviews?.length||0})
             </div>
-            <p>This reservation is non‑refundable. <a href="/legal">Full policy</a></p>
+            <p>This reservation is non-refundable. <a href="/legal">Full policy</a></p>
 
             <div className={cls.section}>
               <h4>Trip details</h4>
               <p>
-                {fromDate.toLocaleDateString()} → {toDate.toLocaleDateString()}<br/>
-                {days} days
+                {fromDate.toLocaleDateString()} → {toDate.toLocaleDateString()}<br/>
+                {days} days
               </p>
               <button onClick={()=>navigate(-1)} style={{ borderRadius:8, padding:4 }}>Change</button>
             </div>
@@ -279,7 +288,7 @@ export default function PaymentPage() {
             <div className={cls.section}>
               <h4>Price details</h4>
               <div className={cls.breakdown}>
-                <span>£{base.toFixed(2)} × {days} days</span>
+                <span>£{base.toFixed(2)} × {days} days</span>
                 <span>£{subtotal.toFixed(2)}</span>
               </div>
               <div className={cls.breakdown}>
@@ -287,7 +296,7 @@ export default function PaymentPage() {
                 <span>£{service.toFixed(2)}</span>
               </div>
               <div className={cls.breakdown}>
-                <span>VAT (20%)</span>
+                <span>VAT (20%)</span>
                 <span>£{vat.toFixed(2)}</span>
               </div>
               <hr/>
