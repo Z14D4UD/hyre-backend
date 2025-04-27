@@ -41,9 +41,7 @@ const libraries = ['places'];
  * so that it can be used as a default value for <input type="datetime-local" />
  */
 function getLocalDateTimeString(date) {
-  // Convert the Date object to local time by adjusting for time zone offset
   const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-  // Then slice off the seconds, leaving yyyy-mm-ddThh:mm
   return local.toISOString().slice(0, 16);
 }
 
@@ -106,7 +104,8 @@ export default function Home() {
 
   const handleListYourCar = () => {
     if (isBusinessLoggedIn) {
-      navigate('/upload-car');
+      // changed to Add Listing
+      navigate('/add-listing');
     } else if (token) {
       alert('You must be logged in as a business to list your car.');
     } else {
@@ -239,5 +238,4 @@ export default function Home() {
 
       <Footer />
     </div>
-  );
-}
+)}

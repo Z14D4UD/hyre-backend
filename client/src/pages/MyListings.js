@@ -205,5 +205,5 @@ export default function MyListings() {
         )}
       </div>
     </div>
-  );
+);
 }
