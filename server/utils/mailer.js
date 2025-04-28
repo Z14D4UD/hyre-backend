@@ -1,75 +1,81 @@
 // server/utils/mailer.js
 const nodemailer = require('nodemailer');
 
-const {
-  EMAIL_HOST,
-  EMAIL_PORT,
-  EMAIL_USER,
-  EMAIL_PASS,
-  EMAIL_FROM
-} = process.env;
+// -----------------------------------------------------------------------------
+// Read env once — handle either GMAIL_* or EMAIL_* naming
+// -----------------------------------------------------------------------------
+const smtpUser = process.env.GMAIL_USER  || process.env.EMAIL_USER;
+const smtpPass = process.env.GMAIL_PASS  || process.env.EMAIL_PASS;
+const smtpHost = process.env.EMAIL_HOST  || 'smtp.gmail.com';
+const smtpPort = process.env.EMAIL_PORT  ? Number(process.env.EMAIL_PORT) : 465;
+const smtpSecure = (process.env.EMAIL_SECURE ?? 'true') !== 'false'; // default true
 
-// Warn if any required env var is missing
-if (!EMAIL_HOST || !EMAIL_PORT || !EMAIL_USER || !EMAIL_PASS || !EMAIL_FROM) {
+// If creds are missing, log a warning once at startup
+if (!smtpUser || !smtpPass) {
+  /* eslint-disable no-console */
   console.warn(
-    'Mailer warning: missing one or more of EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASS, EMAIL_FROM'
+    '⚠️  Mail disabled: missing SMTP credentials. ' +
+    'Set GMAIL_USER / GMAIL_PASS or EMAIL_USER / EMAIL_PASS.'
   );
 }
 
-const transporter = nodemailer.createTransport({
-  host: EMAIL_HOST,
-  port: Number(EMAIL_PORT),
-  secure: Number(EMAIL_PORT) === 465, // true for 465, false for other ports
-  auth: {
-    user: EMAIL_USER,
-    pass: EMAIL_PASS
+/** -------------------------------------------------------------------------
+ * createTransport – only if creds exist; otherwise a stub that resolves
+ * ------------------------------------------------------------------------ */
+function getTransport () {
+  if (!smtpUser || !smtpPass) {
+    return {
+      sendMail: () => Promise.resolve('mail skipped – creds missing')
+    };
   }
-});
+  return nodemailer.createTransport({
+    host:   smtpHost,
+    port:   smtpPort,
+    secure: smtpSecure,
+    auth:   { user: smtpUser, pass: smtpPass }
+  });
+}
 
-transporter.verify()
-  .then(() => console.log('Mailer is configured and ready to send messages'))
-  .catch(err => console.error('Error configuring mailer:', err));
+const transporter = getTransport();
 
-async function sendMail({ to, subject, text, html }) {
-  const msg = {
-    from: EMAIL_FROM,
-    to,
-    subject,
-    text,
+// -----------------------------------------------------------------------------
+// Helper wrappers you already call elsewhere
+// -----------------------------------------------------------------------------
+exports.sendBookingApprovalEmail = async ({
+  customerEmail,
+  customerName,
+  bookingId,
+  startDate,
+  endDate
+}) => {
+  const html = `
+    <p>Hi ${customerName},</p>
+    <p>Your booking <strong>${bookingId}</strong> has been <b>approved</b>.</p>
+    <p>${new Date(startDate).toLocaleDateString()} – ${new Date(endDate).toLocaleDateString()}</p>
+    <p>Thanks for using Hyre!</p>
+  `;
+  return transporter.sendMail({
+    from: process.env.EMAIL_FROM || `Hyre <${smtpUser}>`,
+    to:   customerEmail,
+    subject: 'Your booking is approved',
     html
-  };
-  return transporter.sendMail(msg);
-}
+  });
+};
 
-async function sendBookingApprovalEmail({ bookingId, customerName, customerEmail, startDate, endDate }) {
-  const subject = `Your booking ${bookingId} has been approved`;
-  const formattedStart = new Date(startDate).toLocaleDateString();
-  const formattedEnd   = new Date(endDate).toLocaleDateString();
+exports.sendBookingRejectionEmail = async ({
+  customerEmail,
+  customerName,
+  bookingId
+}) => {
   const html = `
     <p>Hi ${customerName},</p>
-    <p>Your booking <strong>${bookingId}</strong> from ${formattedStart} to ${formattedEnd} has been <strong>approved</strong>! 🎉</p>
-    <p>You can view the details and next steps in your account dashboard.</p>
-    <p>Thanks for choosing us,<br/>The Hyre Team</p>
+    <p>We’re sorry — your booking <strong>${bookingId}</strong> has been declined.</p>
+    <p>Please contact support if you have questions.</p>
   `;
-  const text = `Hi ${customerName}, your booking ${bookingId} from ${formattedStart} to ${formattedEnd} has been approved! Visit your dashboard for details.`;
-  return sendMail({ to: customerEmail, subject, text, html });
-}
-
-async function sendBookingRejectionEmail({ bookingId, customerName, customerEmail, reason }) {
-  const subject = `Your booking ${bookingId} has been rejected`;
-  const html = `
-    <p>Hi ${customerName},</p>
-    <p>We’re sorry to inform you that your booking <strong>${bookingId}</strong> has been <strong>rejected</strong>.</p>
-    ${reason ? `<p><em>Reason:</em> ${reason}</p>` : ''}
-    <p>If you have any questions or need assistance, please reply to this email.</p>
-    <p>Best regards,<br/>The Hyre Team</p>
-  `;
-  const text = `Hi ${customerName}, your booking ${bookingId} has been rejected.${reason ? ` Reason: ${reason}` : ''}`;
-  return sendMail({ to: customerEmail, subject, text, html });
-}
-
-module.exports = {
-  sendMail,
-  sendBookingApprovalEmail,
-  sendBookingRejectionEmail
+  return transporter.sendMail({
+    from: process.env.EMAIL_FROM || `Hyre <${smtpUser}>`,
+    to:   customerEmail,
+    subject: 'Your booking was declined',
+    html
+  });
 };
