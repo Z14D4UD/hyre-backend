@@ -2,15 +2,14 @@
 const nodemailer = require('nodemailer');
 
 // -----------------------------------------------------------------------------
-// Read env once — handle either GMAIL_* or EMAIL_* naming
+// SMTP config (GMAIL_*  or  EMAIL_*  env vars)
 // -----------------------------------------------------------------------------
-const smtpUser = process.env.GMAIL_USER  || process.env.EMAIL_USER;
-const smtpPass = process.env.GMAIL_PASS  || process.env.EMAIL_PASS;
-const smtpHost = process.env.EMAIL_HOST  || 'smtp.gmail.com';
-const smtpPort = process.env.EMAIL_PORT  ? Number(process.env.EMAIL_PORT) : 465;
+const smtpUser   = process.env.GMAIL_USER  || process.env.EMAIL_USER;
+const smtpPass   = process.env.GMAIL_PASS  || process.env.EMAIL_PASS;
+const smtpHost   = process.env.EMAIL_HOST  || 'smtp.gmail.com';
+const smtpPort   = process.env.EMAIL_PORT  ? Number(process.env.EMAIL_PORT) : 465;
 const smtpSecure = (process.env.EMAIL_SECURE ?? 'true') !== 'false'; // default true
 
-// If creds are missing, log a warning once at startup
 if (!smtpUser || !smtpPass) {
   /* eslint-disable no-console */
   console.warn(
@@ -19,14 +18,9 @@ if (!smtpUser || !smtpPass) {
   );
 }
 
-/** -------------------------------------------------------------------------
- * createTransport – only if creds exist; otherwise a stub that resolves
- * ------------------------------------------------------------------------ */
 function getTransport () {
   if (!smtpUser || !smtpPass) {
-    return {
-      sendMail: () => Promise.resolve('mail skipped – creds missing')
-    };
+    return { sendMail: () => Promise.resolve('mail skipped – creds missing') };
   }
   return nodemailer.createTransport({
     host:   smtpHost,
@@ -37,16 +31,13 @@ function getTransport () {
 }
 
 const transporter = getTransport();
+const fromAddr    = process.env.EMAIL_FROM || `Hyre <${smtpUser}>`;
 
 // -----------------------------------------------------------------------------
-// Helper wrappers you already call elsewhere
+// Previously-existing helpers
 // -----------------------------------------------------------------------------
 exports.sendBookingApprovalEmail = async ({
-  customerEmail,
-  customerName,
-  bookingId,
-  startDate,
-  endDate
+  customerEmail, customerName, bookingId, startDate, endDate
 }) => {
   const html = `
     <p>Hi ${customerName},</p>
@@ -55,7 +46,7 @@ exports.sendBookingApprovalEmail = async ({
     <p>Thanks for using Hyre!</p>
   `;
   return transporter.sendMail({
-    from: process.env.EMAIL_FROM || `Hyre <${smtpUser}>`,
+    from: fromAddr,
     to:   customerEmail,
     subject: 'Your booking is approved',
     html
@@ -63,9 +54,7 @@ exports.sendBookingApprovalEmail = async ({
 };
 
 exports.sendBookingRejectionEmail = async ({
-  customerEmail,
-  customerName,
-  bookingId
+  customerEmail, customerName, bookingId
 }) => {
   const html = `
     <p>Hi ${customerName},</p>
@@ -73,9 +62,31 @@ exports.sendBookingRejectionEmail = async ({
     <p>Please contact support if you have questions.</p>
   `;
   return transporter.sendMail({
-    from: process.env.EMAIL_FROM || `Hyre <${smtpUser}>`,
+    from: fromAddr,
     to:   customerEmail,
     subject: 'Your booking was declined',
+    html
+  });
+};
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * NEW: immediate confirmation right after checkout succeeds
+ * ────────────────────────────────────────────────────────────────────────── */
+exports.sendBookingReceivedEmail = async ({
+  customerEmail, customerName, bookingId, startDate, endDate
+}) => {
+  const html = `
+    <p>Hi ${customerName},</p>
+    <p>We’ve received your booking <strong>${bookingId}</strong>.</p>
+    <p>${new Date(startDate).toLocaleDateString()} – ${new Date(endDate).toLocaleDateString()}</p>
+    <p>The host will review and confirm shortly. You can reply to this e-mail or
+       the in-app chat if you have questions.</p>
+    <p>Thank you for choosing Hyre!</p>
+  `;
+  return transporter.sendMail({
+    from: fromAddr,
+    to:   customerEmail,
+    subject: 'Booking received – pending host approval',
     html
   });
 };
