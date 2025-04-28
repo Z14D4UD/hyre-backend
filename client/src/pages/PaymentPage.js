@@ -1,5 +1,4 @@
 // client/src/pages/PaymentPage.js
-
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -23,11 +22,12 @@ export default function PaymentPage() {
   const toDate    = new Date(toISO);
 
   // –– State
-  const [menuOpen,      setMenuOpen]       = useState(false);
-  const [listing,       setListing]        = useState(null);
-  const [method,        setMethod]         = useState('card');
-  const [message,       setMessage]        = useState('');
-  const [affiliateCode, setAffiliateCode]  = useState('');   // ← ADDED
+  const [menuOpen,      setMenuOpen]      = useState(false);
+  const [listing,       setListing]       = useState(null);
+  const [method,        setMethod]        = useState('card');
+  const [message,       setMessage]       = useState('');
+  const [affiliateCode, setAffiliateCode] = useState('');
+  const [processing,    setProcessing]    = useState(false);   // ← NEW
 
   // –– Auth guard
   const token = localStorage.getItem('token') || '';
@@ -38,7 +38,7 @@ export default function PaymentPage() {
     }
   }, [token, navigate]);
 
-  // –– Fetch
+  // –– Fetch listing
   useEffect(() => {
     api.get(`/listings/${listingId}`)
       .then(r => setListing(r.data))
@@ -63,25 +63,21 @@ export default function PaymentPage() {
   const service  = (subtotal / 1.2) * 0.05;
   const total    = subtotal + vat + service;
 
-  // –– Backend base URL (for images)
   const backendBase = process.env.REACT_APP_BACKEND_URL.replace(/\/api$/, '');
 
-  // –– Pay handler
+  // –– Pay (card) handler
   const handleCardPayment = async () => {
+    if (processing) return;        // ← guard
     if (!message.trim()) {
       return alert('Please leave a message to your local rental business before you pay.');
     }
 
-    // Compute pence and enforce Stripe minimum
-    const amountInPence = Math.round(total * 100);
-    if (amountInPence < 30) {
-      return alert('Payments must be at least £0.30.');
-    }
-
     try {
+      setProcessing(true);         // ← disable repeats
+
       // 1) Create PaymentIntent
       const { data } = await api.post('/payment/stripe', {
-        amount: amountInPence,
+        amount:   Math.round(total * 100),
         currency: 'GBP'
       });
 
@@ -95,28 +91,30 @@ export default function PaymentPage() {
           }
         }
       );
+
       if (error) {
         console.error('Stripe confirmCardPayment error:', error);
-        return alert(error.message);
+        alert(error.message);
+        return;
       }
 
-      // 3) Record booking, passing affiliateCode
+      // 3) Record booking
       await api.post('/bookings', {
         listingId,
         startDate: fromISO,
-        endDate: toISO,
+        endDate:   toISO,
         basePrice: base,
-        currency: 'GBP',
-        affiliateCode: affiliateCode.trim() || undefined   // ← ADDED
+        currency:  'GBP',
+        affiliateCode: affiliateCode.trim() || undefined
       });
 
-      // 4) Navigate on success
+      // 4) Success → confirmation page
       navigate(`/confirmation?paymentIntent=${paymentIntent.id}`);
     } catch (err) {
       console.error('Stripe payment error:', err);
-      // show the server/Stripe error if available
-      const msg = err.response?.data?.error || err.message || 'Payment failed. Please try again.';
-      alert(msg);
+      alert('Payment failed. Please try again.');
+    } finally {
+      setProcessing(false);        // ← re-enable button
     }
   };
 
@@ -208,15 +206,15 @@ export default function PaymentPage() {
                 <button
                   className={cls.payBtn}
                   onClick={handleCardPayment}
-                  disabled={!stripe || !elements}
+                  disabled={processing || !stripe || !elements}   // ← disable while processing
                   style={{ borderRadius:24, backgroundColor:'#38b6ff', boxShadow:'0 4px 12px rgba(0,0,0,0.1)', marginTop:16 }}
                 >
-                  Pay £{total.toFixed(2)}
+                  {processing ? 'Processing…' : `Pay £${total.toFixed(2)}`}
                 </button>
               </div>
             )}
 
-            {/* PayPal Buttons */}
+            {/* PayPal Buttons (unchanged) */}
             {method === 'paypal' && (
               <div className={cls.section} style={{ borderRadius:12, boxShadow:'0 2px 8px rgba(0,0,0,0.05)', padding:16 }}>
                 <PayPalButtons
