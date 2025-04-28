@@ -6,6 +6,7 @@ const Business      = require('../models/Business');
 const Affiliate     = require('../models/Affiliate');
 const Conversation  = require('../models/Conversation');
 const Message       = require('../models/Message');
+const Customer      = require('../models/Customer');    // ← NEW: load Customer model
 const PDFDocument   = require('pdfkit');
 const {
   sendBookingApprovalEmail,
@@ -33,6 +34,10 @@ exports.createBooking = async (req, res) => {
     const listing  = await Listing.findById(lookupId);
     if (!listing) return res.status(404).json({ msg: 'Listing not found' });
 
+    // ← FETCH CUSTOMER RECORD TO GET NAME
+    const cust = await Customer.findById(req.customer.id);
+    const custName = cust?.name || 'Unknown';
+
     const businessId  = listing.business;
     const bookingFee  = basePrice * 0.05;
     const serviceFee  = basePrice * 0.05;
@@ -42,8 +47,8 @@ exports.createBooking = async (req, res) => {
     const bookingData = {
       car:          lookupId,
       business:     businessId,
-      customer:     req.customer.id,      // ← use authenticated customer
-      customerName: req.customer.name,    // ← pull name from token
+      customer:     req.customer.id,
+      customerName: custName,                // ← GUARANTEED now
       startDate,
       endDate,
       basePrice,
