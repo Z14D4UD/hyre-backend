@@ -1,28 +1,27 @@
-// client/src/pages/BookingsPage.js
+// client/src/pages/CustomerBookingsPage.js
 import React, { useState, useEffect } from 'react';
-import { useNavigate }            from 'react-router-dom';
-import axios                      from 'axios';               // NEW
-import SideMenuCustomer           from '../components/SideMenuCustomer';
-import styles                     from '../styles/CustomerBookingsPage.module.css';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';                               // ← NEW
+import SideMenuCustomer from '../components/SideMenuCustomer';
+import styles from '../styles/CustomerBookingsPage.module.css';
 
-export default function BookingsPage() {
+export default function CustomerBookingsPage() {        // ← keep filename & export aligned
   const navigate = useNavigate();
 
-  // Auth checks
-  const token       = localStorage.getItem('token');
-  const accountType = localStorage.getItem('accountType');
-  const isCustomer  = token && accountType === 'customer';
+  /* ───── auth guard ───── */
+  const token        = localStorage.getItem('token');
+  const accountType  = localStorage.getItem('accountType');
+  const isCustomer   = Boolean(token && accountType === 'customer');
 
-  // Side menu toggling
+  /* ───── side-menu ───── */
   const [menuOpen, setMenuOpen] = useState(false);
-  const toggleMenu = () => setMenuOpen(!menuOpen);
+  const toggleMenu = () => setMenuOpen(o => !o);
   const closeMenu  = () => setMenuOpen(false);
 
-  // Live data
-  const [activeBookings, setActiveBookings] = useState([]);
-  const [pastBookings,   setPastBookings]   = useState([]);
-
-  const BACKEND = process.env.REACT_APP_BACKEND_URL || 'https://hyre-backend.onrender.com/api';
+  /* ───── bookings ───── */
+  const [activeBookings, setActive] = useState([]);
+  const [pastBookings,   setPast]   = useState([]);
+  const backend = process.env.REACT_APP_BACKEND_URL || 'https://hyre-backend.onrender.com/api';
 
   useEffect(() => {
     if (!isCustomer) {
@@ -31,105 +30,91 @@ export default function BookingsPage() {
       return;
     }
 
-    /* ── fetch real bookings ── */
     (async () => {
       try {
-        const { data } = await axios.get(`${BACKEND}/bookings/customer`, {
+        const { data } = await axios.get(`${backend}/bookings/customer`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
-        const today = new Date().setHours(0,0,0,0);
+        /* ── normalise + defensive checks ───────────────────────────── */
         const upcoming = [];
-        const past     = [];
+        const history  = [];
+        const nowMs    = Date.now();
 
         data.forEach(b => {
-          const end = new Date(b.endDate).setHours(0,0,0,0);
-          (end >= today ? upcoming : past).push(b);
+          /* skip if car ref was deleted → avoids “images of null” */
+          if (!b.car) return;
+
+          const img0 = Array.isArray(b.car.images) && b.car.images.length
+            ? `${backend.replace(/\/api$/, '')}/${b.car.images[0]}`
+            : '/avatar.svg';
+
+          const card = {
+            id:        b._id,
+            location:  `${b.car.make ?? ''} ${b.car.model ?? ''}`.trim() || '—',
+            hostName:  b.business?.name || 'Host',
+            startDate: new Date(b.startDate).toLocaleDateString('en-GB'),
+            endDate:   new Date(b.endDate).toLocaleDateString('en-GB'),
+            imageUrl:  img0
+          };
+
+          (new Date(b.endDate).getTime() >= nowMs ? upcoming : history).push(card);
         });
 
-        setActiveBookings(upcoming);
-        setPastBookings(past);
+        setActive(upcoming);
+        setPast(history);
       } catch (err) {
-        console.error('Fetch bookings error:', err);
+        console.error('Booking fetch error:', err);
+        alert('Failed to load your bookings.');
       }
     })();
-  }, [isCustomer, navigate, token, BACKEND]);
+  }, [isCustomer, navigate, backend, token]);
 
-  if (!isCustomer) {
-    return <div className={styles.loading}>Loading bookings…</div>;
-  }
+  if (!isCustomer) return <div className={styles.loading}>Loading bookings...</div>;
 
   const hasActive = activeBookings.length > 0;
-  const hasPast   = pastBookings.length > 0;
-
-  /* helpers to build card content */
-  const leadPhoto = car => {
-    const base = BACKEND.replace(/\/api$/,'');
-    return car.images?.[0] ? `${base}/${car.images[0]}` : '/avatar.svg';
-  };
-  const hostName = b => b.business?.name || 'Host';
+  const hasPast   = pastBookings.length   > 0;
 
   return (
     <div className={styles.container}>
       {/* Header */}
       <header className={styles.header}>
-        <div className={styles.logo} onClick={() => navigate('/')}>
-          Hyre
-        </div>
-        <button className={styles.menuIcon} onClick={toggleMenu}>
-          ☰
-        </button>
+        <div className={styles.logo} onClick={() => navigate('/')}>Hyre</div>
+        <button className={styles.menuIcon} onClick={toggleMenu}>☰</button>
       </header>
 
       {/* Side Menu */}
-      <SideMenuCustomer
-        isOpen={menuOpen}
-        toggleMenu={toggleMenu}
-        closeMenu={closeMenu}
-      />
+      <SideMenuCustomer isOpen={menuOpen} toggleMenu={toggleMenu} closeMenu={closeMenu} />
 
       <div className={styles.content}>
         <h1 className={styles.title}>Bookings</h1>
 
-        {/* Empty State: No Active Bookings */}
+        {/* Empty-state */}
         {!hasActive && (
           <div className={styles.emptyState}>
             <div className={styles.emptyStateContent}>
-              <h2>No trips booked… yet!</h2>
+              <h2>No trips booked... yet!</h2>
               <p>Time to dust off your bags and start planning your next adventure.</p>
               <button
                 className={styles.startSearchingBtn}
                 onClick={() => navigate('/search')}
-              >
-                Start searching
-              </button>
+              >Start searching</button>
             </div>
           </div>
         )}
 
-        {/* Active Bookings */}
+        {/* Active bookings */}
         {hasActive && (
           <section className={styles.section}>
-            <h2 className={styles.sectionHeading}>Active bookings</h2>
+            <h2 className={styles.sectionHeading}>Active Bookings</h2>
             <div className={styles.bookingGrid}>
               {activeBookings.map(b => (
-                <div
-                  key={b._id}
-                  className={styles.bookingCard}
-                  onClick={() => navigate(`/booking/${b._id}`)}
-                >
-                  <img
-                    src={leadPhoto(b.car)}
-                    alt="Booking"
-                    className={styles.bookingImage}
-                  />
+                <div key={b.id} className={styles.bookingCard}>
+                  <img src={b.imageUrl} alt="booking" className={styles.bookingImage}/>
                   <div className={styles.bookingInfo}>
-                    <h3>{b.car.make} {b.car.model}</h3>
-                    <p>Hosted by {hostName(b)}</p>
-                    <p>
-                      {new Date(b.startDate).toLocaleDateString()} –{' '}
-                      {new Date(b.endDate).toLocaleDateString()}
-                    </p>
+                    <h3>{b.location}</h3>
+                    <p>Hosted by {b.hostName}</p>
+                    <p>{b.startDate} – {b.endDate}</p>
                   </div>
                 </div>
               ))}
@@ -137,25 +122,18 @@ export default function BookingsPage() {
           </section>
         )}
 
-        {/* Past Bookings */}
+        {/* Past bookings */}
         {hasPast && (
           <section className={styles.section}>
             <h2 className={styles.sectionHeading}>Where you’ve been</h2>
             <div className={styles.bookingGrid}>
               {pastBookings.map(b => (
-                <div key={b._id} className={styles.bookingCard}>
-                  <img
-                    src={leadPhoto(b.car)}
-                    alt="Past Booking"
-                    className={styles.bookingImage}
-                  />
+                <div key={b.id} className={styles.bookingCard}>
+                  <img src={b.imageUrl} alt="past booking" className={styles.bookingImage}/>
                   <div className={styles.bookingInfo}>
-                    <h3>{b.car.make} {b.car.model}</h3>
-                    <p>Hosted by {hostName(b)}</p>
-                    <p>
-                      {new Date(b.startDate).toLocaleDateString()} –{' '}
-                      {new Date(b.endDate).toLocaleDateString()}
-                    </p>
+                    <h3>{b.location}</h3>
+                    <p>Hosted by {b.hostName}</p>
+                    <p>{b.startDate} – {b.endDate}</p>
                   </div>
                 </div>
               ))}
