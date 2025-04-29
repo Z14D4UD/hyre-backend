@@ -34,6 +34,8 @@ import EditListing        from './pages/EditListing';
 import BusinessBookings   from './pages/BusinessBookings';
 import BusinessMessagesPage from './pages/BusinessMessagesPage';
 import ConnectBank        from './pages/ConnectBank';
+import PaymentSuccessPage from './pages/PaymentSuccessPage';
+
 
 export default function App() {
   return (
@@ -78,6 +80,8 @@ export default function App() {
       <Route path="/my-listings"          element={<MyListings />} />
       <Route path="/edit-listing/:id"     element={<EditListing />} />
       <Route path="/connect-bank"         element={<ConnectBank />} />
+      <Route path="/payment/confirmation" element={<PaymentSuccessPage/>} />
+
 
       {/* fallback */}
       <Route path="*" element={<div style={{ padding: '2rem' }}>404 – Not Found</div>} />
