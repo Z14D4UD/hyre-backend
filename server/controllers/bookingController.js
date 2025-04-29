@@ -32,8 +32,8 @@ exports.createBooking = async (req, res) => {
   } = req.body;
 
   try {
-    const lookupId = listingId || carId;
-    const listing  = await Listing.findById(lookupId);
+    const lookupId  = listingId || carId;
+    const listing   = await Listing.findById(lookupId);
     if (!listing) return res.status(404).json({ msg: 'Listing not found' });
 
     /* ── fetch customer name once so it is always present ── */
@@ -208,25 +208,9 @@ exports.updateBookingStatus = async (req, res) => {
 };
 
 /* ────────────────────────────────────────────────────────────── */
-/*  REMAINDER OF EXPORTS – unchanged from your previous file      */
+/*  PUBLIC: LIST ALL BOOKINGS                                    */
 /* ────────────────────────────────────────────────────────────── */
-exports.requestPayout = async (req, res) => {
-  if (!req.business) return res.status(401).json({ msg: 'Unauthorized' });
-  const businessId = req.business.id;
-  try {
-    const biz = await Business.findById(businessId);
-    if (!biz) return res.status(404).json({ msg: 'Business not found' });
-    const payoutAmount = biz.balance;
-    biz.balance = 0;
-    await biz.save();
-    return res.json({ msg: `Payout of $${payoutAmount.toFixed(2)} processed successfully.` });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).send('Server error');
-  }
-};
-
-exports.getBookings = async (req, res) => {
+exports.getBookings = async (_req, res) => {
   try {
     const bookings = await Booking.find({})
       .populate('car', 'make model')
@@ -239,6 +223,9 @@ exports.getBookings = async (req, res) => {
   }
 };
 
+/* ────────────────────────────────────────────────────────────── */
+/*  MY BOOKINGS (by role)                                        */
+/* ────────────────────────────────────────────────────────────── */
 exports.getMyBookings = async (req, res) => {
   try {
     let query = {};
@@ -263,6 +250,9 @@ exports.getMyBookings = async (req, res) => {
   }
 };
 
+/* ────────────────────────────────────────────────────────────── */
+/*  CUSTOMER’S BOOKINGS                                          */
+/* ────────────────────────────────────────────────────────────── */
 exports.getCustomerBookings = async (req, res) => {
   try {
     if (!req.customer) return res.status(401).json({ msg: 'Unauthorized' });
@@ -277,6 +267,26 @@ exports.getCustomerBookings = async (req, res) => {
   }
 };
 
+/* ────────────────────────────────────────────────────────────── */
+/*  SINGLE BOOKING – for payment success page                    */
+/* ────────────────────────────────────────────────────────────── */
+exports.getBookingById = async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id)
+      .populate('car', 'make model')
+      .populate('business', 'name email')
+      .populate('customer', 'name email');
+    if (!booking) return res.status(404).json({ msg: 'Booking not found' });
+    return res.json(booking);
+  } catch (err) {
+    console.error('Error fetching booking:', err);
+    return res.status(500).json({ msg: 'Server error fetching booking' });
+  }
+};
+
+/* ────────────────────────────────────────────────────────────── */
+/*  GENERATE PDF INVOICE                                         */
+/* ────────────────────────────────────────────────────────────── */
 exports.generateInvoice = async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id)

@@ -2,6 +2,8 @@
 const Conversation = require('../models/Conversation');
 const Message      = require('../models/Message');
 const Booking      = require('../models/Booking');
+const Customer     = require('../models/Customer');  // ← NEW
+const Business     = require('../models/Business');  // ← NEW
 
 exports.getConversations = async (req, res) => {
   try {
@@ -12,7 +14,7 @@ exports.getConversations = async (req, res) => {
       : null;
     if (!userId) return res.status(401).json({ msg: 'Not authorized' });
 
-    let query = { participants: userId };
+    let query     = { participants: userId };
     const filter     = req.query.filter || 'all';
     const searchTerm = req.query.search;
     if (searchTerm) {
@@ -22,13 +24,24 @@ exports.getConversations = async (req, res) => {
       ];
     }
 
-    let convos = await Conversation.find(query).sort({ updatedAt: -1 }).lean();
+    let convos = await Conversation.find(query)
+      .sort({ updatedAt: -1 })
+      .lean();
+
     for (let c of convos) {
+      // count unread
       c.unreadCount = await Message.countDocuments({
         conversation: c._id,
         readBy:       { $ne: userId },
       });
+      // populate displayName & avatarUrl of the *other* participant
+      const otherId = c.participants.find(id => id.toString() !== userId);
+      let user = await Customer.findById(otherId, 'name avatarUrl').lean()
+              || await Business.findById(otherId, 'name avatarUrl').lean();
+      c.displayName = user?.name || 'Conversation';
+      c.avatarUrl   = user?.avatarUrl || '/avatar.svg';
     }
+
     if (filter === 'unread') convos = convos.filter(c => c.unreadCount > 0);
     res.json(convos);
   } catch (error) {
@@ -52,7 +65,22 @@ exports.getMessages = async (req, res) => {
       .sort({ createdAt: 1 })
       .lean();
 
-    res.json({ conversation: convo, messages, bookingDetails });
+    // enrich each message with senderName + senderAvatar
+    const detailed = await Promise.all(messages.map(async m => {
+      let user;
+      if (m.senderModel === 'Customer') {
+        user = await Customer.findById(m.sender, 'name avatarUrl').lean();
+      } else {
+        user = await Business.findById(m.sender, 'name avatarUrl').lean();
+      }
+      return {
+        ...m,
+        senderName:   user?.name,
+        senderAvatar: user?.avatarUrl || '/avatar.svg'
+      };
+    }));
+
+    res.json({ conversation: convo, messages: detailed, bookingDetails });
   } catch (error) {
     console.error('Error fetching messages:', error);
     res.status(500).json({ msg: 'Server error fetching messages' });
@@ -86,7 +114,20 @@ exports.sendMessage = async (req, res) => {
       updatedAt:   new Date(),
     });
 
-    res.json(newMessage);
+    // attach name+avatar on the response as well
+    let user;
+    if (senderModel === 'Customer') {
+      user = await Customer.findById(userId, 'name avatarUrl').lean();
+    } else {
+      user = await Business.findById(userId, 'name avatarUrl').lean();
+    }
+    const result = {
+      ...newMessage.toObject(),
+      senderName:   user?.name,
+      senderAvatar: user?.avatarUrl || '/avatar.svg'
+    };
+
+    res.json(result);
   } catch (error) {
     console.error('Error sending message:', error);
     res.status(500).json({ msg: 'Server error sending message' });
