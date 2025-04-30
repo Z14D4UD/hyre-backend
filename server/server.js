@@ -27,6 +27,7 @@ const reviewRoutes        = require('./routes/reviewRoutes');
 const withdrawalRoutes    = require('./routes/withdrawalRoutes');
 const connectBankRoutes   = require('./routes/connectBankRoutes');
 const remindersRoutes     = require('./routes/remindersRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 const app    = express();
 const server = http.createServer(app);
@@ -77,6 +78,8 @@ app.use('/api/withdrawals',   withdrawalRoutes);
 app.use('/api/connect-bank',  connectBankRoutes);
 app.use('/api/reminders',     remindersRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/admin', adminRoutes);
+
 
 
 /* ───────────── 7. socket.io ─────── */

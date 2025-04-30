@@ -28,42 +28,53 @@ exports.requestWithdrawal = async (req, res) => {
       return res.status(400).json({ msg: 'Invalid withdrawal method' });
     }
 
-    // (Optional) Verify that the user/affiliate has enough funds here
-    // For example, for a business you might check `business.balance`
-    // and for an affiliate, you might check `affiliate.earnings` or a similar field.
+    // Fetch the business (or affiliate) record
+    let business;
+    if (accountType === 'business') {
+      business = await Business.findById(accountId);
+      if (!business) {
+        return res.status(404).json({ msg: 'Business not found' });
+      }
+      if (business.balance < withdrawalAmount) {
+        return res.status(400).json({ msg: 'Insufficient balance' });
+      }
+    }
+
+    // ── compute 5% service fee and net amount ─────────────────────────────
+    const serviceFee = withdrawalAmount * 0.05;
+    const netAmount  = withdrawalAmount - serviceFee;
 
     let payoutResult;
     if (method === 'paypal') {
       if (!details || !details.paypalEmail) {
         return res.status(400).json({ msg: 'PayPal email is required for withdrawal' });
       }
-      payoutResult = await createPayPalPayout(withdrawalAmount, "USD", details.paypalEmail);
+      // send only the net amount to user
+      payoutResult = await createPayPalPayout(netAmount, "USD", details.paypalEmail);
     } else if (method === 'bank') {
-      // For bank transfers, ensure the account is set up (this example assumes using Stripe transfers)
-      // You'll need the appropriate account ID; update as per your model.
-      // For businesses, you might use business.stripeAccountId.
-      // For affiliates, you might have a different field.
-      // Here, we assume business for demonstration purposes:
-      const business = await Business.findById(accountId);
-      if (!business || !business.stripeAccountId) {
+      if (!business.stripeAccountId) {
         return res.status(400).json({ msg: 'No connected bank account. Please connect your bank account first.' });
       }
-      payoutResult = await createStripeTransfer(withdrawalAmount, "USD", business.stripeAccountId);
+      // send only the net amount to user
+      payoutResult = await createStripeTransfer(netAmount, "USD", business.stripeAccountId);
     }
 
-    // Deduct the withdrawn amount from the appropriate balance and save in your model logic
-    // For example, for businesses:
+    // ── debit the full requested amount from business balance ──────────────
     if (accountType === 'business') {
-      const business = await Business.findById(accountId);
-      if (business.balance < withdrawalAmount) {
-        return res.status(400).json({ msg: 'Insufficient balance' });
-      }
       business.balance -= withdrawalAmount;
+      // Optionally record fee: e.g. business.totalFeesCollected = (business.totalFeesCollected || 0) + serviceFee;
       await business.save();
     }
-    // Similarly, if affiliates have a balance field or earnings field to deduct from.
 
-    res.json({ msg: 'Withdrawal request submitted successfully', payoutResult });
+    // You may also record the serviceFee into your platform's revenue tracking here
+
+    res.json({
+      msg: 'Withdrawal request submitted successfully',
+      requestedAmount: withdrawalAmount,
+      serviceFee,
+      netPaid: netAmount,
+      payoutResult
+    });
   } catch (error) {
     console.error('Error processing withdrawal:', error);
     res.status(500).json({ msg: 'Server error processing withdrawal' });
