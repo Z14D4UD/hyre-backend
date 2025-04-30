@@ -6,10 +6,10 @@ import styles from '../styles/BusinessMessagesPage.module.css';
 import axios from 'axios';
 
 export default function BusinessMessagesPage() {
-  const navigate    = useNavigate();
-  const token       = localStorage.getItem('token');
-  const acct        = localStorage.getItem('accountType');
-  const isBusiness  = token && acct === 'business';
+  const navigate   = useNavigate();
+  const token      = localStorage.getItem('token');
+  const acct       = localStorage.getItem('accountType');
+  const isBusiness= token && acct === 'business';
 
   const [menuOpen, setMenuOpen]           = useState(false);
   const [filter, setFilter]               = useState('all');
@@ -41,7 +41,7 @@ export default function BusinessMessagesPage() {
     setConversations(res.data);
   };
 
-  const selectConversation = async conv => {
+  const selectConversation = async (conv) => {
     setSelectedConv(conv);
     const res = await axios.get(
       `${backend}/chat/conversations/${conv._id}/messages`,
@@ -82,7 +82,9 @@ export default function BusinessMessagesPage() {
   return (
     <div className={styles.container}>
       <header className={styles.header}>
-        <div className={styles.logo} onClick={() => navigate('/')}>Hyre</div>
+        <div className={styles.logo} onClick={() => navigate('/')}>
+          <strong>{selectedConv?.name || 'Messages'}</strong>
+        </div>
         <button className={styles.menuIcon} onClick={() => setMenuOpen(o => !o)}>☰</button>
       </header>
 

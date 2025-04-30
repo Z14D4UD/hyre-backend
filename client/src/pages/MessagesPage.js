@@ -11,25 +11,16 @@ export default function MessagesPage() {
   const accountType = localStorage.getItem('accountType');
   const isCustomer  = token && accountType === 'customer';
 
-  // Side menu
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  // Filter & search
-  const [filter, setFilter]         = useState('all');
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-
-  // Conversations & messages
+  const [menuOpen, setMenuOpen]           = useState(false);
+  const [filter, setFilter]               = useState('all');
+  const [searchOpen, setSearchOpen]       = useState(false);
+  const [searchTerm, setSearchTerm]       = useState('');
   const [conversations, setConversations] = useState([]);
   const [selectedConv, setSelectedConv]   = useState(null);
   const [messages, setMessages]           = useState([]);
-
-  // New message
-  const [messageText, setMessageText] = useState('');
-  const [attachment, setAttachment]   = useState(null);
-
-  // Scroll ref
-  const endRef = useRef(null);
+  const [messageText, setMessageText]     = useState('');
+  const [attachment, setAttachment]       = useState(null);
+  const endRef                            = useRef(null);
 
   const backend = process.env.REACT_APP_BACKEND_URL || 'https://hyre-backend.onrender.com/api';
 
@@ -50,14 +41,13 @@ export default function MessagesPage() {
     setConversations(res.data);
   };
 
-  const selectConversation = async conv => {
+  const selectConversation = async (conv) => {
     setSelectedConv(conv);
     const res = await axios.get(
       `${backend}/chat/conversations/${conv._id}/messages`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
     setMessages(res.data.messages);
-    // mark read
     await axios.put(
       `${backend}/chat/conversations/${conv._id}/read`,
       {},
@@ -180,9 +170,11 @@ export default function MessagesPage() {
                     <div className={styles.messageText}>{msg.text}</div>
                     {msg.attachment && (
                       <div className={styles.attachmentWrapper}>
-                        <a href={`${backend}/${msg.attachment}`} target="_blank" rel="noreferrer">
-                          View Attachment
-                        </a>
+                        <a
+                          href={`${backend}/${msg.attachment}`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >View Attachment</a>
                       </div>
                     )}
                     <div className={styles.messageTimestamp}>
@@ -194,6 +186,7 @@ export default function MessagesPage() {
             })}
             <div ref={endRef}/>
           </div>
+
           {selectedConv && (
             <div className={styles.messageInputArea}>
               <textarea
@@ -207,11 +200,13 @@ export default function MessagesPage() {
                 className={styles.attachmentInput}
                 onChange={e => setAttachment(e.target.files[0])}
               />
-              <button className={styles.sendButton} onClick={handleSend}>Send</button>
+              <button className={styles.sendButton} onClick={handleSend}>
+                Send
+              </button>
             </div>
           )}
         </div>
       </div>
     </div>
-  );
+);
 }
