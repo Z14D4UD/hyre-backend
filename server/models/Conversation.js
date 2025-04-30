@@ -12,10 +12,12 @@ const ConversationSchema = new mongoose.Schema(
       {
         type: mongoose.Schema.Types.ObjectId,
         required: true,
-        refPath: 'participantModels'      // dynamic ref so we can populate name/avatar
+        refPath: 'participantModels'
       }
     ],
-    participantModels: [                   // parallel array indicating each ID’s model
+
+    /** parallel array indicating each ID’s model */
+    participantModels: [
       {
         type: String,
         enum: ['Customer', 'Business', 'Affiliate', 'Support']
@@ -31,7 +33,7 @@ const ConversationSchema = new mongoose.Schema(
     /** links the convo to a booking (so we can find / create by bookingId) */
     bookingId:   { type: mongoose.Schema.Types.ObjectId, ref: 'Booking' }
   },
-  { timestamps: true }               // adds createdAt + updatedAt
+  { timestamps: true } // adds createdAt + updatedAt
 );
 
 module.exports = mongoose.model('Conversation', ConversationSchema);

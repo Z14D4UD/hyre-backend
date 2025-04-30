@@ -59,13 +59,11 @@ exports.getMessages = async (req, res) => {
     const convo = await Conversation.findById(conversationId).lean();
     if (!convo) return res.status(404).json({ msg: 'Conversation not found' });
 
-    // Booking details (unchanged)
     let bookingDetails = null;
     if (convo.bookingId) {
       bookingDetails = await Booking.findById(convo.bookingId).lean();
     }
 
-    // Fetch messages
     let messages = await Message.find({ conversation: conversationId })
       .sort({ createdAt: 1 })
       .lean();
@@ -73,7 +71,7 @@ exports.getMessages = async (req, res) => {
     // Populate each sender’s name + avatar
     for (let m of messages) {
       let Model;
-      if (m.senderModel === 'Business')   Model = Business;
+      if (m.senderModel === 'Business')    Model = Business;
       else if (m.senderModel === 'Customer') Model = Customer;
       else if (m.senderModel === 'Affiliate') Model = Affiliate;
       const doc = await Model.findById(m.sender).select('name avatarUrl');
@@ -113,13 +111,12 @@ exports.sendMessage = async (req, res) => {
     });
     await newMessage.save();
 
-    // Update lastMessage on Conversation
     await Conversation.findByIdAndUpdate(conversationId, {
       lastMessage: text,
       updatedAt:   new Date(),
     });
 
-    // Populate sender info on response
+    // Return the message with sender info populated
     const SenderModel = senderModel === 'Business' ? Business : Customer;
     const doc         = await SenderModel.findById(userId).select('name avatarUrl');
     const payload     = {
