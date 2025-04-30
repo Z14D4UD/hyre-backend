@@ -12,18 +12,20 @@ exports.getAffiliateStats = async (req, res) => {
 
     const data = {
       last30Days: {
-        referrals: affiliate.recentReferrals || 0,
-        visits: affiliate.recentVisits || 0,
-        conversions: affiliate.conversions || 0,
+        referrals: affiliate.recentReferrals   || 0,
+        visits:    affiliate.recentVisits      || 0,
+        conversions: affiliate.conversions     || 0,
       },
       allTime: {
-        referrals: affiliate.referrals || 0,
-        paidReferrals: affiliate.paidReferrals || 0,
+        referrals:      affiliate.referrals      || 0,
+        paidReferrals:  affiliate.paidReferrals  || 0,
         unpaidEarnings: affiliate.unpaidEarnings || 0,
-        totalEarnings: affiliate.totalEarnings || 0,
+        totalEarnings:  affiliate.totalEarnings  || 0,
       },
-      affiliateCode: affiliate.affiliateCode, // the unique code for referrals
-      recentActivity: [] // populate with real activity if available
+      pendingBalance:   affiliate.pendingBalance   || 0,  // ← new
+      availableBalance: affiliate.availableBalance || 0,  // ← new
+      affiliateCode:    affiliate.affiliateCode,
+      recentActivity:   [] // populate with real activity if available
     };
 
     res.json(data);
@@ -54,19 +56,10 @@ exports.updateAffiliateProfile = async (req, res) => {
     console.log('req.body:', req.body);
     console.log('req.file:', req.file);
 
-    // Extract fields from the request body that affiliates are allowed to update.
     const { name, email, location, aboutMe, phoneNumber } = req.body;
 
-    // Build the update object from request body data.
-    let updateData = {
-      name,
-      email,
-      location,
-      aboutMe,
-      phoneNumber,
-    };
+    let updateData = { name, email, location, aboutMe, phoneNumber };
 
-    // If a file (avatar) was uploaded, update avatarUrl.
     if (req.file) {
       updateData.avatarUrl = req.file.path.replace(/\\/g, '/');
       console.log('Updating avatarUrl with file path:', updateData.avatarUrl);

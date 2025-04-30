@@ -1,8 +1,9 @@
 // server/controllers/businessController.js
-const mongoose     = require('mongoose');
-const Business     = require('../models/Business');
-const Booking      = require('../models/Booking');
-const Car          = require('../models/Car');
+
+const mongoose = require('mongoose');
+const Business = require('../models/Business');
+const Booking  = require('../models/Booking');
+const Car      = require('../models/Car');
 
 exports.verifyID = async (req, res) => {
   const businessId = req.business?.id;
@@ -75,7 +76,7 @@ exports.getStats = async (req, res) => {
     ]);
     const availableBalance = availableResult[0]?.total || 0;
 
-    // 7) Pending Payouts = sum of payouts for FUTURE bookings
+    // 7) Pending Balance = sum of payouts for FUTURE bookings
     const pendingResult = await Booking.aggregate([
       { $match: {
           business:  new mongoose.Types.ObjectId(businessId),
@@ -102,7 +103,7 @@ exports.getStats = async (req, res) => {
       rentedCars,
       activeCars,
       availableBalance,
-      pendingPayouts,
+      pendingBalance: pendingPayouts,      // ← renamed so React sees stats.pendingBalance
       rentStatus: {
         hired:     hiredCount,
         pending:   upcomingCount,

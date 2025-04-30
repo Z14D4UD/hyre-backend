@@ -1,4 +1,5 @@
 // server/controllers/bookingController.js
+
 const Booking      = require('../models/Booking');
 const Listing      = require('../models/Listing');
 const Business     = require('../models/Business');
@@ -10,7 +11,7 @@ const PDFDocument  = require('pdfkit');
 const {
   sendBookingApprovalEmail,
   sendBookingRejectionEmail,
-  sendBookingReceivedEmail            // ← NEW helper
+  sendBookingReceivedEmail
 } = require('../utils/mailer');
 
 /* ────────────────────────────────────────────────────────────── */
@@ -62,13 +63,15 @@ exports.createBooking = async (req, res) => {
       status:       'Pending'
     };
 
-    /* ── affiliate commission (unchanged) ── */
+    /* ── affiliate commission ── */
     if (affiliateCode) {
       const aff = await Affiliate.findOne({ affiliateCode: affiliateCode.toUpperCase() });
       if (!aff) return res.status(400).json({ msg: 'Invalid affiliate code' });
       bookingData.affiliate = aff._id;
-      const commission      = basePrice * 0.10;
-      aff.earnings         += commission;
+
+      const commission = basePrice * 0.10;
+      aff.earnings       += commission;
+      aff.pendingBalance += commission;            // ← new: credit pendingBalance
       await aff.save();
     }
 
@@ -76,14 +79,14 @@ exports.createBooking = async (req, res) => {
     const booking = new Booking(bookingData);
     await booking.save();
 
-    /* put funds in pendingBalance (unchanged) */
+    /* put funds in business pendingBalance ── */
     if (businessId) {
       await Business.findByIdAndUpdate(businessId, {
         $inc: { pendingBalance: payout }
       });
     }
 
-    /* ── immediate e-mail confirmation to customer (non-blocking) ── */
+    /* ── immediate e-mail confirmation to customer ── */
     try {
       await sendBookingReceivedEmail({
         customerEmail: cust.email,
@@ -96,9 +99,7 @@ exports.createBooking = async (req, res) => {
       console.warn('✉️  booking-received mail failed (ignored):', mailErr.message);
     }
 
-    /* ─────────────────────────────────────────────── */
-    /*  🔔 AUTOMATED CHAT CONVERSATION + MESSAGE       */
-    /* ─────────────────────────────────────────────── */
+    /* ── automated chat conversation + message ── */
     let convo = await Conversation.findOne({ bookingId: booking._id });
     if (!convo) {
       convo = await Conversation.create({
@@ -120,13 +121,12 @@ exports.createBooking = async (req, res) => {
       sender:       businessId,
       senderModel:  'Business',
       text:         msgText,
-      readBy:       [businessId]           // customer sees it as UNREAD
+      readBy:       [businessId]
     });
 
     convo.lastMessage = msg.text;
     convo.updatedAt   = Date.now();
     await convo.save();
-    /* ─────────────────────────────────────────────── */
 
     return res.json({ booking });
   } catch (error) {
@@ -134,6 +134,7 @@ exports.createBooking = async (req, res) => {
     return res.status(500).send('Server error');
   }
 };
+
 
 /* ────────────────────────────────────────────────────────────── */
 /*  UPDATE BOOKING STATUS – business clicks Approve / Reject     */
@@ -151,7 +152,7 @@ exports.updateBookingStatus = async (req, res) => {
     booking.status = status;
     await booking.save();
 
-    /* ── optional e-mail notification (ignored if fails) ── */
+    /* optional e-mail notification */
     const emailData = {
       customerEmail: booking.customer?.email,
       customerName:  booking.customer?.name || booking.customerName,
@@ -168,9 +169,7 @@ exports.updateBookingStatus = async (req, res) => {
       console.warn('✉️  email failed (ignored):', mailErr.message);
     }
 
-    /* ─────────────────────────────────────────────── */
-    /*  send automated chat message                    */
-    /* ─────────────────────────────────────────────── */
+    /* automated chat message */
     let convo = await Conversation.findOne({ bookingId: booking._id });
     if (!convo) {
       convo = await Conversation.create({
@@ -182,23 +181,20 @@ exports.updateBookingStatus = async (req, res) => {
 
     const msgText =
       status === 'Active'
-        ? `✅ Your booking ${booking._id} has been *approved*.\n\n` +
-          `See you on ${new Date(booking.startDate).toLocaleDateString()}!`
-        : `❌ Unfortunately, your booking ${booking._id} has been *rejected*.\n\n` +
-          `Feel free to reply here if you have any questions.`;
+        ? `✅ Your booking ${booking._id} has been *approved*.\n\nSee you on ${new Date(booking.startDate).toLocaleDateString()}!`
+        : `❌ Unfortunately, your booking ${booking._id} has been *rejected*.\n\nFeel free to reply here if you have any questions.`;
 
     const msg = await Message.create({
       conversation: convo._id,
       sender:       booking.business._id,
       senderModel:  'Business',
       text:         msgText,
-      readBy:       [booking.business._id]   // customer sees UNREAD badge
+      readBy:       [booking.business._id]
     });
 
     convo.lastMessage = msg.text;
     convo.updatedAt   = Date.now();
     await convo.save();
-    /* ─────────────────────────────────────────────── */
 
     return res.json({ booking });
   } catch (error) {
@@ -206,6 +202,7 @@ exports.updateBookingStatus = async (req, res) => {
     return res.status(500).json({ msg: 'Server error while updating status' });
   }
 };
+
 
 /* ────────────────────────────────────────────────────────────── */
 /*  PAYOUT REQUEST – business withdraws their available balance  */
@@ -226,6 +223,7 @@ exports.requestPayout = async (req, res) => {
   }
 };
 
+
 /* ────────────────────────────────────────────────────────────── */
 /*  PUBLIC: LIST ALL BOOKINGS                                    */
 /* ────────────────────────────────────────────────────────────── */
@@ -241,6 +239,7 @@ exports.getBookings = async (_req, res) => {
     return res.status(500).send('Server error');
   }
 };
+
 
 /* ────────────────────────────────────────────────────────────── */
 /*  MY BOOKINGS (by role)                                        */
@@ -269,6 +268,7 @@ exports.getMyBookings = async (req, res) => {
   }
 };
 
+
 /* ────────────────────────────────────────────────────────────── */
 /*  CUSTOMER’S BOOKINGS                                          */
 /* ────────────────────────────────────────────────────────────── */
@@ -276,8 +276,8 @@ exports.getCustomerBookings = async (req, res) => {
   try {
     if (!req.customer) return res.status(401).json({ msg: 'Unauthorized' });
     const bookings = await Booking.find({ customer: req.customer.id })
-      .populate('car', 'make model images')     // include first image
-      .populate('business', 'name email')       // host name
+      .populate('car', 'make model images')
+      .populate('business', 'name email')
       .populate('customer', 'name email');
     return res.json(bookings);
   } catch (error) {
@@ -285,6 +285,7 @@ exports.getCustomerBookings = async (req, res) => {
     return res.status(500).send('Server error');
   }
 };
+
 
 /* ────────────────────────────────────────────────────────────── */
 /*  SINGLE BOOKING – for payment success page                    */
@@ -302,6 +303,7 @@ exports.getBookingById = async (req, res) => {
     return res.status(500).json({ msg: 'Server error fetching booking' });
   }
 };
+
 
 /* ────────────────────────────────────────────────────────────── */
 /*  GENERATE PDF INVOICE                                         */
