@@ -462,6 +462,21 @@ export default function AddListing() {
             </div>
           </details>
 
+          
+          {/* Section 9: Cancellation Policy (NEW) */}
+          <details className={styles.section} open>
+            <summary className={styles.sectionHeading}>Cancellation Policy</summary>
+            <div className={styles.subSection}>
+              <label className={styles.label}>Enter Cancellation Policy</label>
+              <textarea
+                className={styles.textArea}
+                placeholder="Enter your cancellation policy..."
+                value={cancellationPolicy}
+                onChange={(e) => setCancellationPolicy(e.target.value)}
+              />
+            </div>
+          </details>
+
           <button type="submit" className={styles.submitButton}>
             Agree & List
           </button>

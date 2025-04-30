@@ -1,4 +1,3 @@
-// client/src/pages/Signup.js
 import React, { useState }     from 'react';
 import axios                   from 'axios';
 import { jwtDecode } from 'jwt-decode';
@@ -15,10 +14,19 @@ export default function Signup() {
   const [password, setPassword] = useState('');
   const [role,     setRole]     = useState('customer');   // default
 
+  // NEW: state for the 5% fee acknowledgement
+  const [ackFee,   setAckFee]   = useState(false);
+
   const goHome = () => navigate('/');
 
   const handleSignup = async (e) => {
     e.preventDefault();
+
+    // If business, ensure they tick the fee acknowledgement
+    if (role === 'business' && !ackFee) {
+      return alert('You must acknowledge Hyre’s 5% success fee to sign up as a business.');
+    }
+
     try {
       const { data } = await axios.post(
         `${process.env.REACT_APP_BACKEND_URL}/auth/signup`,
@@ -109,6 +117,23 @@ export default function Signup() {
               I accept the terms and policy
             </label>
           </div>
+
+          {/* NEW: only show this if signing up as business */}
+          {role === 'business' && (
+            <div className={styles.checkboxContainer}>
+              <input
+                id="ackFee"
+                type="checkbox"
+                className={styles.checkbox}
+                checked={ackFee}
+                onChange={e => setAckFee(e.target.checked)}
+                required
+              />
+              <label htmlFor="ackFee" className={styles.checkboxLabel}>
+                I acknowledge and agree that Hyre charges a 5% success fee from each completed booking. The service fee will be deducted automatically from my payouts
+              </label>
+            </div>
+          )}
 
           <div className={styles.extraRow}>
             Already have an account?
