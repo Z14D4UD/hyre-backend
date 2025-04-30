@@ -1,7 +1,7 @@
 // client/src/pages/Login.js
 import React, { useState }           from 'react';
 import axios                         from 'axios';
-import { jwtDecode } from 'jwt-decode';
+import { jwtDecode }                 from 'jwt-decode';
 import { useNavigate, Link }         from 'react-router-dom';
 import { useTranslation }            from 'react-i18next';
 import styles                        from '../styles/Login.module.css';
@@ -40,8 +40,19 @@ export default function Login() {
         if (decoded.id) localStorage.setItem(key, decoded.id);
       } catch { /* ignore */ }
 
-      /* navigate ------------------------------------- */
-      navigate('/');
+      /* decide where to send them -------------------- */
+      let dest = data.redirectUrl;                 // backend may give one
+      if (!dest) {
+        switch (data.accountType) {
+          case 'admin':     dest = '/dashboard/admin';     break;
+          case 'business':  dest = '/dashboard/business';  break;
+          case 'customer':  dest = '/dashboard/customer';  break;
+          case 'affiliate': dest = '/dashboard/affiliate'; break;
+          default:          dest = '/';
+        }
+      }
+
+      navigate(dest);
     } catch (err) {
       console.error(err.response?.data || err);
       alert(err.response?.data?.msg || 'Login failed');
