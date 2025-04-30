@@ -1,11 +1,11 @@
 // server/controllers/authController.js
 
-const Business = require('../models/Business');
-const Customer = require('../models/Customer');
+const Business  = require('../models/Business');
+const Customer  = require('../models/Customer');
 const Affiliate = require('../models/Affiliate');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
-const crypto = require('crypto');
+const jwt       = require('jsonwebtoken');
+const bcrypt    = require('bcryptjs');
+const crypto    = require('crypto');
 const sendEmail = require('../utils/sendEmail');
 
 // Helper to generate random tokens for email confirmation
@@ -50,6 +50,7 @@ const signup = async (req, res) => {
         msg: 'Signup successful. Please check your email to confirm your account.',
         redirectUrl: '/dashboard/business'
       });
+
     } else if (accountType === 'customer') {
       let customer = await Customer.findOne({ email });
       if (customer) return res.status(400).json({ msg: 'Customer already exists' });
@@ -71,6 +72,7 @@ const signup = async (req, res) => {
         msg: 'Customer signup successful.',
         redirectUrl: '/dashboard/customer'
       });
+
     } else if (accountType === 'affiliate') {
       let affiliate = await Affiliate.findOne({ email });
       if (affiliate) return res.status(400).json({ msg: 'Affiliate already exists' });
@@ -98,6 +100,37 @@ const signup = async (req, res) => {
         msg: 'Affiliate signup successful.',
         redirectUrl: '/dashboard/affiliate'
       });
+
+    } else if (accountType === 'admin') {
+      // ADMIN signup (you must manually seed one admin in DB; this allows additional)
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
+
+      // store admin in Business collection with special flag, or separate Admin model if desired
+      let existing = await Business.findOne({ email, role: 'admin' });
+      if (existing) return res.status(400).json({ msg: 'Admin already exists' });
+
+      const admin = new Business({
+        name,
+        email,
+        password: hashedPassword,
+        verified: true,
+        role: 'admin'
+      });
+      await admin.save();
+
+      const token = jwt.sign(
+        { id: admin._id, accountType: 'admin' },
+        process.env.JWT_SECRET,
+        { expiresIn: '1h' }
+      );
+      return res.json({
+        token,
+        admin,
+        msg: 'Admin signup successful.',
+        redirectUrl: '/dashboard/admin'
+      });
+
     } else {
       return res.status(400).json({ msg: 'Invalid account type' });
     }
@@ -111,8 +144,12 @@ const signup = async (req, res) => {
 const login = async (req, res) => {
   const { email, password } = req.body;
   try {
-    let user = await Business.findOne({ email });
-    let accountType = 'business';
+    let user;
+    let accountType;
+
+    // try each
+    user = await Business.findOne({ email, role: { $ne: 'admin' } });
+    accountType = 'business';
     if (!user) {
       user = await Customer.findOne({ email });
       accountType = 'customer';
@@ -120,6 +157,10 @@ const login = async (req, res) => {
     if (!user) {
       user = await Affiliate.findOne({ email });
       accountType = 'affiliate';
+    }
+    if (!user) {
+      user = await Business.findOne({ email, role: 'admin' });
+      accountType = 'admin';
     }
     if (!user) {
       return res.status(400).json({ msg: 'Invalid credentials' });
@@ -137,9 +178,10 @@ const login = async (req, res) => {
     );
 
     let redirectUrl = '/dashboard';
-    if (accountType === 'business') redirectUrl = '/dashboard/business';
+    if (accountType === 'business')   redirectUrl = '/dashboard/business';
     else if (accountType === 'customer') redirectUrl = '/dashboard/customer';
     else if (accountType === 'affiliate') redirectUrl = '/dashboard/affiliate';
+    else if (accountType === 'admin')     redirectUrl = '/dashboard/admin';
 
     return res.json({ token, user, accountType, redirectUrl });
   } catch (error) {
