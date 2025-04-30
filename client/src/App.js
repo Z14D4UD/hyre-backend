@@ -35,6 +35,8 @@ import BusinessBookings   from './pages/BusinessBookings';
 import BusinessMessagesPage from './pages/BusinessMessagesPage';
 import ConnectBank        from './pages/ConnectBank';
 import PaymentSuccessPage from './pages/PaymentSuccessPage';
+import AdminDashboard from './pages/AdminDashboard';
+
 
 
 export default function App() {
@@ -81,6 +83,8 @@ export default function App() {
       <Route path="/edit-listing/:id"     element={<EditListing />} />
       <Route path="/connect-bank"         element={<ConnectBank />} />
       <Route path="/payment/confirmation" element={<PaymentSuccessPage/>} />
+      <Route path="/dashboard/admin" element={<AdminDashboard />} />
+
 
 
       {/* fallback */}
