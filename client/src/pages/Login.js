@@ -1,7 +1,7 @@
 // client/src/pages/Login.js
 import React, { useState }           from 'react';
 import axios                         from 'axios';
-import jwtDecode                     from 'jwt-decode';      // ← new
+import { jwtDecode } from 'jwt-decode';
 import { useNavigate, Link }         from 'react-router-dom';
 import { useTranslation }            from 'react-i18next';
 import styles                        from '../styles/Login.module.css';

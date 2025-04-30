@@ -1,7 +1,7 @@
 // client/src/pages/Signup.js
 import React, { useState }     from 'react';
 import axios                   from 'axios';
-import jwtDecode               from 'jwt-decode';      // ← new
+import { jwtDecode } from 'jwt-decode';
 import { useNavigate }         from 'react-router-dom';
 import { useTranslation }      from 'react-i18next';
 import styles                  from '../styles/Signup.module.css';
