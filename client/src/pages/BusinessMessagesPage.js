@@ -1,53 +1,61 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { FaSearch } from 'react-icons/fa';
-import SideMenuBusiness from '../components/SideMenuBusiness';
-import styles from '../styles/BusinessMessagesPage.module.css';
-import axios from 'axios';
+// client/src/pages/BusinessMessagesPage.js
+import React, { useEffect, useState, useRef, useMemo } from 'react';
+import axios                  from 'axios';
+import jwtDecode              from 'jwt-decode';
+import { useNavigate }        from 'react-router-dom';
+import { FaSearch }           from 'react-icons/fa';
+import SideMenuBusiness       from '../components/SideMenuBusiness';
+import styles                 from '../styles/BusinessMessagesPage.module.css';
 
 export default function BusinessMessagesPage() {
   const navigate   = useNavigate();
-  const token      = localStorage.getItem('token');
+  const token      = localStorage.getItem('token') || '';
   const acct       = localStorage.getItem('accountType');
-  const isBusiness= token && acct === 'business';
+  const isBiz      = token && acct === 'business';
 
+  const myBizId    = useMemo(() => {
+    try { return jwtDecode(token).id; } catch { return null; }
+  }, [token]);
+
+  /* ---------- state ---------- */
   const [menuOpen, setMenuOpen]           = useState(false);
-  const [filter, setFilter]               = useState('all');
+  const [filter,   setFilter]             = useState('all');
   const [searchOpen, setSearchOpen]       = useState(false);
   const [searchTerm, setSearchTerm]       = useState('');
   const [conversations, setConversations] = useState([]);
   const [selectedConv, setSelectedConv]   = useState(null);
   const [messages, setMessages]           = useState([]);
   const [messageText, setMessageText]     = useState('');
-  const [attachment, setAttachment]       = useState(null);
+  const [attachment,  setAttachment]      = useState(null);
   const endRef                            = useRef(null);
 
-  const backend = process.env.REACT_APP_BACKEND_URL || 'https://hyre-backend.onrender.com/api';
+  const backend = process.env.REACT_APP_BACKEND_URL ||
+                  'https://hyre-backend.onrender.com/api';
 
+  /* ---------- effects ---------- */
   useEffect(() => {
-    if (!isBusiness) {
-      alert('Please log in as a business');
-      navigate('/');
-      return;
-    }
+    if (!isBiz) { navigate('/'); return; }
     fetchConversations();
-  }, [isBusiness, filter, searchTerm]);
+    // eslint-disable-next-line
+  }, [isBiz, filter, searchTerm]);
 
+  /* ---------- helpers ---------- */
   const fetchConversations = async () => {
-    const res = await axios.get(
+    const { data } = await axios.get(
       `${backend}/chat/conversations?filter=${filter}&search=${encodeURIComponent(searchTerm)}`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
-    setConversations(res.data);
+    setConversations(data);
   };
 
   const selectConversation = async (conv) => {
     setSelectedConv(conv);
-    const res = await axios.get(
+    const { data } = await axios.get(
       `${backend}/chat/conversations/${conv._id}/messages`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
-    setMessages(res.data.messages);
+    setMessages(data.messages);
+
     await axios.put(
       `${backend}/chat/conversations/${conv._id}/read`,
       {},
@@ -58,11 +66,12 @@ export default function BusinessMessagesPage() {
 
   const sendMessage = async () => {
     if (!selectedConv || (!messageText && !attachment)) return;
+
     const form = new FormData();
     form.append('text', messageText);
     if (attachment) form.append('attachment', attachment);
 
-    const res = await axios.post(
+    const { data } = await axios.post(
       `${backend}/chat/conversations/${selectedConv._id}/messages`,
       form,
       {
@@ -72,113 +81,115 @@ export default function BusinessMessagesPage() {
         }
       }
     );
-    setMessages(msgs => [...msgs, res.data]);
+    setMessages(prev => [...prev, data]);
     setMessageText('');
     setAttachment(null);
     fetchConversations();
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  /* ---------- render ---------- */
+  const fullAvatar = (u) => u ? `${backend}/${u}` : '/default-avatar.png';
+
   return (
     <div className={styles.container}>
+      {/* header */}
       <header className={styles.header}>
         <div className={styles.logo} onClick={() => navigate('/')}>
           <strong>{selectedConv?.name || 'Messages'}</strong>
         </div>
-        <button className={styles.menuIcon} onClick={() => setMenuOpen(o => !o)}>☰</button>
+        <button className={styles.menuIcon} onClick={() => setMenuOpen(!menuOpen)}>☰</button>
       </header>
 
+      {/* side-menu */}
       <SideMenuBusiness
         isOpen={menuOpen}
-        toggleMenu={() => setMenuOpen(o => !o)}
+        toggleMenu={() => setMenuOpen(!menuOpen)}
         closeMenu={() => setMenuOpen(false)}
       />
 
       <div className={styles.content}>
-        {/* Left Pane */}
+        {/* ---------- LEFT PANE ---------- */}
         <div className={styles.leftPane}>
           <div className={styles.messagesHeader}>
             <h2>Messages</h2>
             <div className={styles.filterRow}>
               <button
-                className={`${styles.filterButton} ${filter === 'all' ? styles.activeFilter : ''}`}
+                className={`${styles.filterButton} ${filter==='all' && styles.activeFilter}`}
                 onClick={() => setFilter('all')}
               >All</button>
               <button
-                className={`${styles.filterButton} ${filter === 'unread' ? styles.activeFilter : ''}`}
+                className={`${styles.filterButton} ${filter==='unread' && styles.activeFilter}`}
                 onClick={() => setFilter('unread')}
               >Unread</button>
               <button className={styles.searchIconBtn} onClick={() => setSearchOpen(true)}>
                 <FaSearch/>
               </button>
             </div>
+
             {searchOpen && (
               <div className={styles.searchRow}>
                 <input
-                  type="text"
-                  placeholder="Search..."
                   className={styles.searchInput}
+                  placeholder="Search..."
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
                 />
-                <button
-                  className={styles.cancelSearchBtn}
-                  onClick={() => setSearchOpen(false)}
-                >Cancel</button>
+                <button className={styles.cancelSearchBtn} onClick={() => setSearchOpen(false)}>
+                  Cancel
+                </button>
               </div>
             )}
           </div>
+
           <div className={styles.conversationList}>
-            {conversations.map(conv => {
-              const isSel = selectedConv?._id === conv._id;
+            {conversations.map(c => {
+              const sel = selectedConv?._id === c._id;
               return (
                 <div
-                  key={conv._id}
-                  className={`${styles.conversationItem} ${isSel ? styles.selectedConv : ''}`}
-                  onClick={() => selectConversation(conv)}
+                  key={c._id}
+                  className={`${styles.conversationItem} ${sel && styles.selectedConv}`}
+                  onClick={() => selectConversation(c)}
                 >
-                  <img src={conv.avatarUrl} alt="" className={styles.convAvatar}/>
+                  <img src={fullAvatar(c.avatarUrl)} alt="" className={styles.convAvatar}/>
                   <div className={styles.convoText}>
-                    <div className={styles.conversationTitle}>{conv.name}</div>
-                    <div className={styles.conversationSnippet}>{conv.lastMessage || '–'}</div>
+                    <div className={styles.conversationTitle}>{c.name}</div>
+                    <div className={styles.conversationSnippet}>{c.lastMessage || '—'}</div>
                   </div>
-                  {conv.unreadCount > 0 && (
-                    <div className={styles.unreadBadge}>{conv.unreadCount}</div>
+                  {c.unreadCount > 0 && (
+                    <div className={styles.unreadBadge}>{c.unreadCount}</div>
                   )}
                 </div>
               );
             })}
-            {conversations.length === 0 && (
+            {!conversations.length && (
               <div className={styles.noConversations}>No conversations yet.</div>
             )}
           </div>
         </div>
 
-        {/* Right Pane */}
+        {/* ---------- RIGHT PANE ---------- */}
         <div className={styles.rightPane}>
           <div className={styles.messageThread}>
-            {messages.map(msg => {
-              const mine = msg.sender._id === localStorage.getItem('businessId');
+            {messages.map(m => {
+              const mine   = m.sender._id === myBizId;
+              const bubble = mine ? styles.myMessage : styles.theirMessage;
               return (
-                <div
-                  key={msg._id}
-                  className={`${styles.messageItem} ${mine ? styles.myMessage : styles.theirMessage}`}
-                >
-                  <img src={msg.sender.avatarUrl} alt="" className={styles.msgAvatar}/>
+                <div key={m._id} className={`${styles.messageItem} ${bubble}`}>
+                  <img src={fullAvatar(m.sender.avatarUrl)} alt="" className={styles.msgAvatar}/>
                   <div className={styles.messageBubble}>
-                    <div className={styles.msgName}>{msg.sender.name}</div>
-                    <div className={styles.messageText}>{msg.text}</div>
-                    {msg.attachment && (
+                    <div className={styles.msgName}>{m.sender.name}</div>
+                    <div className={styles.messageText}>{m.text}</div>
+
+                    {m.attachment && (
                       <div className={styles.attachmentWrapper}>
-                        <a
-                          href={`${backend}/${msg.attachment}`}
-                          target="_blank"
-                          rel="noreferrer"
-                        >View Attachment</a>
+                        <a href={`${backend}/${m.attachment}`} target="_blank"
+                           rel="noreferrer">View Attachment</a>
                       </div>
                     )}
+
                     <div className={styles.messageTimestamp}>
-                      {new Date(msg.createdAt).toLocaleString()}
+                      {new Date(m.createdAt).toLocaleString()}
                     </div>
                   </div>
                 </div>
@@ -187,6 +198,7 @@ export default function BusinessMessagesPage() {
             <div ref={endRef}/>
           </div>
 
+          {/* input */}
           {selectedConv && (
             <div className={styles.messageInputArea}>
               <textarea
@@ -200,9 +212,7 @@ export default function BusinessMessagesPage() {
                 className={styles.attachmentInput}
                 onChange={e => setAttachment(e.target.files[0])}
               />
-              <button className={styles.sendButton} onClick={sendMessage}>
-                Send
-              </button>
+              <button className={styles.sendButton} onClick={sendMessage}>Send</button>
             </div>
           )}
         </div>
