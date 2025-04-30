@@ -3,6 +3,7 @@
 const Business  = require('../models/Business');
 const Customer  = require('../models/Customer');
 const Affiliate = require('../models/Affiliate');
+const Admin     = require('../models/Admin');           // ← NEW
 const jwt       = require('jsonwebtoken');
 const bcrypt    = require('bcryptjs');
 const crypto    = require('crypto');
@@ -50,7 +51,6 @@ const signup = async (req, res) => {
         msg: 'Signup successful. Please check your email to confirm your account.',
         redirectUrl: '/dashboard/business'
       });
-
     } else if (accountType === 'customer') {
       let customer = await Customer.findOne({ email });
       if (customer) return res.status(400).json({ msg: 'Customer already exists' });
@@ -72,7 +72,6 @@ const signup = async (req, res) => {
         msg: 'Customer signup successful.',
         redirectUrl: '/dashboard/customer'
       });
-
     } else if (accountType === 'affiliate') {
       let affiliate = await Affiliate.findOne({ email });
       if (affiliate) return res.status(400).json({ msg: 'Affiliate already exists' });
@@ -100,37 +99,6 @@ const signup = async (req, res) => {
         msg: 'Affiliate signup successful.',
         redirectUrl: '/dashboard/affiliate'
       });
-
-    } else if (accountType === 'admin') {
-      // ADMIN signup (you must manually seed one admin in DB; this allows additional)
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(password, salt);
-
-      // store admin in Business collection with special flag, or separate Admin model if desired
-      let existing = await Business.findOne({ email, role: 'admin' });
-      if (existing) return res.status(400).json({ msg: 'Admin already exists' });
-
-      const admin = new Business({
-        name,
-        email,
-        password: hashedPassword,
-        verified: true,
-        role: 'admin'
-      });
-      await admin.save();
-
-      const token = jwt.sign(
-        { id: admin._id, accountType: 'admin' },
-        process.env.JWT_SECRET,
-        { expiresIn: '1h' }
-      );
-      return res.json({
-        token,
-        admin,
-        msg: 'Admin signup successful.',
-        redirectUrl: '/dashboard/admin'
-      });
-
     } else {
       return res.status(400).json({ msg: 'Invalid account type' });
     }
@@ -144,24 +112,26 @@ const signup = async (req, res) => {
 const login = async (req, res) => {
   const { email, password } = req.body;
   try {
-    let user;
-    let accountType;
+    // → 1) try Admin first
+    let user = await Admin.findOne({ email });
+    let accountType = 'admin';
 
-    // try each
-    user = await Business.findOne({ email, role: { $ne: 'admin' } });
-    accountType = 'business';
+    // → 2) then Business
+    if (!user) {
+      user = await Business.findOne({ email });
+      accountType = 'business';
+    }
+    // → 3) then Customer
     if (!user) {
       user = await Customer.findOne({ email });
       accountType = 'customer';
     }
+    // → 4) then Affiliate
     if (!user) {
       user = await Affiliate.findOne({ email });
       accountType = 'affiliate';
     }
-    if (!user) {
-      user = await Business.findOne({ email, role: 'admin' });
-      accountType = 'admin';
-    }
+
     if (!user) {
       return res.status(400).json({ msg: 'Invalid credentials' });
     }
@@ -177,11 +147,12 @@ const login = async (req, res) => {
       { expiresIn: '1h' }
     );
 
+    // decide where to send them on successful login
     let redirectUrl = '/dashboard';
-    if (accountType === 'business')   redirectUrl = '/dashboard/business';
-    else if (accountType === 'customer') redirectUrl = '/dashboard/customer';
-    else if (accountType === 'affiliate') redirectUrl = '/dashboard/affiliate';
-    else if (accountType === 'admin')     redirectUrl = '/dashboard/admin';
+    if (accountType === 'admin')      redirectUrl = '/dashboard/admin';
+    else if (accountType === 'business')   redirectUrl = '/dashboard/business';
+    else if (accountType === 'customer')   redirectUrl = '/dashboard/customer';
+    else if (accountType === 'affiliate')  redirectUrl = '/dashboard/affiliate';
 
     return res.json({ token, user, accountType, redirectUrl });
   } catch (error) {
@@ -223,17 +194,9 @@ const confirmEmail = async (req, res) => {
   }
 };
 
-const forgotPassword = async (req, res) => {
-  res.json({ msg: 'forgotPassword not implemented yet.' });
-};
-
-const resetPassword = async (req, res) => {
-  res.json({ msg: 'resetPassword not implemented yet.' });
-};
-
-const googleCallback = (req, res) => {
-  res.json({ msg: 'googleCallback not implemented yet.' });
-};
+const forgotPassword  = async (req, res) => { res.json({ msg: 'forgotPassword not implemented yet.' }); };
+const resetPassword   = async (req, res) => { res.json({ msg: 'resetPassword not implemented yet.' }); };
+const googleCallback  = (req, res)    => { res.json({ msg: 'googleCallback not implemented yet.' }); };
 
 module.exports = {
   signup,
