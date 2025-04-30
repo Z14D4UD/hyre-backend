@@ -1,16 +1,15 @@
-// client/src/pages/BusinessMessagesPage.js
 import React, { useEffect, useState, useRef } from 'react';
-import { useNavigate }            from 'react-router-dom';
-import { FaSearch }               from 'react-icons/fa';
-import SideMenuBusiness           from '../components/SideMenuBusiness';
-import styles                     from '../styles/BusinessMessagesPage.module.css';
-import axios                       from 'axios';
+import { useNavigate } from 'react-router-dom';
+import { FaSearch } from 'react-icons/fa';
+import SideMenuBusiness from '../components/SideMenuBusiness';
+import styles from '../styles/BusinessMessagesPage.module.css';
+import axios from 'axios';
 
 export default function BusinessMessagesPage() {
-  const navigate   = useNavigate();
-  const token      = localStorage.getItem('token');
-  const acct       = localStorage.getItem('accountType');
-  const isBusiness= token && acct === 'business';
+  const navigate    = useNavigate();
+  const token       = localStorage.getItem('token');
+  const acct        = localStorage.getItem('accountType');
+  const isBusiness  = token && acct === 'business';
 
   const [menuOpen, setMenuOpen]           = useState(false);
   const [filter, setFilter]               = useState('all');
@@ -84,13 +83,13 @@ export default function BusinessMessagesPage() {
     <div className={styles.container}>
       <header className={styles.header}>
         <div className={styles.logo} onClick={() => navigate('/')}>Hyre</div>
-        <button className={styles.menuIcon} onClick={()=>setMenuOpen(o=>!o)}>☰</button>
+        <button className={styles.menuIcon} onClick={() => setMenuOpen(o => !o)}>☰</button>
       </header>
 
       <SideMenuBusiness
         isOpen={menuOpen}
-        toggleMenu={()=>setMenuOpen(o=>!o)}
-        closeMenu={()=>setMenuOpen(false)}
+        toggleMenu={() => setMenuOpen(o => !o)}
+        closeMenu={() => setMenuOpen(false)}
       />
 
       <div className={styles.content}>
@@ -100,14 +99,14 @@ export default function BusinessMessagesPage() {
             <h2>Messages</h2>
             <div className={styles.filterRow}>
               <button
-                className={`${styles.filterButton} ${filter==='all'?styles.activeFilter:''}`}
-                onClick={()=>setFilter('all')}
+                className={`${styles.filterButton} ${filter === 'all' ? styles.activeFilter : ''}`}
+                onClick={() => setFilter('all')}
               >All</button>
               <button
-                className={`${styles.filterButton} ${filter==='unread'?styles.activeFilter:''}`}
-                onClick={()=>setFilter('unread')}
+                className={`${styles.filterButton} ${filter === 'unread' ? styles.activeFilter : ''}`}
+                onClick={() => setFilter('unread')}
               >Unread</button>
-              <button className={styles.searchIconBtn} onClick={()=>setSearchOpen(true)}>
+              <button className={styles.searchIconBtn} onClick={() => setSearchOpen(true)}>
                 <FaSearch/>
               </button>
             </div>
@@ -118,36 +117,36 @@ export default function BusinessMessagesPage() {
                   placeholder="Search..."
                   className={styles.searchInput}
                   value={searchTerm}
-                  onChange={e=>setSearchTerm(e.target.value)}
+                  onChange={e => setSearchTerm(e.target.value)}
                 />
                 <button
                   className={styles.cancelSearchBtn}
-                  onClick={()=>setSearchOpen(false)}
+                  onClick={() => setSearchOpen(false)}
                 >Cancel</button>
               </div>
             )}
           </div>
           <div className={styles.conversationList}>
             {conversations.map(conv => {
-              const isSel = selectedConv?._id===conv._id;
+              const isSel = selectedConv?._id === conv._id;
               return (
                 <div
                   key={conv._id}
-                  className={`${styles.conversationItem} ${isSel?styles.selectedConv:''}`}
-                  onClick={()=>selectConversation(conv)}
+                  className={`${styles.conversationItem} ${isSel ? styles.selectedConv : ''}`}
+                  onClick={() => selectConversation(conv)}
                 >
                   <img src={conv.avatarUrl} alt="" className={styles.convAvatar}/>
                   <div className={styles.convoText}>
                     <div className={styles.conversationTitle}>{conv.name}</div>
-                    <div className={styles.conversationSnippet}>{conv.lastMessage||'–'}</div>
+                    <div className={styles.conversationSnippet}>{conv.lastMessage || '–'}</div>
                   </div>
-                  {conv.unreadCount>0 && (
+                  {conv.unreadCount > 0 && (
                     <div className={styles.unreadBadge}>{conv.unreadCount}</div>
                   )}
                 </div>
               );
             })}
-            {conversations.length===0 && (
+            {conversations.length === 0 && (
               <div className={styles.noConversations}>No conversations yet.</div>
             )}
           </div>
@@ -161,12 +160,10 @@ export default function BusinessMessagesPage() {
               return (
                 <div
                   key={msg._id}
-                  className={`${styles.messageItem} ${
-                    mine?styles.myMessage:styles.theirMessage
-                  }`}
+                  className={`${styles.messageItem} ${mine ? styles.myMessage : styles.theirMessage}`}
                 >
                   <img src={msg.sender.avatarUrl} alt="" className={styles.msgAvatar}/>
-                  <div>
+                  <div className={styles.messageBubble}>
                     <div className={styles.msgName}>{msg.sender.name}</div>
                     <div className={styles.messageText}>{msg.text}</div>
                     {msg.attachment && (
@@ -194,12 +191,12 @@ export default function BusinessMessagesPage() {
                 className={styles.textArea}
                 placeholder="Type your message…"
                 value={messageText}
-                onChange={e=>setMessageText(e.target.value)}
+                onChange={e => setMessageText(e.target.value)}
               />
               <input
                 type="file"
                 className={styles.attachmentInput}
-                onChange={e=>setAttachment(e.target.files[0])}
+                onChange={e => setAttachment(e.target.files[0])}
               />
               <button className={styles.sendButton} onClick={sendMessage}>
                 Send

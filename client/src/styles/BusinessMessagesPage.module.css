@@ -1,5 +1,3 @@
-/* client/src/styles/BusinessMessagesPage.module.css */
-
 .container {
   position: relative;
   min-height: 100vh;
@@ -8,125 +6,237 @@
   color: #333;
 }
 .header {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 1rem 1.5rem;
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  position: fixed;
+  top: 0; left: 0; right: 0; z-index: 100;
   background-color: #fff;
 }
-.logo { font-weight: 700; font-size: 1.8rem; color: #38b6ff; cursor: pointer; }
-.menuIcon { font-size: 1.4rem; background: none; border: none; cursor: pointer; }
+.logo {
+  font-weight: 700;
+  font-size: 1.8rem;
+  color: #38b6ff;
+  cursor: pointer;
+}
+.menuIcon {
+  font-size: 1.4rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
 
 .content {
-  display: flex; margin-top: 70px; height: calc(100vh - 70px);
+  display: flex;
+  margin-top: 70px;
+  height: calc(100vh - 70px);
 }
 
 /* Left Pane */
 .leftPane {
-  width: 320px; border-right: 1px solid #eee;
-  display: flex; flex-direction: column; overflow-y: auto;
+  width: 320px;
+  border-right: 1px solid #eee;
   background-color: #fff;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
 }
 .messagesHeader {
-  padding: 1rem; border-bottom: 1px solid #eee;
+  padding: 1rem;
+  border-bottom: 1px solid #eee;
 }
 .filterRow {
-  display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 .filterButton {
-  background: #e0e0e0; border: none; border-radius: 9999px;
-  color: #333; padding: 0.4rem 1rem; cursor: pointer; font-size: 0.9rem;
+  background: #e0e0e0;
+  border: none;
+  border-radius: 9999px;
+  color: #333;
+  padding: 0.4rem 1rem;
+  cursor: pointer;
+  font-size: 0.9rem;
 }
 .filterButton:hover { background-color: #d0d0d0; }
 .activeFilter { background-color: #333 !important; color: #fff !important; }
 .searchIconBtn {
-  background: #e0e0e0; border: none; border-radius: 9999px;
-  padding: 0.4rem 0.7rem; cursor: pointer; font-size: 0.9rem; color: #333;
+  background: #e0e0e0;
+  border: none;
+  border-radius: 9999px;
+  padding: 0.4rem 0.7rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #333;
 }
 .searchIconBtn:hover { background-color: #d0d0d0; }
-.searchRow { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; }
+.searchRow {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
 .searchInput {
-  flex: 1; padding: 0.4rem; border-radius: 9999px;
-  border: 1px solid #ccc; font-size: 0.9rem;
+  flex: 1;
+  padding: 0.4rem;
+  border-radius: 9999px;
+  border: 1px solid #ccc;
+  font-size: 0.9rem;
 }
 .cancelSearchBtn {
-  background: none; border: none; color: #333; font-size: 0.9rem;
-  cursor: pointer; padding: 0.4rem 0.8rem; border-radius: 4px;
+  background: none;
+  border: none;
+  color: #333;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
 }
 .cancelSearchBtn:hover { background-color: #f2f2f2; }
 
 .conversationList {
-  flex-grow: 1; overflow-y: auto; background-color: #fff; padding: 0 0.5rem;
+  flex-grow: 1;
+  overflow-y: auto;
+  background-color: #fff;
+  padding: 0 0.5rem;
 }
 .noConversations {
-  padding: 1rem; color: #999;
+  padding: 1rem;
+  color: #999;
 }
 .conversationItem {
-  display: flex; align-items: center; padding: 0.8rem;
-  border-bottom: 1px solid #f0f0f0; cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 0.8rem;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
 }
 .conversationItem:hover { background-color: #fafafa; }
 .selectedConv { background-color: #e8e8e8; }
 .convAvatar {
-  width: 32px; height: 32px; border-radius: 50%;
-  margin-right: 0.6rem; object-fit: cover;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 0.6rem;
 }
-.convoText { flex: 1; }
-.conversationTitle { font-weight: 600; margin-bottom: 0.3rem; }
-.conversationSnippet { font-size: 0.9rem; color: #666; }
+.convoText {
+  flex: 1;
+}
+.conversationTitle {
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+}
+.conversationSnippet {
+  font-size: 0.9rem;
+  color: #666;
+}
 .unreadBadge {
-  background-color: #ff3b30; color: #fff;
-  border-radius: 50%; padding: 0.2rem 0.5rem; font-size: 0.75rem;
+  background-color: #ff3b30;
+  color: #fff;
+  border-radius: 50%;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.75rem;
 }
 
 /* Right Pane */
 .rightPane {
-  flex-grow: 1; display: flex; flex-direction: column;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
   background-color: #f9f9f9;
 }
 .messageThread {
-  flex-grow: 1; overflow-y: auto; padding: 1rem;
-  display: flex; flex-direction: column; gap: 1rem;
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.emptyMessages {
+  padding: 2rem;
+  text-align: center;
+  color: #999;
 }
 .messageItem {
-  display: flex; max-width: 70%; padding: 0.6rem;
-  border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  display: flex;
+  max-width: 70%;
+  padding: 0.6rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 .theirMessage {
-  align-self: flex-start; background-color: #fff;
+  align-self: flex-start;
+  background-color: #fff;
+  color: #333;
 }
 .myMessage {
-  align-self: flex-end; background-color: #38b6ff; color: #fff;
+  align-self: flex-end;
+  background-color: #38b6ff;
+  color: #fff;
 }
 .msgAvatar {
-  width: 28px; height: 28px; border-radius: 50%;
-  margin-right: 0.6rem; object-fit: cover;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 0.6rem;
+}
+.messageBubble {
+  display: flex;
+  flex-direction: column;
 }
 .msgName {
-  font-size: 0.85rem; font-weight: 600; margin-bottom: 0.2rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.2rem;
 }
-.messageText { line-height: 1.4; }
+.messageText {
+  line-height: 1.4;
+}
 .attachmentWrapper a {
-  color: #fff; text-decoration: underline; font-size: 0.9rem;
+  color: inherit;
+  text-decoration: underline;
+  font-size: 0.9rem;
+  margin-top: 0.3rem;
 }
 .messageTimestamp {
-  font-size: 0.75rem; color: rgba(255,255,255,0.75);
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.75);
   text-align: right;
+  margin-top: 0.3rem;
 }
 
 /* Input area */
 .messageInputArea {
-  display: flex; align-items: center; padding: 0.5rem;
-  background-color: #fff; border-top: 1px solid #eee;
+  display: flex;
+  align-items: center;
+  padding: 0.5rem;
+  background-color: #fff;
+  border-top: 1px solid #eee;
 }
 .textArea {
-  flex-grow: 1; border: 1px solid #ccc; border-radius: 4px;
-  min-height: 40px; max-height: 80px; padding: 0.4rem;
+  flex-grow: 1;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  min-height: 40px;
+  max-height: 80px;
+  padding: 0.4rem;
 }
-.attachmentInput { display: none; }
+.attachmentInput {
+  display: none;
+}
 .sendButton {
-  background-color: #38b6ff; color: #fff; border: none;
-  padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer;
+  background-color: #38b6ff;
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  cursor: pointer;
 }
 .sendButton:hover { background-color: #30a2e0; }
 
@@ -134,7 +244,8 @@
 @media (max-width: 900px) {
   .content { flex-direction: column; height: auto; }
   .leftPane {
-    width: 100%; border-right: none;
+    width: 100%;
+    border-right: none;
     border-bottom: 1px solid #eee;
   }
   .rightPane { width: 100%; height: auto; }

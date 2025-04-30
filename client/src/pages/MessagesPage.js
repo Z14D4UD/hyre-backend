@@ -1,16 +1,15 @@
-// client/src/pages/MessagesPage.js
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaSearch, FaPaperclip } from 'react-icons/fa';
+import { FaSearch } from 'react-icons/fa';
 import SideMenuCustomer from '../components/SideMenuCustomer';
 import styles from '../styles/MessagesPage.module.css';
 import axios from 'axios';
 
 export default function MessagesPage() {
-  const navigate      = useNavigate();
-  const token         = localStorage.getItem('token');
-  const accountType   = localStorage.getItem('accountType');
-  const isCustomer    = token && accountType === 'customer';
+  const navigate    = useNavigate();
+  const token       = localStorage.getItem('token');
+  const accountType = localStorage.getItem('accountType');
+  const isCustomer  = token && accountType === 'customer';
 
   // Side menu
   const [menuOpen, setMenuOpen] = useState(false);
@@ -176,7 +175,7 @@ export default function MessagesPage() {
                   className={`${styles.messageItem} ${mine ? styles.myMessage : styles.theirMessage}`}
                 >
                   <img src={msg.sender.avatarUrl} alt="" className={styles.msgAvatar}/>
-                  <div>
+                  <div className={styles.messageBubble}>
                     <div className={styles.msgName}>{msg.sender.name}</div>
                     <div className={styles.messageText}>{msg.text}</div>
                     {msg.attachment && (
@@ -214,5 +213,5 @@ export default function MessagesPage() {
         </div>
       </div>
     </div>
-);
+  );
 }

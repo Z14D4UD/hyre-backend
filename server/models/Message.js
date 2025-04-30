@@ -15,9 +15,9 @@ const MessageSchema = new mongoose.Schema({
   senderModel: {
     type: String,
     required: true,
-    enum: ['Customer', 'Business', 'Affiliate'],
+    enum: ['Customer', 'Business', 'Affiliate', 'Support'],
   },
-  text: { type: String },
+  text:       { type: String },
   attachment: { type: String }, // file path if an attachment is uploaded
   // For read/unread:
   readBy: [{ type: mongoose.Schema.Types.ObjectId }], // store IDs that read the message

@@ -11,7 +11,14 @@ const ConversationSchema = new mongoose.Schema(
     participants: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        required: true
+        required: true,
+        refPath: 'participantModels'      // dynamic ref so we can populate name/avatar
+      }
+    ],
+    participantModels: [                   // parallel array indicating each ID’s model
+      {
+        type: String,
+        enum: ['Customer', 'Business', 'Affiliate', 'Support']
       }
     ],
 

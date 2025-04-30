@@ -2,8 +2,9 @@
 const Conversation = require('../models/Conversation');
 const Message      = require('../models/Message');
 const Booking      = require('../models/Booking');
-const Customer     = require('../models/Customer');  // ← NEW
-const Business     = require('../models/Business');  // ← NEW
+const Business     = require('../models/Business');
+const Customer     = require('../models/Customer');
+const Affiliate    = require('../models/Affiliate');
 
 exports.getConversations = async (req, res) => {
   try {
@@ -14,35 +15,37 @@ exports.getConversations = async (req, res) => {
       : null;
     if (!userId) return res.status(401).json({ msg: 'Not authorized' });
 
-    let query     = { participants: userId };
     const filter     = req.query.filter || 'all';
     const searchTerm = req.query.search;
-    if (searchTerm) {
-      query.$or = [
-        { name:        { $regex: searchTerm, $options: 'i' } },
-        { lastMessage: { $regex: searchTerm, $options: 'i' } },
-      ];
-    }
 
-    let convos = await Conversation.find(query)
+    // Fetch all conversations involving this user:
+    let convos = await Conversation.find({ participants: userId })
       .sort({ updatedAt: -1 })
       .lean();
 
+    // For each convo: count unread, determine “other” party’s name/avatar
     for (let c of convos) {
-      // count unread
+      // Unread count
       c.unreadCount = await Message.countDocuments({
         conversation: c._id,
         readBy:       { $ne: userId },
       });
-      // populate displayName & avatarUrl of the *other* participant
+
+      // Identify the other participant
       const otherId = c.participants.find(id => id.toString() !== userId);
-      let user = await Customer.findById(otherId, 'name avatarUrl').lean()
-              || await Business.findById(otherId, 'name avatarUrl').lean();
-      c.displayName = user?.name || 'Conversation';
-      c.avatarUrl   = user?.avatarUrl || '/avatar.svg';
+      let otherDoc;
+      if (req.customer) {
+        otherDoc = await Business.findById(otherId).select('name avatarUrl');
+      } else {
+        otherDoc = await Customer.findById(otherId).select('name avatarUrl');
+      }
+      c.name      = otherDoc?.name      || 'Conversation';
+      c.avatarUrl = otherDoc?.avatarUrl || '';
     }
 
+    // Filter unread if requested
     if (filter === 'unread') convos = convos.filter(c => c.unreadCount > 0);
+
     res.json(convos);
   } catch (error) {
     console.error('Error fetching conversations:', error);
@@ -56,31 +59,32 @@ exports.getMessages = async (req, res) => {
     const convo = await Conversation.findById(conversationId).lean();
     if (!convo) return res.status(404).json({ msg: 'Conversation not found' });
 
+    // Booking details (unchanged)
     let bookingDetails = null;
     if (convo.bookingId) {
       bookingDetails = await Booking.findById(convo.bookingId).lean();
     }
 
-    const messages = await Message.find({ conversation: conversationId })
+    // Fetch messages
+    let messages = await Message.find({ conversation: conversationId })
       .sort({ createdAt: 1 })
       .lean();
 
-    // enrich each message with senderName + senderAvatar
-    const detailed = await Promise.all(messages.map(async m => {
-      let user;
-      if (m.senderModel === 'Customer') {
-        user = await Customer.findById(m.sender, 'name avatarUrl').lean();
-      } else {
-        user = await Business.findById(m.sender, 'name avatarUrl').lean();
-      }
-      return {
-        ...m,
-        senderName:   user?.name,
-        senderAvatar: user?.avatarUrl || '/avatar.svg'
+    // Populate each sender’s name + avatar
+    for (let m of messages) {
+      let Model;
+      if (m.senderModel === 'Business')   Model = Business;
+      else if (m.senderModel === 'Customer') Model = Customer;
+      else if (m.senderModel === 'Affiliate') Model = Affiliate;
+      const doc = await Model.findById(m.sender).select('name avatarUrl');
+      m.sender = {
+        _id:       m.sender,
+        name:      doc?.name      || '',
+        avatarUrl: doc?.avatarUrl || '',
       };
-    }));
+    }
 
-    res.json({ conversation: convo, messages: detailed, bookingDetails });
+    res.json({ conversation: convo, messages, bookingDetails });
   } catch (error) {
     console.error('Error fetching messages:', error);
     res.status(500).json({ msg: 'Server error fetching messages' });
@@ -109,25 +113,25 @@ exports.sendMessage = async (req, res) => {
     });
     await newMessage.save();
 
+    // Update lastMessage on Conversation
     await Conversation.findByIdAndUpdate(conversationId, {
       lastMessage: text,
       updatedAt:   new Date(),
     });
 
-    // attach name+avatar on the response as well
-    let user;
-    if (senderModel === 'Customer') {
-      user = await Customer.findById(userId, 'name avatarUrl').lean();
-    } else {
-      user = await Business.findById(userId, 'name avatarUrl').lean();
-    }
-    const result = {
+    // Populate sender info on response
+    const SenderModel = senderModel === 'Business' ? Business : Customer;
+    const doc         = await SenderModel.findById(userId).select('name avatarUrl');
+    const payload     = {
       ...newMessage.toObject(),
-      senderName:   user?.name,
-      senderAvatar: user?.avatarUrl || '/avatar.svg'
+      sender: {
+        _id:       userId,
+        name:      doc?.name      || '',
+        avatarUrl: doc?.avatarUrl || '',
+      }
     };
 
-    res.json(result);
+    res.json(payload);
   } catch (error) {
     console.error('Error sending message:', error);
     res.status(500).json({ msg: 'Server error sending message' });
