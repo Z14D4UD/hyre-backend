@@ -1,7 +1,7 @@
 // client/src/pages/MessagesPage.js
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import axios                    from 'axios';
-import jwtDecode                from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
 import { useNavigate }          from 'react-router-dom';
 import { FaSearch }             from 'react-icons/fa';
 import SideMenuCustomer         from '../components/SideMenuCustomer';
