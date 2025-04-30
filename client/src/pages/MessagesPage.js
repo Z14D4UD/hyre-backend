@@ -7,39 +7,33 @@ import styles from '../styles/MessagesPage.module.css';
 import axios from 'axios';
 
 export default function MessagesPage() {
-  const navigate = useNavigate();
-  const token = localStorage.getItem('token');
-  const accountType = localStorage.getItem('accountType');
-  const isCustomer = token && accountType === 'customer';
+  const navigate      = useNavigate();
+  const token         = localStorage.getItem('token');
+  const accountType   = localStorage.getItem('accountType');
+  const isCustomer    = token && accountType === 'customer';
 
-  // Side menu state
+  // Side menu
   const [menuOpen, setMenuOpen] = useState(false);
-  const toggleMenu = () => setMenuOpen(!menuOpen);
-  const closeMenu = () => setMenuOpen(false);
 
-  // Filter state: "all" or "unread"
-  const [filter, setFilter] = useState('all');
-
-  // Search state
+  // Filter & search
+  const [filter, setFilter]         = useState('all');
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Conversations & selected conversation
+  // Conversations & messages
   const [conversations, setConversations] = useState([]);
-  const [selectedConversation, setSelectedConversation] = useState(null);
-  const [messages, setMessages] = useState([]);
+  const [selectedConv, setSelectedConv]   = useState(null);
+  const [messages, setMessages]           = useState([]);
 
-  // New message inputs
+  // New message
   const [messageText, setMessageText] = useState('');
-  const [attachment, setAttachment] = useState(null);
+  const [attachment, setAttachment]   = useState(null);
 
-  // Ref for scrolling to bottom
-  const messagesEndRef = useRef(null);
+  // Scroll ref
+  const endRef = useRef(null);
 
-  // Base URL for your backend API
-  const backendUrl = process.env.REACT_APP_BACKEND_URL || 'https://hyre-backend.onrender.com/api';
+  const backend = process.env.REACT_APP_BACKEND_URL || 'https://hyre-backend.onrender.com/api';
 
-  // Fetch conversations when component mounts or when filter/search changes
   useEffect(() => {
     if (!isCustomer) {
       alert('Please log in as a customer to view messages.');
@@ -47,175 +41,73 @@ export default function MessagesPage() {
       return;
     }
     fetchConversations();
-    // eslint-disable-next-line
   }, [isCustomer, filter, searchTerm]);
 
   const fetchConversations = async () => {
-    try {
-      const res = await axios.get(
-        `${backendUrl}/chat/conversations?filter=${filter}&search=${encodeURIComponent(searchTerm)}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setConversations(res.data);
-    } catch (error) {
-      console.error('Error fetching conversations:', error);
-    }
+    const res = await axios.get(
+      `${backend}/chat/conversations?filter=${filter}&search=${encodeURIComponent(searchTerm)}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    setConversations(res.data);
   };
 
-  const handleSelectConversation = async (conv) => {
-    setSelectedConversation(conv);
-    try {
-      const res = await axios.get(
-        `${backendUrl}/chat/conversations/${conv._id}/messages`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setMessages(res.data.messages);
-      // Optionally, mark conversation as read
-      await axios.put(
-        `${backendUrl}/chat/conversations/${conv._id}/read`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      // Scroll to bottom after messages load
-      scrollToBottom();
-    } catch (error) {
-      console.error('Error fetching messages:', error);
-    }
+  const selectConversation = async conv => {
+    setSelectedConv(conv);
+    const res = await axios.get(
+      `${backend}/chat/conversations/${conv._id}/messages`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    setMessages(res.data.messages);
+    // mark read
+    await axios.put(
+      `${backend}/chat/conversations/${conv._id}/read`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    endRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const handleSend = async () => {
+    if (!selectedConv || (!messageText && !attachment)) return;
+    const form = new FormData();
+    form.append('text', messageText);
+    if (attachment) form.append('attachment', attachment);
 
-  const handleSendMessage = async () => {
-    if (!selectedConversation || (!messageText && !attachment)) return;
-
-    try {
-      const formData = new FormData();
-      formData.append('text', messageText);
-      if (attachment) {
-        formData.append('attachment', attachment);
-      }
-
-      const res = await axios.post(
-        `${backendUrl}/chat/conversations/${selectedConversation._id}/messages`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data',
-          },
+    const res = await axios.post(
+      `${backend}/chat/conversations/${selectedConv._id}/messages`,
+      form,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
         }
-      );
-
-      setMessages((prev) => [...prev, res.data]);
-      setMessageText('');
-      setAttachment(null);
-      // Refresh conversation list to update last message
-      fetchConversations();
-      scrollToBottom();
-    } catch (error) {
-      console.error('Error sending message:', error);
-      alert('Failed to send message.');
-    }
-  };
-
-  const handleAttachmentChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setAttachment(e.target.files[0]);
-    }
-  };
-
-  const handleSearchIconClick = () => {
-    setSearchOpen(true);
-  };
-
-  const handleCancelSearch = () => {
-    setSearchOpen(false);
-    setSearchTerm('');
-  };
-
-  const renderConversationList = () => {
-    if (!conversations.length) {
-      return <div className={styles.noConversations}>No conversations yet.</div>;
-    }
-    return conversations.map((conv) => {
-      const isSelected = selectedConversation && selectedConversation._id === conv._id;
-      return (
-        <div
-          key={conv._id}
-          className={`${styles.conversationItem} ${isSelected ? styles.selectedConv : ''}`}
-          onClick={() => handleSelectConversation(conv)}
-        >
-          <div className={styles.conversationTitle}>
-            {conv.name || 'Conversation'}
-          </div>
-          <div className={styles.conversationSnippet}>
-            {conv.lastMessage || 'No messages yet'}
-          </div>
-          {conv.unreadCount > 0 && (
-            <div className={styles.unreadBadge}>{conv.unreadCount}</div>
-          )}
-        </div>
-      );
-    });
-  };
-
-  const renderMessages = () => {
-    if (!selectedConversation) {
-      return <div className={styles.emptyMessages}>Select a conversation to view messages.</div>;
-    }
-    if (!messages.length) {
-      return <div className={styles.emptyMessages}>No messages yet.</div>;
-    }
-    return messages.map((msg) => {
-      const myId = localStorage.getItem('userId'); // or use token-decoded id if stored
-      const isMine = msg.sender === myId;
-      return (
-        <div
-          key={msg._id}
-          className={`${styles.messageItem} ${isMine ? styles.myMessage : styles.theirMessage}`}
-        >
-          <div className={styles.messageText}>{msg.text}</div>
-          {msg.attachment && (
-            <div className={styles.attachmentWrapper}>
-              <a href={`${backendUrl}/${msg.attachment}`} target="_blank" rel="noopener noreferrer">
-                View Attachment
-              </a>
-            </div>
-          )}
-          <div className={styles.messageTimestamp}>
-            {new Date(msg.createdAt).toLocaleString()}
-          </div>
-        </div>
-      );
-    });
+      }
+    );
+    setMessages(msgs => [...msgs, res.data]);
+    setMessageText('');
+    setAttachment(null);
+    fetchConversations();
+    endRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
     <div className={styles.container}>
       {/* Header */}
       <header className={styles.header}>
-        <div className={styles.logo} onClick={() => navigate('/')}>
-          Hyre
-        </div>
-        <button className={styles.menuIcon} onClick={toggleMenu}>
-          ☰
-        </button>
+        <div className={styles.logo} onClick={() => navigate('/')}>Hyre</div>
+        <button className={styles.menuIcon} onClick={() => setMenuOpen(o => !o)}>☰</button>
       </header>
 
       {/* Side Menu */}
-      {isCustomer && (
-        <SideMenuCustomer
-          isOpen={menuOpen}
-          toggleMenu={toggleMenu}
-          closeMenu={closeMenu}
-        />
-      )}
+      <SideMenuCustomer
+        isOpen={menuOpen}
+        toggleMenu={() => setMenuOpen(o => !o)}
+        closeMenu={() => setMenuOpen(false)}
+      />
 
-      {/* Main Content */}
+      {/* Content */}
       <div className={styles.content}>
-        {/* Left Pane: Conversation List & Search */}
+        {/* Left Pane */}
         <div className={styles.leftPane}>
           <div className={styles.messagesHeader}>
             <h2>Messages</h2>
@@ -223,65 +115,104 @@ export default function MessagesPage() {
               <button
                 className={`${styles.filterButton} ${filter === 'all' ? styles.activeFilter : ''}`}
                 onClick={() => setFilter('all')}
-              >
-                All
-              </button>
+              >All</button>
               <button
                 className={`${styles.filterButton} ${filter === 'unread' ? styles.activeFilter : ''}`}
                 onClick={() => setFilter('unread')}
-              >
-                Unread
-              </button>
-              <button className={styles.searchIconBtn} onClick={handleSearchIconClick}>
-                <FaSearch />
+              >Unread</button>
+              <button className={styles.searchIconBtn} onClick={() => setSearchOpen(true)}>
+                <FaSearch/>
               </button>
             </div>
             {searchOpen && (
               <div className={styles.searchRow}>
                 <input
                   type="text"
-                  placeholder="Search conversations..."
+                  placeholder="Search..."
                   className={styles.searchInput}
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={e => setSearchTerm(e.target.value)}
                 />
-                <button className={styles.cancelSearchBtn} onClick={handleCancelSearch}>
+                <button className={styles.cancelSearchBtn} onClick={() => setSearchOpen(false)}>
                   Cancel
                 </button>
               </div>
             )}
           </div>
           <div className={styles.conversationList}>
-            {renderConversationList()}
+            {conversations.map(conv => {
+              const isSel = selectedConv?._id === conv._id;
+              return (
+                <div
+                  key={conv._id}
+                  className={`${styles.conversationItem} ${isSel ? styles.selectedConv : ''}`}
+                  onClick={() => selectConversation(conv)}
+                >
+                  <img src={conv.avatarUrl} alt="" className={styles.convAvatar}/>
+                  <div className={styles.convoText}>
+                    <div className={styles.conversationTitle}>{conv.name}</div>
+                    <div className={styles.conversationSnippet}>{conv.lastMessage || '–'}</div>
+                  </div>
+                  {conv.unreadCount > 0 && (
+                    <div className={styles.unreadBadge}>{conv.unreadCount}</div>
+                  )}
+                </div>
+              );
+            })}
+            {conversations.length === 0 && (
+              <div className={styles.noConversations}>No conversations yet.</div>
+            )}
           </div>
         </div>
 
-        {/* Right Pane: Message Thread */}
+        {/* Right Pane */}
         <div className={styles.rightPane}>
           <div className={styles.messageThread}>
-            {renderMessages()}
-            <div ref={messagesEndRef} />
+            {messages.map(msg => {
+              const mine = msg.sender._id === localStorage.getItem('userId');
+              return (
+                <div
+                  key={msg._id}
+                  className={`${styles.messageItem} ${mine ? styles.myMessage : styles.theirMessage}`}
+                >
+                  <img src={msg.sender.avatarUrl} alt="" className={styles.msgAvatar}/>
+                  <div>
+                    <div className={styles.msgName}>{msg.sender.name}</div>
+                    <div className={styles.messageText}>{msg.text}</div>
+                    {msg.attachment && (
+                      <div className={styles.attachmentWrapper}>
+                        <a href={`${backend}/${msg.attachment}`} target="_blank" rel="noreferrer">
+                          View Attachment
+                        </a>
+                      </div>
+                    )}
+                    <div className={styles.messageTimestamp}>
+                      {new Date(msg.createdAt).toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            <div ref={endRef}/>
           </div>
-          {selectedConversation && (
+          {selectedConv && (
             <div className={styles.messageInputArea}>
               <textarea
                 className={styles.textArea}
-                placeholder="Type your message..."
+                placeholder="Type your message…"
                 value={messageText}
-                onChange={(e) => setMessageText(e.target.value)}
+                onChange={e => setMessageText(e.target.value)}
               />
               <input
                 type="file"
                 className={styles.attachmentInput}
-                onChange={handleAttachmentChange}
+                onChange={e => setAttachment(e.target.files[0])}
               />
-              <button className={styles.sendButton} onClick={handleSendMessage}>
-                Send
-              </button>
+              <button className={styles.sendButton} onClick={handleSend}>Send</button>
             </div>
           )}
         </div>
       </div>
     </div>
-  );
+);
 }
