@@ -208,6 +208,25 @@ exports.updateBookingStatus = async (req, res) => {
 };
 
 /* ────────────────────────────────────────────────────────────── */
+/*  PAYOUT REQUEST – business withdraws their available balance  */
+/* ────────────────────────────────────────────────────────────── */
+exports.requestPayout = async (req, res) => {
+  if (!req.business) return res.status(401).json({ msg: 'Unauthorized' });
+  const businessId = req.business.id;
+  try {
+    const biz = await Business.findById(businessId);
+    if (!biz) return res.status(404).json({ msg: 'Business not found' });
+    const payoutAmount = biz.balance;
+    biz.balance = 0;
+    await biz.save();
+    return res.json({ msg: `Payout of $${payoutAmount.toFixed(2)} processed successfully.` });
+  } catch (error) {
+    console.error('Payout error:', error);
+    return res.status(500).json({ msg: 'Server error processing payout' });
+  }
+};
+
+/* ────────────────────────────────────────────────────────────── */
 /*  PUBLIC: LIST ALL BOOKINGS                                    */
 /* ────────────────────────────────────────────────────────────── */
 exports.getBookings = async (_req, res) => {
@@ -218,7 +237,7 @@ exports.getBookings = async (_req, res) => {
       .populate('customer', 'name email');
     return res.json(bookings);
   } catch (error) {
-    console.error(error);
+    console.error('Error listing bookings:', error);
     return res.status(500).send('Server error');
   }
 };
@@ -245,7 +264,7 @@ exports.getMyBookings = async (req, res) => {
       .populate('customer', 'name email');
     return res.json(bookings);
   } catch (error) {
-    console.error(error);
+    console.error('Error fetching my bookings:', error);
     return res.status(500).send('Server error');
   }
 };
@@ -262,7 +281,7 @@ exports.getCustomerBookings = async (req, res) => {
       .populate('customer', 'name email');
     return res.json(bookings);
   } catch (error) {
-    console.error(error);
+    console.error('Error fetching customer bookings:', error);
     return res.status(500).send('Server error');
   }
 };
@@ -323,7 +342,7 @@ exports.generateInvoice = async (req, res) => {
 
     doc.end();
   } catch (error) {
-    console.error(error);
+    console.error('Error generating invoice:', error);
     return res.status(500).send('Server error');
   }
 };
