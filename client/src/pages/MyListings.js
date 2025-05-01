@@ -1,4 +1,5 @@
 // client/src/pages/MyListings.js
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -28,14 +29,13 @@ export default function MyListings() {
   // Listings state
   const [listings, setListings] = useState([]);
 
-  // Build API and static bases from BACKEND_URL
+  // Build API base from REACT_APP_BACKEND_URL
   const rawBackend = process.env.REACT_APP_BACKEND_URL || '';
   const apiBase = rawBackend.endsWith('/api')
     ? rawBackend
     : rawBackend.replace(/\/$/, '') + '/api';
-  const staticBase = rawBackend.replace(/\/api$/, '');
 
-  // Fetch
+  // Fetch listings
   useEffect(() => {
     axios
       .get(`${apiBase}/business/listings`, {
@@ -144,9 +144,14 @@ export default function MyListings() {
             <p>No listings found.</p>
           ) : (
             shown.map(l => {
-              const imgSrc = l.images && l.images.length
-                ? `${staticBase}/${l.images[0]}`
+              // build fully-qualified URL into your API's /uploads static route
+              const imgFilename = l.images && l.images.length
+                ? l.images[0].split('/').pop()
+                : null;
+              const imgSrc = imgFilename
+                ? `${apiBase}/uploads/${imgFilename}`
                 : '/default-car.jpg';
+
               return (
                 <div className={styles.listingRow} key={l._id}>
                   <div className={styles.listingImage}>
@@ -205,5 +210,5 @@ export default function MyListings() {
         )}
       </div>
     </div>
-);
+  );
 }
