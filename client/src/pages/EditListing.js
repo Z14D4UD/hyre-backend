@@ -1,3 +1,4 @@
+// client/src/pages/EditListing.js
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -7,40 +8,46 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import styles from '../styles/AddListing.module.css';
 
+// derive origin so we hit /uploads static (not /api/uploads)
+const BACKEND_ORIGIN = process.env.REACT_APP_BACKEND_URL.split('/api')[0];
+
 export default function EditListing() {
   const { id } = useParams();
   const navigate = useNavigate();
   const token = localStorage.getItem('token') || '';
   const isBusiness = token && localStorage.getItem('accountType') === 'business';
-  if (!isBusiness) { alert('Please log in as a business'); navigate('/'); }
+  if (!isBusiness) {
+    alert('Please log in as a business');
+    navigate('/');
+  }
 
   const [menuOpen, setMenuOpen] = useState(false);
   const toggleMenu = () => setMenuOpen(o => !o);
 
-  // Form state
+  // full form state including cancellationPolicy
   const [form, setForm] = useState({
     title: '', description: '', carType: '', make: '', model: '',
     year: '', mileage: '', fuelType: 'Petrol', engineSize: '',
     transmission: '', licensePlate: '', pricePerDay: '', terms: '',
-    cancellationPolicy: '', // ← NEW (if you want to edit it)
     address: '', availableFrom: null, availableTo: null,
     gps: false, bluetooth: false, heatedSeats: false, parkingSensors: false,
     backupCamera: false, appleCarPlay: false, androidAuto: false,
     keylessEntry: false, childSeat: false, leatherSeats: false,
     tintedWindows: false, convertible: false, roofRack: false,
-    petFriendly: false, smokeFree: false, seatCovers: false, dashCam: false
+    petFriendly: false, smokeFree: false, seatCovers: false, dashCam: false,
+    cancellationPolicy: ''
   });
 
-  // Images
-  const [existingImages, setExistingImages] = useState([]); // paths like "uploads/123.jpg"
+  // images
+  const [existingImages, setExistingImages] = useState([]); // ["uploads/…"]
   const [newFiles, setNewFiles] = useState([]);             // File[]
 
-  // Load listing on mount
+  // load listing
   useEffect(() => {
-    axios.get(`${(process.env.REACT_APP_BACKEND_URL||'').replace(/\/$/,'')}/business/listings/${id}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    .then(res => {
+    axios.get(
+      `${process.env.REACT_APP_BACKEND_URL}/business/listings/${id}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    ).then(res => {
       const lst = res.data;
       setForm({
         title: lst.title || '',
@@ -56,10 +63,9 @@ export default function EditListing() {
         licensePlate: lst.licensePlate || '',
         pricePerDay: lst.pricePerDay || '',
         terms: lst.terms || '',
-        cancellationPolicy: lst.cancellationPolicy || '', // ← NEW
         address: lst.address || '',
         availableFrom: lst.availableFrom ? new Date(lst.availableFrom) : null,
-        availableTo:   lst.availableTo   ? new Date(lst.availableTo)   : null,
+        availableTo: lst.availableTo ? new Date(lst.availableTo) : null,
         gps: lst.gps, bluetooth: lst.bluetooth, heatedSeats: lst.heatedSeats,
         parkingSensors: lst.parkingSensors, backupCamera: lst.backupCamera,
         appleCarPlay: lst.appleCarPlay, androidAuto: lst.androidAuto,
@@ -67,24 +73,22 @@ export default function EditListing() {
         leatherSeats: lst.leatherSeats, tintedWindows: lst.tintedWindows,
         convertible: lst.convertible, roofRack: lst.roofRack,
         petFriendly: lst.petFriendly, smokeFree: lst.smokeFree,
-        seatCovers: lst.seatCovers, dashCam: lst.dashCam
+        seatCovers: lst.seatCovers, dashCam: lst.dashCam,
+        cancellationPolicy: lst.cancellationPolicy || ''
       });
       setExistingImages(lst.images || []);
-    })
-    .catch(() => navigate('/my-listings'));
+    }).catch(() => navigate('/my-listings'));
   }, [id, token, navigate]);
 
-  // Handlers for images
+  // image handlers
   const handleRemoveExisting = idx =>
-    setExistingImages(imgs => imgs.filter((_,i) => i !== idx));
-
+    setExistingImages(imgs => imgs.filter((_, i) => i !== idx));
   const handleNewFiles = e =>
     setNewFiles(f => [...f, ...Array.from(e.target.files)]);
-
   const handleRemoveNew = idx =>
-    setNewFiles(f => f.filter((_,i) => i !== idx));
+    setNewFiles(f => f.filter((_, i) => i !== idx));
 
-  // Generic form field change
+  // generic form change
   const handleChange = e => {
     const { name, value, type, checked } = e.target;
     setForm(f => ({
@@ -93,37 +97,34 @@ export default function EditListing() {
     }));
   };
 
-  // For PlacesAutocomplete
+  // Places autocomplete select
   const handleSelectAddress = async value => {
     setForm(f => ({ ...f, address: value }));
     try {
       const results = await geocodeByAddress(value);
-      const latLng = await getLatLng(results[0]);
+      await getLatLng(results[0]);
     } catch (err) {
-      console.error(err);
+      console.error('Error geocoding:', err);
     }
   };
 
-  // Submit handler
+  // submit
   const handleSubmit = e => {
     e.preventDefault();
     const data = new FormData();
-
-    // append form fields
-    Object.entries(form).forEach(([k,v]) => {
+    // append all form fields
+    Object.entries(form).forEach(([k, v]) => {
       if (v !== null && v !== undefined) {
         data.append(k, v instanceof Date ? v.toISOString() : v);
       }
     });
-
-    // tell server which existing images to keep
+    // tell server which existing to keep
     existingImages.forEach(path => data.append('keepImages[]', path));
-
-    // new files
+    // new
     newFiles.forEach(file => data.append('images', file));
 
     axios.put(
-      `${(process.env.REACT_APP_BACKEND_URL||'').replace(/\/$/,'')}/business/listings/${id}`,
+      `${process.env.REACT_APP_BACKEND_URL}/business/listings/${id}`,
       data,
       {
         headers: {
@@ -134,53 +135,49 @@ export default function EditListing() {
     ).then(() => navigate('/my-listings'))
      .catch(err => {
        console.error('Error updating listing:', err);
-       alert('Failed to update listing.');
+       alert('Failed to save changes.');
      });
   };
 
   return (
     <div className={styles.addListingContainer}>
+      {/* header */}
       <header className={styles.header}>
-        <div className={styles.logo} onClick={()=>navigate('/')}>Hyre</div>
+        <div className={styles.logo} onClick={() => navigate('/')}>Hyre</div>
         <button className={styles.menuIcon} onClick={toggleMenu}>☰</button>
       </header>
 
-      <SideMenuBusiness
-        isOpen={menuOpen}
-        toggleMenu={toggleMenu}
-        closeMenu={()=>setMenuOpen(false)}
-      />
+      <SideMenuBusiness isOpen={menuOpen} toggleMenu={toggleMenu} closeMenu={() => setMenuOpen(false)} />
 
       <div className={styles.mainContent}>
         <h1 className={styles.pageTitle}>Edit Listing</h1>
 
-        {/* IMAGE BAR */}
+        {/* existing previews */}
         <div className={styles.imagePreviewGrid}>
-          {existingImages.map((src,i) => (
+          {existingImages.map((src, i) => (
             <div key={i} className={styles.imagePreviewWrapper}>
               <button
                 type="button"
                 className={styles.removeImageBtn}
-                onClick={()=>handleRemoveExisting(i)}
+                onClick={() => handleRemoveExisting(i)}
               >×</button>
               <img
-                src={`${(process.env.REACT_APP_BACKEND_URL||'').replace(/\/$/,'')}/${src.replace(/^\/?/, '')}`}
+                src={`${BACKEND_ORIGIN}/${src.replace(/^\/?/, '')}`}
                 alt=""
                 className={styles.imagePreview}
               />
             </div>
           ))}
-
-          {newFiles.map((file,i) => {
+          {newFiles.map((file, i) => {
             const url = URL.createObjectURL(file);
             return (
               <div key={`new${i}`} className={styles.imagePreviewWrapper}>
                 <button
                   type="button"
                   className={styles.removeImageBtn}
-                  onClick={()=>handleRemoveNew(i)}
+                  onClick={() => handleRemoveNew(i)}
                 >×</button>
-                <img src={url} alt="" className={styles.imagePreview}/>
+                <img src={url} alt="" className={styles.imagePreview} />
               </div>
             );
           })}
@@ -189,7 +186,7 @@ export default function EditListing() {
         <button
           type="button"
           className={styles.uploadPhotosButton}
-          onClick={()=>document.getElementById('newImgs').click()}
+          onClick={() => document.getElementById('newImgs').click()}
         >Add Photos</button>
         <input
           id="newImgs"
@@ -200,7 +197,7 @@ export default function EditListing() {
           onChange={handleNewFiles}
         />
 
-        {/* FORM */}
+        {/* form */}
         <form onSubmit={handleSubmit} className={styles.formContainer}>
 
           {/* Car Details */}
@@ -215,7 +212,7 @@ export default function EditListing() {
                 onChange={handleChange}
               />
             </div>
-            {/* Make, Model */}
+            {/* Make / Model */}
             <div className={styles.formRow}>
               <div className={styles.subSection}>
                 <label className={styles.label}>Make</label>
@@ -236,7 +233,7 @@ export default function EditListing() {
                 />
               </div>
             </div>
-            {/* Year, Mileage */}
+            {/* Year / Mileage */}
             <div className={styles.formRow}>
               <div className={styles.subSection}>
                 <label className={styles.label}>Year</label>
@@ -259,7 +256,7 @@ export default function EditListing() {
                 />
               </div>
             </div>
-            {/* Car Type, Fuel */}
+            {/* Car Type / Fuel */}
             <div className={styles.formRow}>
               <div className={styles.subSection}>
                 <label className={styles.label}>Car Type</label>
@@ -285,7 +282,7 @@ export default function EditListing() {
                 </select>
               </div>
             </div>
-            {/* Engine, Transmission */}
+            {/* Engine / Transmission */}
             <div className={styles.formRow}>
               <div className={styles.subSection}>
                 <label className={styles.label}>Engine Size</label>
@@ -309,7 +306,7 @@ export default function EditListing() {
                 </select>
               </div>
             </div>
-            {/* License, Price */}
+            {/* License / Price */}
             <div className={styles.formRow}>
               <div className={styles.subSection}>
                 <label className={styles.label}>License Plate</label>
@@ -333,7 +330,7 @@ export default function EditListing() {
             </div>
           </details>
 
-          {/* Availability */}
+          {/* Availability Dates */}
           <details className={styles.section} open>
             <summary className={styles.sectionHeading}>Availability Dates</summary>
             <div className={styles.subSection}>
@@ -413,7 +410,7 @@ export default function EditListing() {
             </div>
           </details>
 
-          {/* Terms */}
+          {/* Terms & Conditions */}
           <details className={styles.section} open>
             <summary className={styles.sectionHeading}>Terms & Conditions</summary>
             <div className={styles.subSection}>
@@ -436,7 +433,7 @@ export default function EditListing() {
                 className={styles.textArea}
                 value={form.cancellationPolicy}
                 onChange={handleChange}
-                placeholder="Your cancellation policy…"
+                placeholder="Enter your cancellation policy…"
               />
             </div>
           </details>

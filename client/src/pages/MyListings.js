@@ -1,8 +1,12 @@
+// client/src/pages/MyListings.js
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import SideMenuBusiness from '../components/SideMenuBusiness';
 import styles from '../styles/MyListings.module.css';
+
+// Strip off the trailing "/api" from your BACKEND_URL so we hit the static /uploads route
+const BACKEND_ORIGIN = process.env.REACT_APP_BACKEND_URL.split('/api')[0];
 
 export default function MyListings() {
   const navigate = useNavigate();
@@ -27,10 +31,11 @@ export default function MyListings() {
   // Listings state
   const [listings, setListings] = useState([]);
 
-  // normalize BACKEND_URL
-  const raw = (process.env.REACT_APP_BACKEND_URL || '').replace(/\/$/, '');
-  const apiBase = raw.endsWith('/api') ? raw : raw + '/api';
-  const staticBase = raw; // for images
+  // Build API base
+  const rawBackend = process.env.REACT_APP_BACKEND_URL || '';
+  const apiBase = rawBackend.endsWith('/api')
+    ? rawBackend
+    : rawBackend.replace(/\/$/, '') + '/api';
 
   // Fetch
   useEffect(() => {
@@ -141,9 +146,14 @@ export default function MyListings() {
             <p>No listings found.</p>
           ) : (
             shown.map(l => {
-              const imgSrc = l.images && l.images.length
-                ? `${staticBase}/${l.images[0].replace(/^\/?/, '')}`
+              // build the correct image URL against the static /uploads route
+              const firstImage = l.images && l.images.length
+                ? l.images[0].replace(/^\/?/, '')
+                : null;
+              const imgSrc = firstImage
+                ? `${BACKEND_ORIGIN}/${firstImage}`
                 : '/default-car.jpg';
+
               return (
                 <div className={styles.listingRow} key={l._id}>
                   <div className={styles.listingImage}>
