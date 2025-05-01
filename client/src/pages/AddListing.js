@@ -1,4 +1,3 @@
-// client/src/pages/AddListing.js
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -281,6 +280,7 @@ export default function AddListing() {
                 </select>
               </div>
             </div>
+            {/* Make / Model */}
             <div className={styles.formRow}>
               <div className={styles.subSection}>
                 <label className={styles.label}>Make</label>
@@ -303,6 +303,7 @@ export default function AddListing() {
                 />
               </div>
             </div>
+            {/* Year / Mileage */}
             <div className={styles.formRow}>
               <div className={styles.subSection}>
                 <label className={styles.label}>Year</label>
@@ -325,6 +326,7 @@ export default function AddListing() {
                 />
               </div>
             </div>
+            {/* Fuel / Engine */}
             <div className={styles.formRow}>
               <div className={styles.subSection}>
                 <label className={styles.label}>Fuel Type</label>
@@ -350,6 +352,7 @@ export default function AddListing() {
                 />
               </div>
             </div>
+            {/* Transmission */}
             <div className={styles.subSection}>
               <label className={styles.label}>Transmission</label>
               <select
@@ -362,6 +365,7 @@ export default function AddListing() {
                 <option value="Manual">Manual</option>
               </select>
             </div>
+            {/* License / Price */}
             <div className={styles.subSection}>
               <label className={styles.label}>License Plate</label>
               <input
@@ -380,7 +384,7 @@ export default function AddListing() {
                 placeholder="e.g., 50"
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
-                />
+              />
             </div>
           </details>
 
@@ -464,7 +468,7 @@ export default function AddListing() {
             </div>
           </details>
 
-          {/* Section 9: Cancellation Policy */}
+          {/* Section 9: Cancellation Policy (NEW) */}
           <details className={styles.section} open>
             <summary className={styles.sectionHeading}>Cancellation Policy</summary>
             <div className={styles.subSection}>

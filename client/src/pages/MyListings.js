@@ -1,5 +1,3 @@
-// client/src/pages/MyListings.js
-
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -29,13 +27,12 @@ export default function MyListings() {
   // Listings state
   const [listings, setListings] = useState([]);
 
-  // Build API base from REACT_APP_BACKEND_URL
-  const rawBackend = process.env.REACT_APP_BACKEND_URL || '';
-  const apiBase = rawBackend.endsWith('/api')
-    ? rawBackend
-    : rawBackend.replace(/\/$/, '') + '/api';
+  // normalize BACKEND_URL
+  const raw = (process.env.REACT_APP_BACKEND_URL || '').replace(/\/$/, '');
+  const apiBase = raw.endsWith('/api') ? raw : raw + '/api';
+  const staticBase = raw; // for images
 
-  // Fetch listings
+  // Fetch
   useEffect(() => {
     axios
       .get(`${apiBase}/business/listings`, {
@@ -144,14 +141,9 @@ export default function MyListings() {
             <p>No listings found.</p>
           ) : (
             shown.map(l => {
-              // build fully-qualified URL into your API's /uploads static route
-              const imgFilename = l.images && l.images.length
-                ? l.images[0].split('/').pop()
-                : null;
-              const imgSrc = imgFilename
-                ? `${apiBase}/uploads/${imgFilename}`
+              const imgSrc = l.images && l.images.length
+                ? `${staticBase}/${l.images[0].replace(/^\/?/, '')}`
                 : '/default-car.jpg';
-
               return (
                 <div className={styles.listingRow} key={l._id}>
                   <div className={styles.listingImage}>

@@ -1,4 +1,3 @@
-// client/src/pages/EditListing.js
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -23,6 +22,7 @@ export default function EditListing() {
     title: '', description: '', carType: '', make: '', model: '',
     year: '', mileage: '', fuelType: 'Petrol', engineSize: '',
     transmission: '', licensePlate: '', pricePerDay: '', terms: '',
+    cancellationPolicy: '', // ← NEW (if you want to edit it)
     address: '', availableFrom: null, availableTo: null,
     gps: false, bluetooth: false, heatedSeats: false, parkingSensors: false,
     backupCamera: false, appleCarPlay: false, androidAuto: false,
@@ -37,7 +37,7 @@ export default function EditListing() {
 
   // Load listing on mount
   useEffect(() => {
-    axios.get(`${process.env.REACT_APP_BACKEND_URL}/business/listings/${id}`, {
+    axios.get(`${(process.env.REACT_APP_BACKEND_URL||'').replace(/\/$/,'')}/business/listings/${id}`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then(res => {
@@ -56,6 +56,7 @@ export default function EditListing() {
         licensePlate: lst.licensePlate || '',
         pricePerDay: lst.pricePerDay || '',
         terms: lst.terms || '',
+        cancellationPolicy: lst.cancellationPolicy || '', // ← NEW
         address: lst.address || '',
         availableFrom: lst.availableFrom ? new Date(lst.availableFrom) : null,
         availableTo:   lst.availableTo   ? new Date(lst.availableTo)   : null,
@@ -122,7 +123,7 @@ export default function EditListing() {
     newFiles.forEach(file => data.append('images', file));
 
     axios.put(
-      `${process.env.REACT_APP_BACKEND_URL}/business/listings/${id}`,
+      `${(process.env.REACT_APP_BACKEND_URL||'').replace(/\/$/,'')}/business/listings/${id}`,
       data,
       {
         headers: {
@@ -130,7 +131,11 @@ export default function EditListing() {
           'Content-Type': 'multipart/form-data'
         }
       }
-    ).then(() => navigate('/my-listings'));
+    ).then(() => navigate('/my-listings'))
+     .catch(err => {
+       console.error('Error updating listing:', err);
+       alert('Failed to update listing.');
+     });
   };
 
   return (
@@ -159,7 +164,7 @@ export default function EditListing() {
                 onClick={()=>handleRemoveExisting(i)}
               >×</button>
               <img
-                src={`${process.env.REACT_APP_BACKEND_URL}/${src}`}
+                src={`${(process.env.REACT_APP_BACKEND_URL||'').replace(/\/$/,'')}/${src.replace(/^\/?/, '')}`}
                 alt=""
                 className={styles.imagePreview}
               />
@@ -418,6 +423,20 @@ export default function EditListing() {
                 value={form.terms}
                 onChange={handleChange}
                 placeholder="Any special terms…"
+              />
+            </div>
+          </details>
+
+          {/* Cancellation Policy */}
+          <details className={styles.section} open>
+            <summary className={styles.sectionHeading}>Cancellation Policy</summary>
+            <div className={styles.subSection}>
+              <textarea
+                name="cancellationPolicy"
+                className={styles.textArea}
+                value={form.cancellationPolicy}
+                onChange={handleChange}
+                placeholder="Your cancellation policy…"
               />
             </div>
           </details>
