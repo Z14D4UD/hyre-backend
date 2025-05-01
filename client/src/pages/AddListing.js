@@ -38,6 +38,7 @@ export default function AddListing() {
   const [licensePlate, setLicensePlate] = useState('');
   const [price, setPrice] = useState('');
   const [terms, setTerms] = useState('');
+  const [cancellationPolicy, setCancellationPolicy] = useState(''); // ← NEW
 
   // Date pickers for availability
   const [availableFrom, setAvailableFrom] = useState(null);
@@ -129,6 +130,7 @@ export default function AddListing() {
     formData.append('licensePlate', licensePlate);
     formData.append('pricePerDay', price);
     formData.append('terms', terms);
+    formData.append('cancellationPolicy', cancellationPolicy); // ← NEW
     formData.append('address', address);
     formData.append('availableFrom', availableFrom ? availableFrom.toISOString() : '');
     formData.append('availableTo', availableTo ? availableTo.toISOString() : '');
@@ -378,7 +380,7 @@ export default function AddListing() {
                 placeholder="e.g., 50"
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
-              />
+                />
             </div>
           </details>
 
@@ -462,8 +464,7 @@ export default function AddListing() {
             </div>
           </details>
 
-          
-          {/* Section 9: Cancellation Policy (NEW) */}
+          {/* Section 9: Cancellation Policy */}
           <details className={styles.section} open>
             <summary className={styles.sectionHeading}>Cancellation Policy</summary>
             <div className={styles.subSection}>

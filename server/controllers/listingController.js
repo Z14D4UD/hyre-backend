@@ -1,5 +1,4 @@
-// server/controllers/listingController.js
-/* eslint‑disable no‑console */
+/* eslint-disable no-console */
 const path    = require('path');
 const Listing = require('../models/Listing');
 const Review  = require('../models/Review');
@@ -12,41 +11,42 @@ exports.createListing = async (req, res) => {
   try {
     if (!req.business) return res.status(403).json({ msg: 'Forbidden' });
     const listing = await Listing.create({
-      business:      req.business.id,
-      title:         req.body.title,
-      description:   req.body.description,
-      carType:       req.body.carType,
-      make:          req.body.make,
-      model:         req.body.model,
-      year:          req.body.year,
-      mileage:       req.body.mileage,
-      fuelType:      req.body.fuelType,
-      engineSize:    req.body.engineSize,
-      transmission:  req.body.transmission,
-      licensePlate:  req.body.licensePlate,
-      pricePerDay:   req.body.pricePerDay,
-      terms:         req.body.terms,
-      address:       req.body.address,
-      availableFrom: req.body.availableFrom ? new Date(req.body.availableFrom) : null,
-      availableTo:   req.body.availableTo   ? new Date(req.body.availableTo)   : null,
-      gps:            req.body.gps === 'true',
-      bluetooth:      req.body.bluetooth === 'true',
-      heatedSeats:    req.body.heatedSeats === 'true',
-      parkingSensors: req.body.parkingSensors === 'true',
-      backupCamera:   req.body.backupCamera === 'true',
-      appleCarPlay:   req.body.appleCarPlay === 'true',
-      androidAuto:    req.body.androidAuto === 'true',
-      keylessEntry:   req.body.keylessEntry === 'true',
-      childSeat:      req.body.childSeat === 'true',
-      leatherSeats:   req.body.leatherSeats === 'true',
-      tintedWindows:  req.body.tintedWindows === 'true',
-      convertible:    req.body.convertible === 'true',
-      roofRack:       req.body.roofRack === 'true',
-      petFriendly:    req.body.petFriendly === 'true',
-      smokeFree:      req.body.smokeFree === 'true',
-      seatCovers:     req.body.seatCovers === 'true',
-      dashCam:        req.body.dashCam === 'true',
-      images:         relPaths(req.files),
+      business:           req.business.id,
+      title:              req.body.title,
+      description:        req.body.description,
+      carType:            req.body.carType,
+      make:               req.body.make,
+      model:              req.body.model,
+      year:               req.body.year,
+      mileage:            req.body.mileage,
+      fuelType:           req.body.fuelType,
+      engineSize:         req.body.engineSize,
+      transmission:       req.body.transmission,
+      licensePlate:       req.body.licensePlate,
+      pricePerDay:        req.body.pricePerDay,
+      terms:              req.body.terms,
+      address:            req.body.address,
+      availableFrom:      req.body.availableFrom ? new Date(req.body.availableFrom) : null,
+      availableTo:        req.body.availableTo   ? new Date(req.body.availableTo)   : null,
+      gps:                req.body.gps === 'true',
+      bluetooth:          req.body.bluetooth === 'true',
+      heatedSeats:        req.body.heatedSeats === 'true',
+      parkingSensors:     req.body.parkingSensors === 'true',
+      backupCamera:       req.body.backupCamera === 'true',
+      appleCarPlay:       req.body.appleCarPlay === 'true',
+      androidAuto:        req.body.androidAuto === 'true',
+      keylessEntry:       req.body.keylessEntry === 'true',
+      childSeat:          req.body.childSeat === 'true',
+      leatherSeats:       req.body.leatherSeats === 'true',
+      tintedWindows:      req.body.tintedWindows === 'true',
+      convertible:        req.body.convertible === 'true',
+      roofRack:           req.body.roofRack === 'true',
+      petFriendly:        req.body.petFriendly === 'true',
+      smokeFree:          req.body.smokeFree === 'true',
+      seatCovers:         req.body.seatCovers === 'true',
+      dashCam:            req.body.dashCam === 'true',
+      images:             relPaths(req.files),
+      cancellationPolicy: req.body.cancellationPolicy,       // ← new
     });
     res.status(201).json(listing);
   } catch (err) {
@@ -77,22 +77,17 @@ exports.getListingById = async (req, res) => {
   }
 };
 
-/**
- * PUBLIC READ‑ONLY
- * GET /api/listings/public/:id
- * Returns listing + host info (with avatarUrl) + reviews (with client info)
- */
 exports.getListingPublic = async (req, res) => {
   try {
     const listing = await Listing
       .findById(req.params.id)
-      .populate('business', 'name createdAt avatarUrl')  // host name + avatarUrl
+      .populate('business', 'name createdAt avatarUrl')
       .lean();
     if (!listing) return res.status(404).json({ msg: 'Not found' });
 
     const reviews = await Review
       .find({ listing: listing._id })
-      .populate('client', 'name avatarUrl')             // client name + avatar
+      .populate('client', 'name avatarUrl')
       .sort({ createdAt: -1 })
       .lean();
 
@@ -106,39 +101,40 @@ exports.getListingPublic = async (req, res) => {
 exports.updateListing = async (req, res) => {
   try {
     const update = {
-      title:         req.body.title,
-      description:   req.body.description,
-      carType:       req.body.carType,
-      make:          req.body.make,
-      model:         req.body.model,
-      year:          req.body.year,
-      mileage:       req.body.mileage,
-      fuelType:      req.body.fuelType,
-      engineSize:    req.body.engineSize,
-      transmission:  req.body.transmission,
-      licensePlate:  req.body.licensePlate,
-      pricePerDay:   req.body.pricePerDay,
-      terms:         req.body.terms,
-      address:       req.body.address,
-      availableFrom: req.body.availableFrom ? new Date(req.body.availableFrom) : null,
-      availableTo:   req.body.availableTo   ? new Date(req.body.availableTo)   : null,
-      gps:            req.body.gps === 'true',
-      bluetooth:      req.body.bluetooth === 'true',
-      heatedSeats:    req.body.heatedSeats === 'true',
-      parkingSensors: req.body.parkingSensors === 'true',
-      backupCamera:   req.body.backupCamera === 'true',
-      appleCarPlay:   req.body.appleCarPlay === 'true',
-      androidAuto:    req.body.androidAuto === 'true',
-      keylessEntry:   req.body.keylessEntry === 'true',
-      childSeat:      req.body.childSeat === 'true',
-      leatherSeats:   req.body.leatherSeats === 'true',
-      tintedWindows:  req.body.tintedWindows === 'true',
-      convertible:    req.body.convertible === 'true',
-      roofRack:       req.body.roofRack === 'true',
-      petFriendly:    req.body.petFriendly === 'true',
-      smokeFree:      req.body.smokeFree === 'true',
-      seatCovers:     req.body.seatCovers === 'true',
-      dashCam:        req.body.dashCam === 'true',
+      title:              req.body.title,
+      description:        req.body.description,
+      carType:            req.body.carType,
+      make:               req.body.make,
+      model:              req.body.model,
+      year:               req.body.year,
+      mileage:            req.body.mileage,
+      fuelType:           req.body.fuelType,
+      engineSize:         req.body.engineSize,
+      transmission:       req.body.transmission,
+      licensePlate:       req.body.licensePlate,
+      pricePerDay:        req.body.pricePerDay,
+      terms:              req.body.terms,
+      address:            req.body.address,
+      availableFrom:      req.body.availableFrom ? new Date(req.body.availableFrom) : null,
+      availableTo:        req.body.availableTo   ? new Date(req.body.availableTo)   : null,
+      gps:                req.body.gps === 'true',
+      bluetooth:          req.body.bluetooth === 'true',
+      heatedSeats:        req.body.heatedSeats === 'true',
+      parkingSensors:     req.body.parkingSensors === 'true',
+      backupCamera:       req.body.backupCamera === 'true',
+      appleCarPlay:       req.body.appleCarPlay === 'true',
+      androidAuto:        req.body.androidAuto === 'true',
+      keylessEntry:       req.body.keylessEntry === 'true',
+      childSeat:          req.body.childSeat === 'true',
+      leatherSeats:       req.body.leatherSeats === 'true',
+      tintedWindows:      req.body.tintedWindows === 'true',
+      convertible:        req.body.convertible === 'true',
+      roofRack:           req.body.roofRack === 'true',
+      petFriendly:        req.body.petFriendly === 'true',
+      smokeFree:          req.body.smokeFree === 'true',
+      seatCovers:         req.body.seatCovers === 'true',
+      dashCam:            req.body.dashCam === 'true',
+      cancellationPolicy: req.body.cancellationPolicy,  // ← new
     };
     if (req.files && req.files.length) update.images = relPaths(req.files);
 
