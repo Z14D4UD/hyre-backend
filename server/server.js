@@ -4,6 +4,7 @@ const cors     = require('cors');
 const session  = require('express-session');
 const passport = require('passport');
 const path     = require('path');
+const fs       = require('fs');                    // ← NEW
 require('dotenv').config();
 const http      = require('http');
 const { Server } = require('socket.io');
@@ -45,9 +46,21 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 /* ───────────── 4. static uploads ─ */
-const uploadsDir = path.join('/data', 'uploads');          // <── persistent disk
-app.use('/uploads',     express.static(uploadsDir));
-app.use('/api/uploads', express.static(uploadsDir));
+
+/**
+ * We store uploads on Render’s persistent disk.
+ *   Disk mount path ………………  /data
+ *   Our sub-folder   …………  /data/uploads
+ *
+ * Make sure the directory exists every time the container boots.
+ */
+const diskUploads = '/data/uploads';
+if (!fs.existsSync(diskUploads)) {
+  fs.mkdirSync(diskUploads, { recursive: true });
+}
+
+app.use('/uploads',     express.static(diskUploads));  // public
+app.use('/api/uploads', express.static(diskUploads));  // legacy URLs
 
 /* ───────────── 5. session / passport ─ */
 app.use(
@@ -68,14 +81,14 @@ app.use('/api/invoices',      invoiceRoutes);
 app.use('/api/chat',          chatRoutes);
 app.use('/api/customer',      customerRoutes);
 app.use('/api/cars',          carRoutes);
-app.use('/api/business',      businessRoutes);        // generic business
-app.use('/api/business',      listingRoutes);         // auth CRUD (/listings …)
-app.use('/api/listings',      publicListingRoutes);   // public GET /api/listings/:id
+app.use('/api/business',      businessRoutes);        // generic business ops
+app.use('/api/business',      listingRoutes);         // /api/business/listings…
+app.use('/api/listings',      publicListingRoutes);   // public read-only
 app.use('/api/payment',       paymentRoutes);
 app.use('/api/affiliate',     affiliateRoutes);
 app.use('/api/account',       accountRoutes);
 app.use('/api/support',       supportRoutes);
-app.use('/api',               reviewRoutes);          // reviews keep paths
+app.use('/api',               reviewRoutes);          // reviews keep historic paths
 app.use('/api/withdrawals',   withdrawalRoutes);
 app.use('/api/connect-bank',  connectBankRoutes);
 app.use('/api/reminders',     remindersRoutes);
