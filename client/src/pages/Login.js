@@ -46,7 +46,7 @@ export default function Login() {
         switch (data.accountType) {
           case 'admin':     dest = '/dashboard/admin';     break;
           case 'business':  dest = '/dashboard/business';  break;
-          case 'customer':  dest = '/dashboard/customer';  break;
+          case 'customer':  dest = '/';                    break;   // ← show Home with customer menu
           case 'affiliate': dest = '/dashboard/affiliate'; break;
           default:          dest = '/';
         }
