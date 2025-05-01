@@ -4,7 +4,7 @@ const cors     = require('cors');
 const session  = require('express-session');
 const passport = require('passport');
 const path     = require('path');
-const fs       = require('fs');
+const fs       = require('fs');                    // ← NEW
 require('dotenv').config();
 const http      = require('http');
 const { Server } = require('socket.io');
@@ -37,35 +37,26 @@ const server = http.createServer(app);
 connectDB();
 
 /* ───────────── 2. CORS ──────────── */
-const allowedOrigins = ['http://localhost:3000', 'https://hyreuk.com'];
+const allowedOrigins = ['http://localhost:3000','https://hyreuk.com'];
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.options('*', cors({ origin: allowedOrigins, credentials: true }));
 
-/* ───────────── 3. body parsers ──── */
+/* ───────────── 3. BODY PARSERS ──── */
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-/* ───────────── 4. static uploads ─ */
-
-/**
- * On Render the persistent disk is mounted at /data
- * We keep images in /data/uploads
- * Attempt to create the directory if it isn’t there – ignore EACCES
- * (Render may have created it with root + 0700 already)
- */
-const uploadsDir = '/data/uploads';
-try {
-  if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-  }
-} catch (err) {
-  if (err.code !== 'EACCES') throw err;   // any other error should still crash
+/* ───────────── 4. STATIC UPLOADS ─ */
+// We store uploads on Render’s persistent disk at <project-root>/uploads
+// __dirname is <project-root>/server, so go up one level:
+const uploadsDir = path.join(__dirname, '..', 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
 }
+// Serve those files publicly
+app.use('/uploads',     express.static(uploadsDir));  // for <img src="/uploads/...
+app.use('/api/uploads', express.static(uploadsDir));  // legacy URLs
 
-app.use('/uploads',     express.static(uploadsDir));   // public
-app.use('/api/uploads', express.static(uploadsDir));   // legacy URLs
-
-/* ───────────── 5. session / passport ─ */
+/* ───────────── 5. SESSIONS & PASSPORT ─ */
 app.use(session({
   secret: process.env.SESSION_SECRET || 'secretKey',
   resave: false,
@@ -75,36 +66,36 @@ app.use(passport.initialize());
 app.use(passport.session());
 require('./config/passport')(passport);
 
-/* ───────────── 6. API routes ────── */
+/* ───────────── 6. API ROUTES ────── */
 app.use('/api/auth',          authRoutes);
 app.use('/api/bookings',      bookingRoutes);
 app.use('/api/invoices',      invoiceRoutes);
 app.use('/api/chat',          chatRoutes);
 app.use('/api/customer',      customerRoutes);
 app.use('/api/cars',          carRoutes);
-app.use('/api/business',      businessRoutes);      // generic business
-app.use('/api/business',      listingRoutes);       // /api/business/listings…
-app.use('/api/listings',      publicListingRoutes); // public read-only
+app.use('/api/business',      businessRoutes);
+app.use('/api/business',      listingRoutes);
+app.use('/api/listings',      publicListingRoutes);
 app.use('/api/payment',       paymentRoutes);
 app.use('/api/affiliate',     affiliateRoutes);
 app.use('/api/account',       accountRoutes);
 app.use('/api/support',       supportRoutes);
-app.use('/api',               reviewRoutes);        // historic review paths
+app.use('/api',               reviewRoutes);
 app.use('/api/withdrawals',   withdrawalRoutes);
 app.use('/api/connect-bank',  connectBankRoutes);
 app.use('/api/reminders',     remindersRoutes);
 app.use('/api/reviews',       reviewRoutes);
 app.use('/api/admin',         adminRoutes);
 
-/* ───────────── 7. socket.io ─────── */
+/* ───────────── 7. SOCKET.IO ─────── */
 const io = new Server(server, {
   cors: { origin: allowedOrigins, methods: ['GET','POST','PUT','DELETE'], credentials: true }
 });
-io.on('connection', (socket) => {
-  socket.on('joinRoom', (room) => socket.join(room));
-  socket.on('sendMessage', (data) => io.to(data.room).emit('receiveMessage', data));
+io.on('connection', socket => {
+  socket.on('joinRoom', room => socket.join(room));
+  socket.on('sendMessage', data => io.to(data.room).emit('receiveMessage', data));
 });
 
-/* ───────────── 8. start ─────────── */
+/* ───────────── 8. START ─────────── */
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`► API up on :${PORT}`));
