@@ -4,7 +4,7 @@ const cors     = require('cors');
 const session  = require('express-session');
 const passport = require('passport');
 const path     = require('path');
-const fs       = require('fs');                    // ← NEW
+const fs       = require('fs');
 require('dotenv').config();
 const http      = require('http');
 const { Server } = require('socket.io');
@@ -48,28 +48,29 @@ app.use(express.urlencoded({ extended: true }));
 /* ───────────── 4. static uploads ─ */
 
 /**
- * We store uploads on Render’s persistent disk.
- *   Disk mount path ………………  /data
- *   Our sub-folder   …………  /data/uploads
- *
- * Make sure the directory exists every time the container boots.
+ * On Render the persistent disk is mounted at /data
+ * We keep images in /data/uploads
+ * Attempt to create the directory if it isn’t there – ignore EACCES
+ * (Render may have created it with root + 0700 already)
  */
-const diskUploads = '/data/uploads';
-if (!fs.existsSync(diskUploads)) {
-  fs.mkdirSync(diskUploads, { recursive: true });
+const uploadsDir = '/data/uploads';
+try {
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+} catch (err) {
+  if (err.code !== 'EACCES') throw err;   // any other error should still crash
 }
 
-app.use('/uploads',     express.static(diskUploads));  // public
-app.use('/api/uploads', express.static(diskUploads));  // legacy URLs
+app.use('/uploads',     express.static(uploadsDir));   // public
+app.use('/api/uploads', express.static(uploadsDir));   // legacy URLs
 
 /* ───────────── 5. session / passport ─ */
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || 'secretKey',
-    resave: false,
-    saveUninitialized: false,
-  })
-);
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'secretKey',
+  resave: false,
+  saveUninitialized: false,
+}));
 app.use(passport.initialize());
 app.use(passport.session());
 require('./config/passport')(passport);
@@ -81,14 +82,14 @@ app.use('/api/invoices',      invoiceRoutes);
 app.use('/api/chat',          chatRoutes);
 app.use('/api/customer',      customerRoutes);
 app.use('/api/cars',          carRoutes);
-app.use('/api/business',      businessRoutes);        // generic business ops
-app.use('/api/business',      listingRoutes);         // /api/business/listings…
-app.use('/api/listings',      publicListingRoutes);   // public read-only
+app.use('/api/business',      businessRoutes);      // generic business
+app.use('/api/business',      listingRoutes);       // /api/business/listings…
+app.use('/api/listings',      publicListingRoutes); // public read-only
 app.use('/api/payment',       paymentRoutes);
 app.use('/api/affiliate',     affiliateRoutes);
 app.use('/api/account',       accountRoutes);
 app.use('/api/support',       supportRoutes);
-app.use('/api',               reviewRoutes);          // reviews keep historic paths
+app.use('/api',               reviewRoutes);        // historic review paths
 app.use('/api/withdrawals',   withdrawalRoutes);
 app.use('/api/connect-bank',  connectBankRoutes);
 app.use('/api/reminders',     remindersRoutes);
@@ -97,7 +98,7 @@ app.use('/api/admin',         adminRoutes);
 
 /* ───────────── 7. socket.io ─────── */
 const io = new Server(server, {
-  cors: { origin: allowedOrigins, methods: ['GET', 'POST', 'PUT', 'DELETE'], credentials: true },
+  cors: { origin: allowedOrigins, methods: ['GET','POST','PUT','DELETE'], credentials: true }
 });
 io.on('connection', (socket) => {
   socket.on('joinRoom', (room) => socket.join(room));
