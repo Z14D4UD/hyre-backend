@@ -46,19 +46,17 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 /* 4) STATIC UPLOADS */
-// In dev, write into ./uploads; on Render, the persistent volume is mounted at /mnt/data
-const localUploads = path.join(__dirname, 'uploads');
-const prodUploads  = '/mnt/data';
-const uploadsDir   = process.env.NODE_ENV === 'production' ? prodUploads : localUploads;
+// This folder is project-root/uploads.
+// On Render, mount the persistent disk to exactly this path:
+//   /opt/render/project/src/server/uploads
+const uploadsDir = path.join(__dirname, 'uploads');
 
-// Ensure local folder exists in development
-if (process.env.NODE_ENV !== 'production') {
-  if (!fs.existsSync(localUploads)) {
-    fs.mkdirSync(localUploads, { recursive: true });
-  }
+// Make sure it exists before multer or static serve
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Serve uploaded files under both /uploads and /api/uploads
+// Serve user-uploaded images under /uploads and legacy /api/uploads
 app.use('/uploads',     express.static(uploadsDir));
 app.use('/api/uploads', express.static(uploadsDir));
 
