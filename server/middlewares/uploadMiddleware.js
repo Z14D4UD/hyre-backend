@@ -1,11 +1,12 @@
+// server/middlewares/uploadMiddleware.js
 const multer = require('multer');
 const path   = require('path');
 const fs     = require('fs');
 
-// Must match the uploadsDir above:
+// must match the uploadsDir in server.js
 const uploadsDir = path.join(__dirname, '..', 'uploads');
 
-// Ensure it exists (only needed in dev, but harmless in prod):
+// ensure it exists (harmless if it already does)
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
@@ -15,7 +16,7 @@ const storage = multer.diskStorage({
   filename:    (_req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
 });
 
-// Accept only images:
+// accept only image mime types
 const fileFilter = (_req, file, cb) =>
   cb(null, file.mimetype.startsWith('image/'));
 

@@ -1,3 +1,4 @@
+// server.js
 /* eslint-disable no-console */
 const express   = require('express');
 const cors      = require('cors');
@@ -46,17 +47,13 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 /* 4) STATIC UPLOADS */
-// This folder is project-root/uploads.
-// On Render, mount the persistent disk to exactly this path:
-//   /opt/render/project/src/server/uploads
+// this must match your Render disk mount: /opt/render/project/src/server/uploads
 const uploadsDir = path.join(__dirname, 'uploads');
-
-// Make sure it exists before multer or static serve
+// ensure it exists before multer or static middleware
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
-
-// Serve user-uploaded images under /uploads and legacy /api/uploads
+// serve at both /uploads and /api/uploads
 app.use('/uploads',     express.static(uploadsDir));
 app.use('/api/uploads', express.static(uploadsDir));
 
@@ -96,8 +93,8 @@ const io = new Server(server, {
   cors: { origin: allowedOrigins, methods: ['GET','POST','PUT','DELETE'], credentials: true }
 });
 io.on('connection', socket => {
-  socket.on('joinRoom',   room => socket.join(room));
-  socket.on('sendMessage',data => io.to(data.room).emit('receiveMessage', data));
+  socket.on('joinRoom',    room => socket.join(room));
+  socket.on('sendMessage', data => io.to(data.room).emit('receiveMessage', data));
 });
 
 /* 8) START */
