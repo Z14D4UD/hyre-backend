@@ -4,7 +4,6 @@ const cors      = require('cors');
 const session   = require('express-session');
 const passport  = require('passport');
 const path      = require('path');
-const fs        = require('fs');
 require('dotenv').config();
 const http      = require('http');
 const { Server }= require('socket.io');
@@ -46,12 +45,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 /* 4) STATIC UPLOADS */
-// store uploads in a local “uploads” folder under the project root
-const uploadsDir = path.join('/mnt', 'data', 'uploads');// ensure it exists before any multer or static middleware runs
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-// serve at both /uploads/... and /api/uploads/...
+// Render mounts your Persistent Disk at ./server/uploads
+const uploadsDir = path.join(__dirname, 'uploads');
+// serve uploads under both URLs:
 app.use('/uploads',     express.static(uploadsDir));
 app.use('/api/uploads', express.static(uploadsDir));
 

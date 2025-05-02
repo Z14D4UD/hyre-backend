@@ -2,8 +2,8 @@
 const multer = require('multer');
 const path   = require('path');
 
-// must match the uploadsDir in server.js
-const uploadsDir = path.join('/mnt', 'data', 'uploads');
+// point at the same uploads folder under server/
+const uploadsDir = path.join(__dirname, '..', 'uploads');
 
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, uploadsDir),
