@@ -2,7 +2,7 @@
 
 const Affiliate = require('../models/Affiliate');
 
-// Existing function for stats:
+// GET /api/affiliate/stats
 exports.getAffiliateStats = async (req, res) => {
   try {
     const affiliate = await Affiliate.findById(req.affiliate.id);
@@ -12,9 +12,9 @@ exports.getAffiliateStats = async (req, res) => {
 
     const data = {
       last30Days: {
-        referrals: affiliate.recentReferrals   || 0,
-        visits:    affiliate.recentVisits      || 0,
-        conversions: affiliate.conversions     || 0,
+        referrals:   affiliate.recentReferrals   || 0,
+        visits:      affiliate.recentVisits      || 0,
+        conversions: affiliate.conversions       || 0,
       },
       allTime: {
         referrals:      affiliate.referrals      || 0,
@@ -22,10 +22,10 @@ exports.getAffiliateStats = async (req, res) => {
         unpaidEarnings: affiliate.unpaidEarnings || 0,
         totalEarnings:  affiliate.totalEarnings  || 0,
       },
-      pendingBalance:   affiliate.pendingBalance   || 0,  // ← new
-      availableBalance: affiliate.availableBalance || 0,  // ← new
+      pendingBalance:   affiliate.pendingBalance   || 0,
+      availableBalance: affiliate.availableBalance || 0,
       affiliateCode:    affiliate.affiliateCode,
-      recentActivity:   [] // populate with real activity if available
+      recentActivity:   [] // populate if you have it
     };
 
     res.json(data);
@@ -35,7 +35,7 @@ exports.getAffiliateStats = async (req, res) => {
   }
 };
 
-// Get Affiliate Profile – mirrors the customer profile GET endpoint
+// GET /api/affiliate/profile
 exports.getAffiliateProfile = async (req, res) => {
   try {
     const affiliate = await Affiliate.findById(req.affiliate.id);
@@ -49,20 +49,15 @@ exports.getAffiliateProfile = async (req, res) => {
   }
 };
 
-// Update Affiliate Profile – now handles file uploads for avatar
+// PUT /api/affiliate/profile
 exports.updateAffiliateProfile = async (req, res) => {
   try {
-    console.log('Received update affiliate profile request:');
-    console.log('req.body:', req.body);
-    console.log('req.file:', req.file);
-
     const { name, email, location, aboutMe, phoneNumber } = req.body;
-
-    let updateData = { name, email, location, aboutMe, phoneNumber };
+    const updateData = { name, email, location, aboutMe, phoneNumber };
 
     if (req.file) {
-      updateData.avatarUrl = req.file.path.replace(/\\/g, '/');
-      console.log('Updating avatarUrl with file path:', updateData.avatarUrl);
+      // only use the filename (with extension); the /uploads middleware will serve it
+      updateData.avatarUrl = `uploads/${req.file.filename}`;
     }
 
     const updatedAffiliate = await Affiliate.findByIdAndUpdate(
@@ -70,11 +65,11 @@ exports.updateAffiliateProfile = async (req, res) => {
       updateData,
       { new: true }
     );
-    
+
     if (!updatedAffiliate) {
       return res.status(404).json({ msg: 'Affiliate not found' });
     }
-    console.log('Updated Affiliate:', updatedAffiliate);
+
     res.json(updatedAffiliate);
   } catch (error) {
     console.error('Error updating affiliate profile:', error);
