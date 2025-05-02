@@ -48,7 +48,7 @@ app.use(express.urlencoded({ extended: true }));
 /* 4) STATIC UPLOADS */
 // store uploads in a local “uploads” folder under the project root
 const uploadsDir = path.join(__dirname, 'uploads');
-// ensure it exists before any multer runs
+// ensure it exists before any multer or static middleware runs
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
