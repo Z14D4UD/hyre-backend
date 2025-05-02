@@ -1,8 +1,7 @@
-// uploadMiddleware.js
 const multer = require('multer');
 const path   = require('path');
 
-// store in same uploads folder under project
+// write into the same uploads folder under project root
 const uploadsDir = path.join(__dirname, '..', 'uploads');
 
 const storage = multer.diskStorage({
@@ -10,6 +9,7 @@ const storage = multer.diskStorage({
   filename:    (_req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`)
 });
 
-const fileFilter = (_req, file, cb) => cb(null, file.mimetype.startsWith('image/'));
+const fileFilter = (_req, file, cb) =>
+  cb(null, file.mimetype.startsWith('image/'));  // only images
 
 module.exports = multer({ storage, fileFilter });

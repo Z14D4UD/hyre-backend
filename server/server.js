@@ -10,7 +10,7 @@ const http      = require('http');
 const { Server }= require('socket.io');
 const connectDB = require('./config/db');
 
-// ── route bundles ──
+/* ── route bundles ── */
 const authRoutes          = require('./routes/authRoutes');
 const bookingRoutes       = require('./routes/bookingRoutes');
 const invoiceRoutes       = require('./routes/invoiceRoutes');
@@ -46,15 +46,14 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 /* 4) STATIC UPLOADS */
-// Render’s persistent disk is mounted at /data
-const diskUploads = '/data/uploads';
-// ensure it exists before any multer runs
-if (!fs.existsSync(diskUploads)) {
-  fs.mkdirSync(diskUploads, { recursive: true });
+// store uploads in a local “uploads” folder under the project root
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
 }
-// serve those files
-app.use('/uploads',     express.static(diskUploads));  // e.g. https://your-backend/uploads/…
-app.use('/api/uploads', express.static(diskUploads));  // legacy support
+// serve at both /uploads/... and /api/uploads/...
+app.use('/uploads',     express.static(uploadsDir));
+app.use('/api/uploads', express.static(uploadsDir));
 
 /* 5) SESSIONS & PASSPORT */
 app.use(session({
