@@ -1,4 +1,3 @@
-// server.js
 /* eslint-disable no-console */
 const express   = require('express');
 const cors      = require('cors');
@@ -7,6 +6,7 @@ const passport  = require('passport');
 const path      = require('path');
 const fs        = require('fs');
 require('dotenv').config();
+
 const http      = require('http');
 const { Server }= require('socket.io');
 const connectDB = require('./config/db');
@@ -38,7 +38,7 @@ const server = http.createServer(app);
 connectDB();
 
 /* 2) CORS */
-const allowedOrigins = ['http://localhost:3000','https://hyreuk.com'];
+const allowedOrigins = ['http://localhost:3000', 'https://hyreuk.com'];
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.options('*', cors({ origin: allowedOrigins, credentials: true }));
 
@@ -47,13 +47,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 /* 4) STATIC UPLOADS */
-// this must match your Render disk mount: /opt/render/project/src/server/uploads
+// Everything lands in server/uploads → Render must be set to mount its persistent disk there:
 const uploadsDir = path.join(__dirname, 'uploads');
-// ensure it exists before multer or static middleware
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
-// serve at both /uploads and /api/uploads
+// Expose both new and legacy URLs:
 app.use('/uploads',     express.static(uploadsDir));
 app.use('/api/uploads', express.static(uploadsDir));
 
