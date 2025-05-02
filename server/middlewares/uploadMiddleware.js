@@ -2,6 +2,7 @@ const multer = require('multer');
 const path   = require('path');
 
 // write into the same uploads folder under project root
+// (must match the `uploadsDir` used in server.js)
 const uploadsDir = path.join(__dirname, '..', 'uploads');
 
 const storage = multer.diskStorage({
