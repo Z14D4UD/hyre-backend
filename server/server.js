@@ -10,7 +10,7 @@ const http      = require('http');
 const { Server }= require('socket.io');
 const connectDB = require('./config/db');
 
-// ── route bundles ──
+/* ── route bundles ── */
 const authRoutes          = require('./routes/authRoutes');
 const bookingRoutes       = require('./routes/bookingRoutes');
 const invoiceRoutes       = require('./routes/invoiceRoutes');
@@ -46,13 +46,19 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 /* 4) STATIC UPLOADS */
-// point at the “uploads” folder INSIDE this server project
-const uploadsDir = path.join(__dirname, 'uploads');
-// create it if necessary
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
+// In dev, write into ./uploads; on Render, the persistent volume is mounted at /mnt/data
+const localUploads = path.join(__dirname, 'uploads');
+const prodUploads  = '/mnt/data';
+const uploadsDir   = process.env.NODE_ENV === 'production' ? prodUploads : localUploads;
+
+// Ensure local folder exists in development
+if (process.env.NODE_ENV !== 'production') {
+  if (!fs.existsSync(localUploads)) {
+    fs.mkdirSync(localUploads, { recursive: true });
+  }
 }
-// serve at both /uploads/... and /api/uploads/...
+
+// Serve uploaded files under both /uploads and /api/uploads
 app.use('/uploads',     express.static(uploadsDir));
 app.use('/api/uploads', express.static(uploadsDir));
 
@@ -80,6 +86,7 @@ app.use('/api/payment',       paymentRoutes);
 app.use('/api/affiliate',     affiliateRoutes);
 app.use('/api/account',       accountRoutes);
 app.use('/api/support',       supportRoutes);
+app.use('/api',               reviewRoutes);
 app.use('/api/withdrawals',   withdrawalRoutes);
 app.use('/api/connect-bank',  connectBankRoutes);
 app.use('/api/reminders',     remindersRoutes);
@@ -91,8 +98,8 @@ const io = new Server(server, {
   cors: { origin: allowedOrigins, methods: ['GET','POST','PUT','DELETE'], credentials: true }
 });
 io.on('connection', socket => {
-  socket.on('joinRoom', room => socket.join(room));
-  socket.on('sendMessage', data => io.to(data.room).emit('receiveMessage', data));
+  socket.on('joinRoom',   room => socket.join(room));
+  socket.on('sendMessage',data => io.to(data.room).emit('receiveMessage', data));
 });
 
 /* 8) START */
