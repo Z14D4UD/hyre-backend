@@ -1,5 +1,5 @@
 // client/src/pages/Home.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaSearch } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -10,7 +10,6 @@ import SideMenuCustomer from '../components/SideMenuCustomer';
 import SideMenuBusiness from '../components/SideMenuBusiness';
 import SideMenuAffiliate from '../components/SideMenuAffiliate';
 
-import FeaturedBusinesses from '../components/FeaturedBusinesses';
 import PlaceAutocomplete from '../components/PlaceAutocomplete';
 import Footer from '../components/Footer';
 
@@ -45,6 +44,13 @@ function getLocalDateTimeString(date) {
   return local.toISOString().slice(0, 16);
 }
 
+/**
+ * Remove any trailing slash so we never fetch HTML by accident
+ */
+function sanitizeBaseUrl(url) {
+  return url?.replace(/\/+$/, '') || '';
+}
+
 export default function Home() {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -62,8 +68,10 @@ export default function Home() {
   const [location, setLocation] = useState('');
   const [fromDateTime, setFromDateTime] = useState(getLocalDateTimeString(now));
   const [toDateTime, setToDateTime] = useState(getLocalDateTimeString(twoDaysLater));
-
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // NEW: featured cars state
+  const [featuredCars, setFeaturedCars] = useState([]);
 
   // side menu login status
   const token = (localStorage.getItem('token') || '').trim();
@@ -74,6 +82,23 @@ export default function Home() {
 
   const toggleMenu = () => setMenuOpen(!menuOpen);
   const closeMenu = () => setMenuOpen(false);
+
+  // Fetch & filter two Birmingham listings on mount
+  useEffect(() => {
+    const BACKEND = sanitizeBaseUrl(process.env.REACT_APP_BACKEND_URL);
+    fetch(`${BACKEND}/listings`)
+      .then(res => {
+        if (!res.ok) throw new Error(`API returned ${res.status}`);
+        return res.json();
+      })
+      .then(data => {
+        const birmingham = data.filter(
+          listing => listing.address && listing.address.includes('Birmingham')
+        );
+        setFeaturedCars(birmingham.slice(0, 2));
+      })
+      .catch(err => console.error('Error fetching featured cars:', err));
+  }, []);
 
   // Callback from PlaceAutocomplete
   const handlePlaceSelect = (prediction) => {
@@ -104,7 +129,6 @@ export default function Home() {
 
   const handleListYourCar = () => {
     if (isBusinessLoggedIn) {
-      // changed to Add Listing
       navigate('/add-listing');
     } else if (token) {
       alert('You must be logged in as a business to list your car.');
@@ -155,7 +179,10 @@ export default function Home() {
       {sideMenuComponent}
 
       {/* Hero */}
-      <section className={styles.hero} style={{ backgroundImage: `url(${heroImage})` }}>
+      <section
+        className={styles.hero}
+        style={{ backgroundImage: `url(${heroImage})` }}
+      >
         <div className={styles.heroOverlay} />
         <div className={styles.searchContainer}>
           {/* Where field */}
@@ -199,10 +226,29 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Featured Businesses */}
+      {/* Featured Cars */}
       <section className={styles.featuredSection}>
-        <h2 className={styles.featuredTitle}>Featured Businesses</h2>
-        <FeaturedBusinesses />
+        <h2 className={styles.featuredTitle}>Featured Cars</h2>
+        <div className={styles.cardGrid}>
+          {featuredCars.map(car => (
+            <div
+              key={car._id}
+              className={styles.card}
+              onClick={() => navigate(`/car/${car._id}`)}
+            >
+              <img
+                src={`${sanitizeBaseUrl(process.env.REACT_APP_BACKEND_URL)}/${car.images[0]}`}
+                alt={car.title}
+                className={styles.carImage}
+              />
+              <div className={styles.carInfo}>
+                <h3>{car.title}</h3>
+                <p>{car.address}</p>
+                <p>£{parseFloat(car.pricePerDay).toFixed(2)}/day</p>
+              </div>
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* Promo Section */}
@@ -223,19 +269,41 @@ export default function Home() {
             Sign up now &gt;
           </a>
         </div>
+        <div className={styles.promoItem}>
+          <div className={styles.promoIcon}>💙</div>
+          <h3>Trusted Providers</h3>
+          <p>Access a network of reliable local car rental businesses.</p>
+          <a href="/signup" className={styles.promoLink}>
+            Learn more &gt;
+          </a>
+        </div>
+        <div className={styles.promoItem}>
+          <div className={styles.promoIcon}>⚡</div>
+          <h3>Fast and Easy</h3>
+          <p>Book in minutes with our seamless reservation process.</p>
+          <a href="/signup" className={styles.promoLink}>
+            Learn more &gt;
+          </a>
+        </div>
       </section>
 
       {/* List Your Car */}
       <section className={styles.listYourCarSection}>
         <h2>List Your Car</h2>
         <p className={styles.listYourCarContent}>
-          Earn extra income by listing your car on Hyre. Set your own rates and availability, and we'll connect you with local customers looking for the perfect ride.
+          Earn extra income by listing your car on Hyre. Set your own rates
+          and availability, and we'll connect you with local customers
+          looking for the perfect ride.
         </p>
-        <button className={styles.listYourCarButton} onClick={handleListYourCar}>
+        <button
+          className={styles.listYourCarButton}
+          onClick={handleListYourCar}
+        >
           List Your Car
         </button>
       </section>
 
       <Footer />
     </div>
-)}
+  );
+}

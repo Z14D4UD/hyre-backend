@@ -161,3 +161,13 @@ exports.deleteListing = async (req, res) => {
     res.status(500).json({ msg: 'Server error deleting listing' });
   }
 };
+
+exports.getAllListings = async (req, res) => {
+  try {
+    const listings = await Listing.find({}).lean();
+    res.json(listings);
+  } catch (err) {
+    console.error('Error fetching all listings:', err);
+    res.status(500).json({ msg: 'Server error fetching listings' });
+  }
+};
