@@ -11,7 +11,7 @@
 .header {
   display: flex;
   align-items: center;
-  justify-content: center; /* center the logo */
+  justify-content: center;
   padding: 1rem 1.5rem;
   background-color: #fff;
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
@@ -25,7 +25,7 @@
   font-weight: 700;
   font-size: 2.4rem;
   letter-spacing: 0.5px;
-  color: #38b6ff; /* Hyre color */
+  color: #38b6ff;
   cursor: pointer;
 }
 .menuIcon {
@@ -58,11 +58,10 @@
   background-color: rgba(0,0,0,0.3);
 }
 
-/* Search Container: 4 columns */
+/* Search Container */
 .searchContainer {
   position: relative;
   z-index: 1;
-  /* changed to semi-opaque */
   background-color: rgba(255,255,255,0.85);
   padding: 1rem;
   border-radius: 20px;
@@ -120,6 +119,52 @@
   font-weight: 700;
   margin-bottom: 1.5rem;
   letter-spacing: 0.5px;
+}
+
+/* Card grid for featured cars */
+.listingsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.listingCard {
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  cursor: pointer;
+  text-align: left;
+}
+.imageWrapper {
+  width: 100%;
+  height: 180px;
+  overflow: hidden;
+}
+.cardImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.cardInfo {
+  padding: 1rem;
+}
+.carTitle {
+  font-size: 1.1rem;
+  margin: 0;
+  font-weight: 600;
+}
+.carLocation {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 0.5rem 0;
+}
+.price {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0;
 }
 
 /* Promo Section */
@@ -195,14 +240,6 @@
   font-weight: 700;
   margin-bottom: 1rem;
 }
-.listYourCarImage {
-  width: 100%;
-  max-width: 600px;
-  margin: 0 auto 1rem;
-  border-radius: 12px;
-  object-fit: cover;
-  display: block;
-}
 .listYourCarContent {
   margin: 0 auto;
   max-width: 600px;
@@ -220,17 +257,6 @@
   cursor: pointer;
   font-size: 0.95rem;
   font-weight: 500;
-}
-
-/* Footer */
-.footer {
-  background-color: #fff;
-  padding: 1.2rem;
-  text-align: center;
-  color: #666;
-  font-size: 0.9rem;
-  box-shadow: 0 -2px 6px rgba(0,0,0,0.1);
-  margin-top: 2rem;
 }
 
 /* Responsive Adjustments */

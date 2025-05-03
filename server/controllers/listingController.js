@@ -98,6 +98,17 @@ exports.getListingPublic = async (req, res) => {
   }
 };
 
+// ← NEW: returns all listings for public GET /api/listings
+exports.getAllListings = async (_req, res) => {
+  try {
+    const listings = await Listing.find({});
+    res.json(listings);
+  } catch (err) {
+    console.error('Error fetching all listings:', err);
+    res.status(500).json({ msg: 'Server error fetching listings' });
+  }
+};
+
 exports.updateListing = async (req, res) => {
   try {
     const update = {
@@ -159,15 +170,5 @@ exports.deleteListing = async (req, res) => {
   } catch (err) {
     console.error('DELETE listing err:', err);
     res.status(500).json({ msg: 'Server error deleting listing' });
-  }
-};
-
-exports.getAllListings = async (req, res) => {
-  try {
-    const listings = await Listing.find({}).lean();
-    res.json(listings);
-  } catch (err) {
-    console.error('Error fetching all listings:', err);
-    res.status(500).json({ msg: 'Server error fetching listings' });
   }
 };
