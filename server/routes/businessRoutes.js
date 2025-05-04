@@ -23,12 +23,9 @@ router.get('/',                getBookings)
 // Payout request
 router.post('/payout',         authMiddleware, requestPayout)
 
-// “My” routes (must come *before* the :id route)
+// “My” routes (must come *before* any ':id' route)
 router.get('/my',              authMiddleware, getMyBookings)
 router.get('/customer',        authMiddleware, getCustomerBookings)
-
-// Single booking (used by PaymentSuccessPage)
-router.get('/:id',             authMiddleware, getBookingById)
 
 // Download invoice PDF (protected)
 router.get('/invoice/:id',     authMiddleware, generateInvoice)
@@ -38,5 +35,9 @@ router.patch('/:id/status',    authMiddleware, updateBookingStatus)
 
 // Delete booking
 router.delete('/:id',          authMiddleware, deleteBooking)
+
+// Single booking (used by PaymentSuccessPage)
+// <-- this must come last so it doesn’t catch '/customer', '/invoice', etc.
+router.get('/:id',             authMiddleware, getBookingById)
 
 module.exports = router
