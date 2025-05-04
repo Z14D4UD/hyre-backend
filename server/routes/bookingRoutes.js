@@ -20,9 +20,6 @@ router.post('/', authMiddleware, createBooking);
 // Public booking list
 router.get('/', getBookings);
 
-// Single booking (used by PaymentSuccessPage)
-router.get('/:id', authMiddleware, getBookingById);
-
 // Download invoice PDF (protected)
 router.get('/invoice/:id', authMiddleware, generateInvoice);
 
@@ -32,6 +29,9 @@ router.post('/payout', authMiddleware, requestPayout);
 // “My” routes (protected)
 router.get('/my', authMiddleware, getMyBookings);
 router.get('/customer', authMiddleware, getCustomerBookings);
+
+// Single booking (used by PaymentSuccessPage)
+router.get('/:id', authMiddleware, getBookingById);
 
 // Update booking status
 router.patch('/:id/status', authMiddleware, updateBookingStatus);

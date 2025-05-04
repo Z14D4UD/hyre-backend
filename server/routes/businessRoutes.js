@@ -1,43 +1,65 @@
-// server/routes/bookingRoutes.js
-const express        = require('express')
-const router         = express.Router()
-const authMiddleware = require('../middlewares/authMiddleware')
+// server/routes/businessRoutes.js
+const express = require('express');
+const router = express.Router();
+const authMiddleware = require('../middlewares/authMiddleware');
+
+// use multer directly for uploads
+const multer = require('multer');
+const upload = multer({ dest: 'uploads/businessIds/' });
+
+const { updateBookingStatus } = require('../controllers/bookingController');
 const {
-  createBooking,
-  requestPayout,
-  getBookings,
-  getMyBookings,
-  getCustomerBookings,
-  getBookingById,
-  generateInvoice,
-  updateBookingStatus
-} = require('../controllers/bookingController')
-const { deleteBooking } = require('../controllers/deleteBookingController')
+  verifyID,
+  getStats,
+  getEarnings,
+  getBookingsOverview
+} = require('../controllers/businessController');
+const { getBusinessProfile, updateBusinessProfile } = require('../controllers/businessProfileController');
+const {
+  createListing,
+  getBusinessListings,
+  getListingById,
+  updateListing,
+  deleteListing
+} = require('../controllers/listingController');
+const Business = require('../models/Business');
 
-// Booking creation must be authenticated
-router.post('/',               authMiddleware, createBooking)
+// Route to get featured businesses
+router.get('/featured', async (req, res) => {
+  try {
+    const featured = await Business.find({ isFeatured: true });
+    res.json(featured);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 
-// Public booking list
-router.get('/',                getBookings)
+// Verify business ID
+router.post(
+  '/verify-id',
+  authMiddleware,
+  upload.single('idDocument'),
+  verifyID
+);
 
-// Payout request
-router.post('/payout',         authMiddleware, requestPayout)
+// Dashboard endpoints
+router.get('/stats', authMiddleware, getStats);
+router.get('/earnings', authMiddleware, getEarnings);
+router.get('/bookingsOverview', authMiddleware, getBookingsOverview);
 
-// “My” routes (must come *before* any ':id' route)
-router.get('/my',              authMiddleware, getMyBookings)
-router.get('/customer',        authMiddleware, getCustomerBookings)
+// Business Profile endpoints
+router.get('/me', authMiddleware, getBusinessProfile);
+router.put('/me', authMiddleware, upload.single('avatar'), updateBusinessProfile);
 
-// Download invoice PDF (protected)
-router.get('/invoice/:id',     authMiddleware, generateInvoice)
+// Listings endpoints
+router.post('/listings', authMiddleware, upload.array('images', 10), createListing);
+router.get('/listings', authMiddleware, getBusinessListings);
+router.get('/listings/:id', authMiddleware, getListingById);
+router.put('/listings/:id', authMiddleware, upload.array('images', 10), updateListing);
+router.delete('/listings/:id', authMiddleware, deleteListing);
 
-// Update booking status
-router.patch('/:id/status',    authMiddleware, updateBookingStatus)
+// Booking status update (shared with bookingRoutes too)
+router.patch('/:id/status', authMiddleware, updateBookingStatus);
 
-// Delete booking
-router.delete('/:id',          authMiddleware, deleteBooking)
-
-// Single booking (used by PaymentSuccessPage)
-// <-- this must come last so it doesn’t catch '/customer', '/invoice', etc.
-router.get('/:id',             authMiddleware, getBookingById)
-
-module.exports = router
+module.exports = router;
