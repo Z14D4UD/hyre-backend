@@ -1,4 +1,5 @@
 // server/controllers/chatController.js
+
 const Conversation = require('../models/Conversation');
 const Message      = require('../models/Message');
 const Booking      = require('../models/Booking');
@@ -6,6 +7,39 @@ const Business     = require('../models/Business');
 const Customer     = require('../models/Customer');
 const Affiliate    = require('../models/Affiliate');
 
+/**
+ * DELETE CONVERSATION – deletes the conversation and all its messages
+ */
+exports.deleteConversation = async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const userId = req.customer
+      ? req.customer.id
+      : req.business
+      ? req.business.id
+      : null;
+    if (!userId) return res.status(401).json({ msg: 'Not authorized' });
+
+    const convo = await Conversation.findById(conversationId);
+    if (!convo) return res.status(404).json({ msg: 'Conversation not found' });
+    if (!convo.participants.includes(userId)) {
+      return res.status(403).json({ msg: 'Not allowed to delete this conversation' });
+    }
+
+    // Remove all related messages, then the conversation itself
+    await Message.deleteMany({ conversation: conversationId });
+    await Conversation.findByIdAndDelete(conversationId);
+
+    res.json({ msg: 'Conversation deleted' });
+  } catch (error) {
+    console.error('Error deleting conversation:', error);
+    res.status(500).json({ msg: 'Server error deleting conversation' });
+  }
+};
+
+/**
+ * GET ALL CONVERSATIONS for the current user
+ */
 exports.getConversations = async (req, res) => {
   try {
     const userId = req.customer
@@ -18,20 +52,18 @@ exports.getConversations = async (req, res) => {
     const filter     = req.query.filter || 'all';
     const searchTerm = req.query.search;
 
-    // Fetch all conversations involving this user:
     let convos = await Conversation.find({ participants: userId })
       .sort({ updatedAt: -1 })
       .lean();
 
-    // For each convo: count unread, determine “other” party’s name/avatar
     for (let c of convos) {
-      // Unread count
+      // Count unread messages
       c.unreadCount = await Message.countDocuments({
         conversation: c._id,
         readBy:       { $ne: userId },
       });
 
-      // Identify the other participant
+      // Identify the "other" participant
       const otherId = c.participants.find(id => id.toString() !== userId);
       let otherDoc;
       if (req.customer) {
@@ -44,7 +76,16 @@ exports.getConversations = async (req, res) => {
     }
 
     // Filter unread if requested
-    if (filter === 'unread') convos = convos.filter(c => c.unreadCount > 0);
+    if (filter === 'unread') {
+      convos = convos.filter(c => c.unreadCount > 0);
+    }
+
+    // Optional search by name
+    if (searchTerm) {
+      convos = convos.filter(c =>
+        c.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
 
     res.json(convos);
   } catch (error) {
@@ -53,6 +94,9 @@ exports.getConversations = async (req, res) => {
   }
 };
 
+/**
+ * GET ALL MESSAGES in a conversation
+ */
 exports.getMessages = async (req, res) => {
   try {
     const { conversationId } = req.params;
@@ -68,7 +112,7 @@ exports.getMessages = async (req, res) => {
       .sort({ createdAt: 1 })
       .lean();
 
-    // Populate each sender’s name + avatar
+    // Populate each sender's name + avatar
     for (let m of messages) {
       let Model;
       if (m.senderModel === 'Business')    Model = Business;
@@ -89,6 +133,9 @@ exports.getMessages = async (req, res) => {
   }
 };
 
+/**
+ * SEND A MESSAGE in a conversation
+ */
 exports.sendMessage = async (req, res) => {
   try {
     const { conversationId } = req.params;
@@ -116,10 +163,10 @@ exports.sendMessage = async (req, res) => {
       updatedAt:   new Date(),
     });
 
-    // Return the message with sender info populated
+    // Populate sender info for the response
     const SenderModel = senderModel === 'Business' ? Business : Customer;
-    const doc         = await SenderModel.findById(userId).select('name avatarUrl');
-    const payload     = {
+    const doc = await SenderModel.findById(userId).select('name avatarUrl');
+    const payload = {
       ...newMessage.toObject(),
       sender: {
         _id:       userId,
@@ -135,6 +182,9 @@ exports.sendMessage = async (req, res) => {
   }
 };
 
+/**
+ * MARK A SINGLE MESSAGE AS READ
+ */
 exports.markMessageRead = async (req, res) => {
   try {
     const { conversationId, messageId } = req.params;
@@ -160,6 +210,9 @@ exports.markMessageRead = async (req, res) => {
   }
 };
 
+/**
+ * MARK ALL MESSAGES IN A CONVERSATION AS READ
+ */
 exports.markAllReadInConversation = async (req, res) => {
   try {
     const { conversationId } = req.params;
