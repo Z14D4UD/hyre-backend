@@ -1,44 +1,42 @@
-// server/routes/businessRoutes.js
-const express         = require('express');
-const router          = express.Router();
-const authMiddleware  = require('../middlewares/authMiddleware');
-// use the shared uploadMiddleware everywhere:
-const upload          = require('../middlewares/uploadMiddleware');
-
-const Business              = require('../models/Business');
+// server/routes/bookingRoutes.js
+const express        = require('express')
+const router         = express.Router()
+const authMiddleware = require('../middlewares/authMiddleware')
 const {
-  verifyID,
-  getStats,
-  getEarnings,
-  getBookingsOverview
-} = require('../controllers/businessController');
-const {
-  getBusinessProfile,
-  updateBusinessProfile
-} = require('../controllers/businessProfileController');
-const { updateBookingStatus } = require('../controllers/bookingController');
+  createBooking,
+  requestPayout,
+  getBookings,
+  getMyBookings,
+  getCustomerBookings,
+  getBookingById,
+  generateInvoice,
+  updateBookingStatus
+} = require('../controllers/bookingController')
+const { deleteBooking } = require('../controllers/deleteBookingController')
 
-/** 
- * VERIFY ID DOCUMENT
- * POST /api/business/verify-id
- */
-router.post(
-  '/verify-id',
-  authMiddleware,
-  upload.single('idDocument'),
-  verifyID
-);
+// Booking creation must be authenticated
+router.post('/',               authMiddleware, createBooking)
 
-/** DASHBOARD STATS */
-router.get('/stats',           authMiddleware, getStats);
-router.get('/earnings',        authMiddleware, getEarnings);
-router.get('/bookingsOverview',authMiddleware, getBookingsOverview);
+// Public booking list
+router.get('/',                getBookings)
 
-/** BUSINESS PROFILE */
-router.get( '/me', authMiddleware,                 getBusinessProfile);
-router.put( '/me', authMiddleware, upload.single('avatar'), updateBusinessProfile);
+// Payout request
+router.post('/payout',         authMiddleware, requestPayout)
 
-/** BOOKING STATUS (shared) */
-router.patch('/:id/status', authMiddleware, updateBookingStatus);
+// “My” routes (must come *before* the :id route)
+router.get('/my',              authMiddleware, getMyBookings)
+router.get('/customer',        authMiddleware, getCustomerBookings)
 
-module.exports = router;
+// Single booking (used by PaymentSuccessPage)
+router.get('/:id',             authMiddleware, getBookingById)
+
+// Download invoice PDF (protected)
+router.get('/invoice/:id',     authMiddleware, generateInvoice)
+
+// Update booking status
+router.patch('/:id/status',    authMiddleware, updateBookingStatus)
+
+// Delete booking
+router.delete('/:id',          authMiddleware, deleteBooking)
+
+module.exports = router

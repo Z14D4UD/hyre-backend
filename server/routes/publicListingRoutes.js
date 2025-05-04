@@ -16,3 +16,4 @@ router.get('/:id', getListingPublic);
 router.get('/public/:id', getListingPublic);
 
 module.exports = router;
+2
