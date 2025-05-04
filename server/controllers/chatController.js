@@ -233,3 +233,18 @@ exports.markAllReadInConversation = async (req, res) => {
     res.status(500).json({ msg: 'Server error marking conversation read' });
   }
 };
+
+/**
+ * DELETE a conversation and all its messages
+ */
+exports.deleteConversation = async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    await Message.deleteMany({ conversation: conversationId });
+    await Conversation.findByIdAndDelete(conversationId);
+    res.json({ msg: 'Conversation deleted' });
+  } catch (error) {
+    console.error('Error deleting conversation:', error);
+    res.status(500).json({ msg: 'Server error deleting conversation' });
+  }
+};

@@ -176,3 +176,18 @@
 .sendButton:hover {
   background-color: #30a2e0;
 }
+
+/* new header title and back button */
+.headerTitle {
+  flex: 1;
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+.backButton {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  margin-right: 0.5rem;
+  cursor: pointer;
+}
