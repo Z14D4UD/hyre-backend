@@ -232,6 +232,13 @@ export default function CarDetailsPage() {
               <span>{count} trips</span>
             </div>
 
+            {/* — Address */}
+            <div className={cls.section}>
+              <h2>Address</h2>
+              <p>{item.address}</p>
+            </div>
+
+            {/* — Hosted By */}
             <div className={cls.hostedBy}>
               {item.business.avatarUrl ? (
                 <img
@@ -255,6 +262,7 @@ export default function CarDetailsPage() {
               </div>
             </div>
 
+            {/* — Features */}
             <div className={cls.section}>
               <h2>Features</h2>
               <ul className={cls.featureList}>
@@ -284,6 +292,7 @@ export default function CarDetailsPage() {
               </ul>
             </div>
 
+            {/* — Description */}
             {item.description && (
               <div className={cls.section}>
                 <h2>Description</h2>
@@ -291,6 +300,19 @@ export default function CarDetailsPage() {
               </div>
             )}
 
+            {/* — Terms & Conditions */}
+            <div className={cls.section}>
+              <h2>Terms &amp; Conditions</h2>
+              <p style={{ whiteSpace: 'pre-line' }}>{item.terms}</p>
+            </div>
+
+            {/* — Cancellation Policy */}
+            <div className={cls.section}>
+              <h2>Cancellation Policy</h2>
+              <p style={{ whiteSpace: 'pre-line' }}>{item.cancellationPolicy}</p>
+            </div>
+
+            {/* — Reviews */}
             {count > 0 && (
               <div className={cls.section}>
                 <h2>Reviews</h2>
@@ -320,6 +342,7 @@ export default function CarDetailsPage() {
               </div>
             )}
 
+            {/* — Pickup location */}
             {lat != null && lng != null && (
               <div className={cls.section}>
                 <h2>Pickup location</h2>
