@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import axios from 'axios';
-const jwtDecode = require('jwt-decode');
 import { useNavigate } from 'react-router-dom';
 import SideMenuCustomer from '../components/SideMenuCustomer';
 import styles from '../styles/MessagesPage.module.css';
 import { FaBars } from 'react-icons/fa';
+const jwtDecode = require('jwt-decode');
+
 
 export default function MessagesPage() {
   const navigate = useNavigate();
