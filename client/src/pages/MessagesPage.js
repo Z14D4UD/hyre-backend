@@ -1,30 +1,22 @@
-// client/src/pages/MessagesPage.js
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import axios from 'axios';
-import jwtDecode from 'jwt-decode';
+const jwtDecode = require('jwt-decode');
 import { useNavigate } from 'react-router-dom';
-import { FaSearch } from 'react-icons/fa';
 import SideMenuCustomer from '../components/SideMenuCustomer';
 import styles from '../styles/MessagesPage.module.css';
+import { FaBars } from 'react-icons/fa';
 
 export default function MessagesPage() {
   const navigate = useNavigate();
   const token = localStorage.getItem('token') || '';
   const acct = localStorage.getItem('accountType');
   const isCust = token && acct === 'customer';
+
   const myId = useMemo(() => {
-    try { return jwtDecode(token).id; } catch { return null; }
+    try { return jwtDecode(token).id; }
+    catch { return null; }
   }, [token]);
 
-  // Mobile detection
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 600);
-  useEffect(() => {
-    const onResize = () => setIsMobile(window.innerWidth <= 600);
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
-
-  /* state */
   const [menuOpen, setMenuOpen] = useState(false);
   const [filter, setFilter] = useState('all');
   const [searchOpen, setSearchOpen] = useState(false);
@@ -36,18 +28,23 @@ export default function MessagesPage() {
   const [attachment, setAttachment] = useState(null);
   const endRef = useRef(null);
 
-  const backend = process.env.REACT_APP_BACKEND_URL || 'https://hyre-backend.onrender.com/api';
+  const backend =
+    process.env.REACT_APP_BACKEND_URL ||
+    'https://hyre-backend.onrender.com/api';
 
-  /* fetch */
   useEffect(() => {
-    if (!isCust) { navigate('/'); return; }
+    if (!isCust) {
+      navigate('/');
+      return;
+    }
     fetchConversations();
-    // eslint-disable-next-line
   }, [isCust, filter, searchTerm]);
 
   const fetchConversations = async () => {
     const { data } = await axios.get(
-      `${backend}/chat/conversations?filter=${filter}&search=${encodeURIComponent(searchTerm)}`,
+      `${backend}/chat/conversations?filter=${filter}&search=${encodeURIComponent(
+        searchTerm
+      )}`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
     setConversations(data);
@@ -60,6 +57,7 @@ export default function MessagesPage() {
       { headers: { Authorization: `Bearer ${token}` } }
     );
     setMessages(data.messages);
+
     await axios.put(
       `${backend}/chat/conversations/${conv._id}/read`,
       {},
@@ -68,177 +66,212 @@ export default function MessagesPage() {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // delete conversation
-  const deleteConversation = async (convId) => {
-    if (!window.confirm('Delete this conversation?')) return;
-    await axios.delete(`${backend}/chat/conversations/${convId}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    if (selectedConv?._id === convId) setSelectedConv(null);
-    fetchConversations();
-  };
-
   const handleSend = async () => {
     if (!selectedConv || (!messageText && !attachment)) return;
+
     const form = new FormData();
     form.append('text', messageText);
     if (attachment) form.append('attachment', attachment);
+
     const { data } = await axios.post(
       `${backend}/chat/conversations/${selectedConv._id}/messages`,
       form,
       {
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data'
-        }
+          'Content-Type': 'multipart/form-data',
+        },
       }
     );
-    setMessages(prev => [...prev, data]);
+    setMessages((prev) => [...prev, data]);
     setMessageText('');
     setAttachment(null);
     fetchConversations();
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const fullAvatar = (u) => u ? `${backend}/${u}` : '/default-avatar.png';
+  const fullAvatar = (u) => (u ? `${backend}/${u}` : '/default-avatar.png');
 
   return (
     <div className={styles.container}>
-      {/* Header */}
+      {/* HEADER */}
       <header className={styles.header}>
-        {isMobile && selectedConv ? (
-          <button
-            className={styles.backButton}
-            onClick={() => setSelectedConv(null)}
-          >
-            ←
-          </button>
-        ) : (
-          <div
-            className={styles.logo}
-            onClick={() => navigate('/')}
-          >
-            Hyre
-          </div>
-        )}
-        <div className={styles.headerTitle}>
-          {isMobile && selectedConv
-            ? selectedConv.name
-            : 'Messages'}
+        <div className={styles.headerLeft}>
+          {selectedConv && (
+            <button
+              className={styles.backBtn}
+              onClick={() => setSelectedConv(null)}
+            >
+              ←
+            </button>
+          )}
+          <span className={styles.headerTitle}>
+            {selectedConv ? selectedConv.name : 'Messages'}
+          </span>
         </div>
         <button
           className={styles.menuIcon}
-          onClick={() => setMenuOpen(o => !o)}
+          onClick={() => setMenuOpen((o) => !o)}
         >
-          ☰
+          <FaBars />
         </button>
       </header>
 
-      {/* Side menu */}
+      {/* SIDE MENU */}
       <SideMenuCustomer
         isOpen={menuOpen}
-        toggleMenu={() => setMenuOpen(o => !o)}
+        toggleMenu={() => setMenuOpen((o) => !o)}
         closeMenu={() => setMenuOpen(false)}
       />
 
+      {/* CONTENT */}
       <div className={styles.content}>
-        {/* LEFT PANE (hide on mobile when in a chat) */}
-        {!(isMobile && selectedConv) && (
-          <div className={styles.leftPane}>
-            {/* ... existing filters/search UI ... */}
-            <div className={styles.conversationList}>
-              {conversations.map(c => {
-                const sel = selectedConv?._id === c._id;
-                return (
-                  <div
-                    key={c._id}
-                    className={`${styles.conversationItem} ${sel && styles.selectedConv}`}
-                    onClick={() => selectConversation(c)}
-                    onContextMenu={e => {
-                      e.preventDefault();
-                      deleteConversation(c._id);
-                    }}
-                  >
-                    <img
-                      src={fullAvatar(c.avatarUrl)}
-                      alt=""
-                      className={styles.convAvatar}
-                    />
-                    <div className={styles.convoText}>
-                      <div className={styles.conversationTitle}>{c.name}</div>
-                      <div className={styles.conversationSnippet}>{c.lastMessage || '—'}</div>
-                    </div>
-                    {c.unreadCount > 0 && (
-                      <div className={styles.unreadBadge}>{c.unreadCount}</div>
-                    )}
-                  </div>
-                );
-              })}
-              {!conversations.length && (
-                <div className={styles.noConversations}>No conversations yet.</div>
-              )}
+        {/* LEFT PANE */}
+        <div className={styles.leftPane}>
+          {/* FILTERS */}
+          <div className={styles.messagesHeader}>
+            <h2>Messages</h2>
+            <div className={styles.filterRow}>
+              <button
+                className={`${styles.filterButton} ${
+                  filter === 'all' ? styles.activeFilter : ''
+                }`}
+                onClick={() => setFilter('all')}
+              >
+                All
+              </button>
+              <button
+                className={`${styles.filterButton} ${
+                  filter === 'unread' ? styles.activeFilter : ''
+                }`}
+                onClick={() => setFilter('unread')}
+              >
+                Unread
+              </button>
             </div>
+            {/* optional search */}
+            {searchOpen && (
+              <div className={styles.searchRow}>
+                <input
+                  className={styles.searchInput}
+                  placeholder="Search..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                <button
+                  className={styles.cancelSearchBtn}
+                  onClick={() => setSearchOpen(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
           </div>
-        )}
+
+          {/* CONVERSATION LIST */}
+          <div className={styles.conversationList}>
+            {conversations.map((c) => {
+              const sel = selectedConv?._id === c._id;
+              return (
+                <div
+                  key={c._id}
+                  className={`${styles.conversationItem} ${
+                    sel ? styles.selectedConv : ''
+                  }`}
+                  onClick={() => selectConversation(c)}
+                >
+                  <img
+                    src={fullAvatar(c.avatarUrl)}
+                    alt=""
+                    className={styles.convAvatar}
+                  />
+                  <div className={styles.convoText}>
+                    <div className={styles.conversationTitle}>{c.name}</div>
+                    <div className={styles.conversationSnippet}>
+                      {c.lastMessage || '—'}
+                    </div>
+                  </div>
+                  {c.unreadCount > 0 && (
+                    <div className={styles.unreadBadge}>{c.unreadCount}</div>
+                  )}
+                </div>
+              );
+            })}
+            {!conversations.length && (
+              <div className={styles.noConversations}>
+                No conversations yet.
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* RIGHT PANE */}
-        {selectedConv ? (
-          <div className={styles.rightPane}>
-            <div className={styles.messageThread}>
-              {messages.map(m => {
-                const mine = m.sender._id === myId;
-                const bubble = mine ? styles.myMessage : styles.theirMessage;
-                return (
-                  <div key={m._id} className={`${styles.messageItem} ${bubble}`}>
-                    <img
-                      src={fullAvatar(m.sender.avatarUrl)}
-                      alt=""
-                      className={styles.msgAvatar}
-                    />
-                    <div className={styles.messageBubble}>
-                      <div className={styles.msgName}>{m.sender.name}</div>
-                      <div className={styles.messageText}>{m.text}</div>
-                      {m.attachment && (
-                        <div className={styles.attachmentWrapper}>
-                          <a
-                            href={`${backend}/${m.attachment}`}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            View Attachment
-                          </a>
-                        </div>
-                      )}
-                      <div className={styles.messageTimestamp}>
-                        {new Date(m.createdAt).toLocaleString()}
+        <div className={styles.rightPane}>
+          <div className={styles.messageThread}>
+            {messages.map((m) => {
+              const mine = m.sender._id === myId;
+              const bubble = mine
+                ? styles.myMessage
+                : styles.theirMessage;
+              return (
+                <div
+                  key={m._id}
+                  className={`${styles.messageItem} ${bubble}`}
+                >
+                  <img
+                    src={fullAvatar(m.sender.avatarUrl)}
+                    alt=""
+                    className={styles.msgAvatar}
+                  />
+                  <div className={styles.messageBubble}>
+                    <div className={styles.msgName}>
+                      {m.sender.name}
+                    </div>
+                    <div className={styles.messageText}>{m.text}</div>
+                    {m.attachment && (
+                      <div className={styles.attachmentWrapper}>
+                        <a
+                          href={`${backend}/${m.attachment}`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          View Attachment
+                        </a>
                       </div>
+                    )}
+                    <div className={styles.messageTimestamp}>
+                      {new Date(m.createdAt).toLocaleString()}
                     </div>
                   </div>
-                );
-              })}
-              <div ref={endRef} />
-            </div>
+                </div>
+              );
+            })}
+            <div ref={endRef} />
+          </div>
+
+          {/* INPUT BAR (always visible) */}
+          {selectedConv && (
             <div className={styles.messageInputArea}>
               <textarea
                 className={styles.textArea}
                 placeholder="Type your message…"
                 value={messageText}
-                onChange={e => setMessageText(e.target.value)}
+                onChange={(e) => setMessageText(e.target.value)}
               />
               <input
                 type="file"
                 className={styles.attachmentInput}
-                onChange={e => setAttachment(e.target.files[0])}
+                onChange={(e) => setAttachment(e.target.files[0])}
               />
-              <button className={styles.sendButton} onClick={handleSend}>
+              <button
+                className={styles.sendButton}
+                onClick={handleSend}
+              >
                 Send
               </button>
             </div>
-          </div>
-        ) : (
-          // on mobile, if no conversation selected, show placeholder
-          isMobile && <div className={styles.emptyMessages}>Select a conversation</div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
