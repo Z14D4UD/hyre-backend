@@ -32,7 +32,6 @@
 .headerTitle {
   font-size: 1.4rem;
   font-weight: 600;
-  color: #333;
 }
 .menuIcon {
   font-size: 1.4rem;
@@ -41,10 +40,10 @@
   cursor: pointer;
 }
 
-/* CONTENT (below header) */
+/* CONTENT */
 .content {
   display: flex;
-  margin-top: 70px; /* header height */
+  margin-top: 70px;
   height: calc(100vh - 70px);
 }
 
@@ -77,7 +76,6 @@
   padding: 0.4rem 1rem;
   cursor: pointer;
   font-size: 0.9rem;
-  transition: background-color 0.2s ease;
 }
 .activeFilter {
   background: #333 !important;
@@ -97,16 +95,13 @@
 .cancelSearchBtn {
   background: none;
   border: none;
-  color: #333;
   font-size: 0.9rem;
   cursor: pointer;
   padding: 0.4rem 0.8rem;
-  transition: background-color 0.2s ease;
 }
 .cancelSearchBtn:hover {
   background: #f2f2f2;
 }
-
 .conversationList {
   flex: 1;
   overflow-y: auto;
@@ -150,6 +145,11 @@
   padding: 0.2rem 0.5rem;
   font-size: 0.75rem;
 }
+.noConversations {
+  padding: 1rem;
+  text-align: center;
+  color: #666;
+}
 
 /* RIGHT PANE */
 .rightPane {
@@ -167,22 +167,28 @@
   gap: 1rem;
 }
 .messageItem {
+  position: relative;
   display: flex;
   max-width: 70%;
   padding: 0.6rem;
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
-.theirMessage {
+
+/* CUSTOMER = left, white */
+.customerMessage {
   align-self: flex-start;
   background: #fff;
   color: #333;
 }
-.myMessage {
+
+/* BUSINESS = right, blue */
+.businessMessage {
   align-self: flex-end;
   background: #38b6ff;
   color: #fff;
 }
+
 .msgAvatar {
   width: 28px;
   height: 28px;
@@ -214,7 +220,29 @@
   margin-top: 0.3rem;
 }
 
-/* INPUT BAR (sticky) */
+/* CONTEXT MENU */
+.contextMenu {
+  position: absolute;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  border-radius: 4px;
+  z-index: 200;
+}
+.contextMenu button {
+  display: block;
+  width: 100%;
+  padding: 0.6rem 1rem;
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+.contextMenu button:hover {
+  background: #f2f2f2;
+}
+
+/* INPUT BAR */
 .messageInputArea {
   display: flex;
   align-items: center;
@@ -246,7 +274,7 @@
   margin-left: 0.5rem;
 }
 
-/* responsive */
+/* MOBILE */
 @media (max-width: 900px) {
   .content {
     flex-direction: column;
@@ -260,5 +288,8 @@
   .rightPane {
     width: 100%;
     height: auto;
+  }
+  .hideLeft .leftPane {
+    display: none;
   }
 }
