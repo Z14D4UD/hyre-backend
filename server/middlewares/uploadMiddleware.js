@@ -10,8 +10,8 @@ if (!fs.existsSync(uploadsDir)) {
 }
 
 const storage = multer.diskStorage({
-  destination: (_req, file, cb) => cb(null, uploadsDir),
-  filename:    (_req, file, cb) => {
+  destination: (_req, _file, cb) => cb(null, uploadsDir),
+    filename:    (_req, file, cb) => {
     // preserve extension
     const ext  = path.extname(file.originalname);
     const name = path.basename(file.originalname, ext)

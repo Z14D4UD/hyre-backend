@@ -5,7 +5,7 @@ const Review  = require('../models/Review');
 
 /** helper: convert multer file paths into public URLs */
 const relPaths = (files = []) =>
-  files.map(f => 'uploads/' + path.basename(f.path).replace(/\\/g, '/'));
+    files.map(f => 'uploads/' + path.basename(f.path));
 
 exports.createListing = async (req, res) => {
   try {
