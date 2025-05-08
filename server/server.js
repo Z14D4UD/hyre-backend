@@ -28,7 +28,8 @@ app.use(express.urlencoded({ extended: true }));
 
 // 4) STATIC UPLOADS
 // Use a local folder at project-root/server/uploads
-const uploadsDir = path.join(__dirname, 'server', 'uploads'); // ← NEW// ensure it exists (read/write permissions)
+const uploadsDir = path.join(__dirname, 'uploads');
+// ensure it exists (read/write permissions)
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
