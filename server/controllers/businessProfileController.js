@@ -1,4 +1,5 @@
 // server/controllers/businessProfileController.js
+const path     = require('path');
 const Business = require('../models/Business');
 
 exports.getBusinessProfile = async (req, res) => {
@@ -13,7 +14,9 @@ exports.getBusinessProfile = async (req, res) => {
     // You might add a "joinedDate" or other fields
     const responseData = {
       ...business.toObject(),
-      joinedDate: business.createdAt ? business.createdAt.toLocaleDateString() : 'N/A',
+      joinedDate: business.createdAt
+        ? business.createdAt.toLocaleDateString()
+        : 'N/A',
     };
     res.json(responseData);
   } catch (error) {
@@ -27,17 +30,23 @@ exports.updateBusinessProfile = async (req, res) => {
     if (!req.business) {
       return res.status(403).json({ msg: 'Not a business user' });
     }
+
     const { name, location, aboutMe, phoneNumber, email } = req.body;
     const updateFields = {
       name,
       location,
       aboutMe,
       phoneNumber,
-      email
+      email,
     };
-    // If an avatar was uploaded
+
+    /* -------------------------------------------------------------------- */
+    /*  NEW: keep the exact relative path Multer wrote (includes timestamp) */
+    /* -------------------------------------------------------------------- */
     if (req.file) {
-      updateFields.avatarUrl = `uploads/${req.file.filename}`;
+      updateFields.avatarUrl = path
+        .relative(path.join(__dirname, '..'), req.file.path)   // uploads/avatars/<id>/<ts>-logo.jpg
+        .replace(/\\/g, '/');
     }
 
     const updatedBusiness = await Business.findByIdAndUpdate(
