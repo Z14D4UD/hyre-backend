@@ -32,6 +32,9 @@ export default function MessagesPage() {
   const [ctx, setCtx]                  = useState({visible:false,x:0,y:0,id:null,type:null});
   const endRef = useRef(null);
 
+  /* ✨ NEW: ref to hold long-press timer */
+  const touchTimerRef = useRef(null);
+
   const backend = process.env.REACT_APP_BACKEND_URL || 'https://hyre-backend.onrender.com/api';
   const fullAvatar = (u) => (u ? `${backend}/${u}` : '/default-avatar.png');
 
@@ -82,6 +85,15 @@ export default function MessagesPage() {
     }
     setCtx({visible:false,x:0,y:0,id:null,type:null});
   };
+
+  /* ✨ helpers for long-press on touch devices */
+  const startHold = (e,type,id)=>{
+    const { pageX, pageY } = e.touches ? e.touches[0] : e;
+    touchTimerRef.current = setTimeout(()=>{
+      setCtx({visible:true,x:pageX,y:pageY,id,type});
+    },600);                                  // 600 ms = “hold”
+  };
+  const cancelHold = ()=> clearTimeout(touchTimerRef.current);
 
   if(!isCust) return null;
 
@@ -134,7 +146,9 @@ export default function MessagesPage() {
                 <div key={c._id}
                      className={`${styles.conversationItem} ${selectedConv?._id===c._id&&styles.selectedConv}`}
                      onClick={()=>selectConversation(c)}
-                     onContextMenu={e=>{e.preventDefault();setCtx({visible:true,x:e.pageX,y:e.pageY,id:c._id,type:'conversation'});}}>
+                     onContextMenu={e=>{e.preventDefault();setCtx({visible:true,x:e.pageX,y:e.pageY,id:c._id,type:'conversation'});}}
+                     onTouchStart={e=>startHold(e,'conversation',c._id)}   /* ✨ */
+                     onTouchEnd={cancelHold}>
                   <img src={fullAvatar(c.avatarUrl)} className={styles.convAvatar} alt="avatar"/>
                   <div className={styles.convoText}>
                     <div className={styles.conversationTitle}>{c.name}</div>
@@ -158,7 +172,9 @@ export default function MessagesPage() {
                 return (
                   <div key={m._id} className={styles.messageItem}
                        data-cust={isCustMsg}
-                       onContextMenu={e=>{e.preventDefault();setCtx({visible:true,x:e.pageX,y:e.pageY,id:m._id,type:'message'});}}>
+                       onContextMenu={e=>{e.preventDefault();setCtx({visible:true,x:e.pageX,y:e.pageY,id:m._id,type:'message'});}}
+                       onTouchStart={e=>startHold(e,'message',m._id)}   /* ✨ */
+                       onTouchEnd={cancelHold}>
                     <img src={fullAvatar(m.sender.avatarUrl)} className={styles.msgAvatar} alt="avatar"/>
                     <div className={styles.messageBubble}>
                       <div className={styles.msgName}>{m.sender.name}</div>
