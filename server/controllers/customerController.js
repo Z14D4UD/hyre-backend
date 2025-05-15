@@ -1,5 +1,5 @@
 // server/controllers/customerController.js
-
+const path     = require('path');        // ✨ NEW: required for relative path helper
 const Customer = require('../models/Customer');
 
 // GET /api/customer/profile
@@ -13,16 +13,16 @@ exports.getCustomerProfile = async (req, res) => {
       return res.status(404).json({ msg: 'Customer not found' });
     }
     res.json({
-      name:           customer.name,
-      location:       customer.location || '',
-      joinedDate:     customer.createdAt
-                        ? new Date(customer.createdAt).toLocaleDateString()
-                        : 'N/A',
-      aboutMe:        customer.aboutMe || '',
-      phoneNumber:    customer.phoneNumber || '',
-      email:          customer.email,
+      name:            customer.name,
+      location:        customer.location || '',
+      joinedDate:      customer.createdAt
+                         ? new Date(customer.createdAt).toLocaleDateString()
+                         : 'N/A',
+      aboutMe:         customer.aboutMe || '',
+      phoneNumber:     customer.phoneNumber || '',
+      email:           customer.email,
       approvedToDrive: !!customer.approvedToDrive,
-      avatarUrl:      customer.avatarUrl || ''
+      avatarUrl:       customer.avatarUrl || ''
     });
   } catch (error) {
     console.error('Error fetching customer profile:', error);
@@ -46,9 +46,13 @@ exports.updateCustomerProfile = async (req, res) => {
       email:       req.body.email
     };
 
+    /* ------------------------------------------------------------------ */
+    /*   NEW: keep the exact relative path Multer wrote (timestamped)      */
+    /* ------------------------------------------------------------------ */
     if (req.file) {
-      // again: only filename + extension, so your frontend URL matches
-      updateData.avatarUrl = `uploads/${req.file.filename}`;
+      updateData.avatarUrl = path
+        .relative(path.join(__dirname, '..'), req.file.path)   // uploads/avatars/<id>/<ts>.jpg
+        .replace(/\\/g, '/');
     }
 
     const updatedCustomer = await Customer.findByIdAndUpdate(

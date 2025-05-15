@@ -1,11 +1,11 @@
 // server/routes/customerRoutes.js
 const express = require('express');
-const router = express.Router();
+const router  = express.Router();
 const customerController = require('../controllers/customerController');
 const auth = require('../middlewares/authMiddleware');
-const multer = require('multer');
 
-const upload = multer({ dest: 'uploads/avatars/' });
+// ✨ NEW: reuse the shared upload middleware (no custom dest here)
+const upload = require('../middlewares/uploadMiddleware');
 
 // GET route to fetch profile
 router.get('/me', auth, customerController.getCustomerProfile);
