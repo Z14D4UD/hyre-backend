@@ -36,6 +36,8 @@ import BusinessMessagesPage from './pages/BusinessMessagesPage';
 import ConnectBank        from './pages/ConnectBank';
 import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import AdminDashboard from './pages/AdminDashboard';
+import BusinessPublicPage from './pages/BusinessPublicPage';
+
 
 
 
@@ -84,6 +86,7 @@ export default function App() {
       <Route path="/connect-bank"         element={<ConnectBank />} />
       <Route path="/payment/confirmation" element={<PaymentSuccessPage/>} />
       <Route path="/dashboard/admin" element={<AdminDashboard />} />
+      <Route path="/business/:id" element={<BusinessPublicPage />} />
 
 
 

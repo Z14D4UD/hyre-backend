@@ -66,6 +66,8 @@ app.use('/api/connect-bank',  require('./routes/connectBankRoutes'));
 app.use('/api/reminders',     require('./routes/remindersRoutes'));
 app.use('/api/reviews',       require('./routes/reviewRoutes'));
 app.use('/api/admin',         require('./routes/adminRoutes'));
+app.use('/api/public/business', require('./routes/publicBusinessRoutes'));  // ← NEW
+
 
 // 7) SOCKET.IO
 const io = new Server(server, {

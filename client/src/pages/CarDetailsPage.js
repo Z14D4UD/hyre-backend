@@ -1,6 +1,11 @@
 // client/src/pages/CarDetailsPage.js
 import React, { useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import {
+  useParams,
+  useNavigate,
+  useSearchParams,
+  Link           // ← NEW
+} from 'react-router-dom';
 import api from '../api';
 
 import SideMenu           from '../components/SideMenu';
@@ -30,11 +35,17 @@ export default function CarDetailsPage() {
 
   let sideMenu = <SideMenu isOpen={menuOpen} toggleMenu={toggle} />;
   if (token && acct === 'customer')
-    sideMenu = <SideMenuCustomer isOpen={menuOpen} toggleMenu={toggle} closeMenu={close} />;
+    sideMenu = (
+      <SideMenuCustomer isOpen={menuOpen} toggleMenu={toggle} closeMenu={close} />
+    );
   if (token && acct === 'business')
-    sideMenu = <SideMenuBusiness isOpen={menuOpen} toggleMenu={toggle} closeMenu={close} />;
+    sideMenu = (
+      <SideMenuBusiness isOpen={menuOpen} toggleMenu={toggle} closeMenu={close} />
+    );
   if (token && acct === 'affiliate')
-    sideMenu = <SideMenuAffiliate isOpen={menuOpen} toggleMenu={toggle} closeMenu={close} />;
+    sideMenu = (
+      <SideMenuAffiliate isOpen={menuOpen} toggleMenu={toggle} closeMenu={close} />
+    );
 
   // –– Listing + gallery
   const [item, setItem]               = useState(null);
@@ -61,7 +72,9 @@ export default function CarDetailsPage() {
         setItem(data);
       } catch (e) {
         console.error('Details fetch error:', e);
-        alert(e.response?.status === 404 ? 'Listing not found.' : 'Failed to load listing.');
+        alert(
+          e.response?.status === 404 ? 'Listing not found.' : 'Failed to load listing.'
+        );
         navigate('/');
       }
     })();
@@ -92,8 +105,8 @@ export default function CarDetailsPage() {
     }
 
     // Build start/end ISO strings
-    const s  = new Date(`${startDate.toISOString().slice(0,10)}T${startTime}`);
-    const eD = new Date(`${endDate.toISOString().slice(0,10)}T${endTime}`);
+    const s  = new Date(`${startDate.toISOString().slice(0, 10)}T${startTime}`);
+    const eD = new Date(`${endDate.toISOString().slice(0, 10)}T${endTime}`);
 
     // Navigate to payment, passing query params
     const params = new URLSearchParams({
@@ -109,11 +122,7 @@ export default function CarDetailsPage() {
     return (
       <>
         <header className={cls.header} style={{ borderBottom: '1px solid #eee' }}>
-          <div
-            className={cls.logo}
-            style={{ color: '#38b6ff' }}
-            onClick={() => navigate('/')}
-          >
+          <div className={cls.logo} style={{ color: '#38b6ff' }} onClick={() => navigate('/')}>
             Hyre
           </div>
         </header>
@@ -139,11 +148,7 @@ export default function CarDetailsPage() {
   return (
     <>
       <header className={cls.header} style={{ borderBottom: '1px solid #eee' }}>
-        <div
-          className={cls.logo}
-          style={{ color: '#38b6ff' }}
-          onClick={() => navigate('/')}
-        >
+        <div className={cls.logo} style={{ color: '#38b6ff' }} onClick={() => navigate('/')}>
           Hyre
         </div>
         <button
@@ -158,17 +163,16 @@ export default function CarDetailsPage() {
 
       {/* gallery modal */}
       {galleryOpen && (
-        <div
-          className={cls.modalBackdrop}
-          onClick={() => setGalleryOpen(false)}
-        >
+        <div className={cls.modalBackdrop} onClick={() => setGalleryOpen(false)}>
           <div
             className={cls.modalContent}
             onClick={e => e.stopPropagation()}
             style={{ borderRadius: 12 }}
           >
             <div className={cls.modalTop}>
-              <h3>{item.make} {item.model} • {avg}⭐</h3>
+              <h3>
+                {item.make} {item.model} • {avg}⭐
+              </h3>
               <button
                 className={cls.closeBtn}
                 onClick={() => setGalleryOpen(false)}
@@ -201,14 +205,10 @@ export default function CarDetailsPage() {
             onClick={() => setGalleryOpen(true)}
             style={{ borderRadius: 12 }}
           >
-            <img
-              src={`${ROOT}/${leadImg}`}
-              alt="vehicle"
-              style={{ borderRadius: 12 }}
-            />
+            <img src={`${ROOT}/${leadImg}`} alt="vehicle" style={{ borderRadius: 12 }} />
           </div>
           <div className={cls.sideImages}>
-            {pictures.slice(0,4).map((p, i) => (
+            {pictures.slice(0, 4).map((p, i) => (
               <img
                 key={i}
                 src={`${ROOT}/${p}`}
@@ -239,7 +239,11 @@ export default function CarDetailsPage() {
             </div>
 
             {/* — Hosted By */}
-            <div className={cls.hostedBy}>
+            <Link
+              to={`/business/${item.business._id}`}           /* ← NEW WRAPPER */
+              className={cls.hostedBy}
+              style={{ textDecoration: 'none', color: 'inherit' }}
+            >
               {item.business.avatarUrl ? (
                 <img
                   src={`${ROOT}/${item.business.avatarUrl}`}
@@ -247,9 +251,7 @@ export default function CarDetailsPage() {
                   style={{ borderRadius: '50%' }}
                 />
               ) : (
-                <div className={cls.placeholderAvatar}>
-                  {item.business.name[0]}
-                </div>
+                <div className={cls.placeholderAvatar}>{item.business.name[0]}</div>
               )}
               <div>
                 <strong>{item.business.name}</strong>
@@ -257,10 +259,10 @@ export default function CarDetailsPage() {
                 Joined{' '}
                 {new Date(item.business.createdAt).toLocaleDateString('en-GB', {
                   month: 'short',
-                  year: 'numeric',
+                  year: 'numeric'
                 })}
               </div>
-            </div>
+            </Link>
 
             {/* — Features */}
             <div className={cls.section}>
@@ -283,7 +285,7 @@ export default function CarDetailsPage() {
                   'petFriendly',
                   'smokeFree',
                   'seatCovers',
-                  'dashCam',
+                  'dashCam'
                 ]
                   .filter(f => item[f])
                   .map(f => (
@@ -320,17 +322,13 @@ export default function CarDetailsPage() {
                   <div key={r._id} className={cls.review}>
                     <img
                       src={
-                        r.client.avatarUrl
-                          ? `${ROOT}/${r.client.avatarUrl}`
-                          : '/avatar.svg'
+                        r.client.avatarUrl ? `${ROOT}/${r.client.avatarUrl}` : '/avatar.svg'
                       }
                       alt="user"
                       style={{ borderRadius: '50%' }}
                     />
                     <div>
-                      <div className={cls.stars}>
-                        {'★'.repeat(Math.round(r.rating || 0))}
-                      </div>
+                      <div className={cls.stars}>{'★'.repeat(Math.round(r.rating || 0))}</div>
                       <small>
                         {r.client.name} •{' '}
                         {new Date(r.createdAt).toLocaleDateString('en-GB')}
@@ -350,13 +348,11 @@ export default function CarDetailsPage() {
                   style={{
                     height: 280,
                     borderRadius: 12,
-                    overflow: 'hidden',
+                    overflow: 'hidden'
                   }}
                 >
                   <GoogleMapReact
-                    bootstrapURLKeys={{
-                      key: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
-                    }}
+                    bootstrapURLKeys={{ key: process.env.REACT_APP_GOOGLE_MAPS_API_KEY }}
                     defaultCenter={{ lat, lng }}
                     defaultZoom={12}
                   >
@@ -375,9 +371,7 @@ export default function CarDetailsPage() {
                 </span>
                 <span className={cls.priceUnit}>/ day</span>
               </div>
-              <div className={cls.subTotal}>
-                £{subtotal} excl. taxes & fees
-              </div>
+              <div className={cls.subTotal}>£{subtotal} excl. taxes & fees</div>
               <hr />
 
               <h3>Your trip</h3>
@@ -448,7 +442,7 @@ export default function CarDetailsPage() {
                 style={{
                   borderRadius: 24,
                   backgroundColor: '#38b6ff',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                 }}
               >
                 Continue
