@@ -17,16 +17,36 @@ const server = http.createServer(app);
 // 1) DATABASE
 connectDB();
 
-// 2) CORS
-const allowedOrigins = ['http://localhost:3000','https://hyreuk.com'];
-app.use(cors({ origin: allowedOrigins, credentials: true }));
-app.options('*', cors({ origin: allowedOrigins, credentials: true }));
+/* -------------------------------------------------------------------------- */
+/* 2) CORS – change array → function so Express _and_ Socket.IO both allow it */
+/* -------------------------------------------------------------------------- */
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://hyreuk.com',
+  // add extra domains here if needed (e.g. 'https://www.hyreuk.com')
+];
 
-// 3) BODY PARSERS
+const corsOptions = {
+  credentials: true,
+  origin: (origin, cb) => {
+    // allow Postman / curl with no Origin
+    if (!origin) return cb(null, true);
+    cb(null, allowedOrigins.includes(origin));
+  }
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
+
+/* -------------------------------------------------------------------------- */
+/* 3) BODY PARSERS                                                            */
+/* -------------------------------------------------------------------------- */
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 4) STATIC UPLOADS
+/* -------------------------------------------------------------------------- */
+/* 4) STATIC UPLOADS                                                          */
+/* -------------------------------------------------------------------------- */
 // Use a local folder at project-root/server/uploads
 const uploadsDir = path.join(__dirname, 'uploads');
 // ensure it exists (read/write permissions)
@@ -37,7 +57,9 @@ if (!fs.existsSync(uploadsDir)) {
 app.use('/uploads',     express.static(uploadsDir));
 app.use('/api/uploads', express.static(uploadsDir));
 
-// 5) SESSIONS & PASSPORT
+/* -------------------------------------------------------------------------- */
+/* 5) SESSIONS & PASSPORT                                                     */
+/* -------------------------------------------------------------------------- */
 app.use(session({
   secret: process.env.SESSION_SECRET || 'secretKey',
   resave: false,
@@ -47,7 +69,9 @@ app.use(passport.initialize());
 app.use(passport.session());
 require('./config/passport')(passport);
 
-// 6) ROUTES
+/* -------------------------------------------------------------------------- */
+/* 6) ROUTES                                                                  */
+/* -------------------------------------------------------------------------- */
 app.use('/api/auth',          require('./routes/authRoutes'));
 app.use('/api/bookings',      require('./routes/bookingRoutes'));
 app.use('/api/invoices',      require('./routes/invoiceRoutes'));
@@ -68,16 +92,20 @@ app.use('/api/reviews',       require('./routes/reviewRoutes'));
 app.use('/api/admin',         require('./routes/adminRoutes'));
 app.use('/api/public/business', require('./routes/publicBusinessRoutes'));  // ← NEW
 
-
-// 7) SOCKET.IO
+/* -------------------------------------------------------------------------- */
+/* 7) SOCKET.IO – reuse the same corsOptions                                  */
+/* -------------------------------------------------------------------------- */
 const io = new Server(server, {
-  cors: { origin: allowedOrigins, methods: ['GET','POST','PUT','DELETE'], credentials: true }
+  cors: { ...corsOptions, methods: ['GET','POST','PUT','DELETE'] }
 });
+
 io.on('connection', socket => {
   socket.on('joinRoom', room => socket.join(room));
   socket.on('sendMessage', data => io.to(data.room).emit('receiveMessage', data));
 });
 
-// 8) START
+/* -------------------------------------------------------------------------- */
+/* 8) START                                                                   */
+/* -------------------------------------------------------------------------- */
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`► API up on :${PORT}`));
